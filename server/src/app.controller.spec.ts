@@ -15,8 +15,13 @@ describe('AppController', () => {
   });
 
   describe('root', () => {
-    it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
+    it('should return object response of statusCode, message and data', () => {
+      const result = appController.getHello();
+      const data = Object.values(result);
+      expect(result).toHaveProperty('message');
+      expect(result).toHaveProperty('statusCode');
+      expect(result).toHaveProperty('data');
+      expect(data[0]).toEqual(200);
     });
   });
 });

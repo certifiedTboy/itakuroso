@@ -12,6 +12,7 @@ import { MongooseModule } from '@nestjs/mongoose';
     MongooseModule.forRoot('mongodb://localhost/itakuroso'),
     ConfigModule.forRoot({
       isGlobal: true, // makes the config accessible globally
+      cache: true, // caches the config for performance
     }),
     UsersModule,
   ],

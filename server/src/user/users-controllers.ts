@@ -1,11 +1,9 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Patch, Body } from '@nestjs/common';
 import { BadRequestException } from '@nestjs/common';
 import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { VerifyUserDto } from './dto/verify-user.dto';
 import { ResponseHandler } from 'src/common/response-handler/response-handler';
-
-// import { UpdateProductDto } from './dto/update-product.dto';
-// import { User } from './schemas/user-schema';
 
 @Controller({
   path: 'users/create',
@@ -30,10 +28,32 @@ export class UsersController {
     }
   }
 
-  //   @Get(':id')
-  //   async findOneUser(@Param('id') id: string): Promise<User | null> {
-  //     const result: User | null = await this.usersService.findById(id);
+  @Patch()
+  async verifyUser(@Body() verifyUserDto: VerifyUserDto) {
+    try {
+      const result = await this.usersService.verifyUser(
+        verifyUserDto.verificationCode,
+      );
 
-  //     return result;
-  //   }
+      if (!result) {
+        throw new BadRequestException('', {
+          cause: 'invalid verification code',
+          description: 'Some error description',
+        });
+      }
+
+      return ResponseHandler.ok(
+        200,
+        'User verified successfully',
+        result || {},
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.message,
+          description: 'Some error description',
+        });
+      }
+    }
+  }
 }
