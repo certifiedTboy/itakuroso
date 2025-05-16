@@ -16,9 +16,12 @@ describe('AppController (e2e)', () => {
     await app.init();
   });
 
-  it('/ (GET)', () => {
-    const response = request(app.getHttpServer()).get('/api/v1');
+  it('/api/v1 (GET)', async () => {
+    const response: request.Response = await request(app.getHttpServer()).get(
+      '/',
+    );
 
-    console.log(response);
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toHaveProperty('data', { result: 'Server is live!' });
   });
 });

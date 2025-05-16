@@ -8,12 +8,4 @@ export class CreateUserDto {
   @IsEmail()
   @IsNotEmpty()
   readonly email: string;
-
-  @IsString()
-  @IsNotEmpty()
-  readonly country: string;
-
-  @IsString()
-  @IsNotEmpty()
-  readonly verificationCode: string;
 }

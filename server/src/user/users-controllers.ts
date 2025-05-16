@@ -6,7 +6,7 @@ import {
 import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
-import { ResponseHandler } from 'src/common/response-handler/response-handler';
+import { ResponseHandler } from '../common/response-handler/response-handler';
 
 @Controller({
   path: 'users/create',
