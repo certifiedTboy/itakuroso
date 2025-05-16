@@ -15,7 +15,7 @@ export class User {
   country: string;
 
   @Prop()
-  verificationCode: string;
+  verificationCode: string | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

@@ -40,13 +40,13 @@ export class MailerService {
     });
   }
 
-  async sendMail(to: string, subject: string) {
+  async sendMail(to: string, subject: string, message: string) {
     try {
       await this.transporter.sendMail({
         from: this.user,
         to,
         subject,
-        html: `<h1> Testing email service </h1>`,
+        html: `<h1> ${message} </h1>`,
       });
       console.log(`Email sent`);
     } catch (error: unknown) {
