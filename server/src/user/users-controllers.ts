@@ -1,5 +1,8 @@
 import { Controller, Post, Patch, Body } from '@nestjs/common';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
@@ -15,14 +18,35 @@ export class UsersController {
   @Post()
   async createUser(@Body() createUserDto: CreateUserDto) {
     try {
+      const userWithEmailExist = await this.usersService.checkIfUserExist({
+        email: createUserDto.email,
+      });
+
+      const userWithPhoneExist = await this.usersService.checkIfUserExist({
+        phoneNumber: createUserDto.phoneNumber,
+      });
+
+      if (userWithEmailExist) {
+        throw new BadRequestException('', {
+          cause: `User with this email already exists`,
+          description: 'User with this email already exists',
+        });
+      }
+
+      if (userWithPhoneExist) {
+        throw new BadRequestException('', {
+          cause: `User with this phone already exists`,
+          description: 'User with this email already exists',
+        });
+      }
       const result = await this.usersService.create(createUserDto);
 
       return ResponseHandler.ok(201, 'User created successfully', result || {});
     } catch (error) {
       if (error instanceof Error) {
         throw new BadRequestException('', {
-          cause: error.message,
-          description: 'Some error description',
+          cause: error.cause,
+          description: error.message,
         });
       }
     }
@@ -49,9 +73,9 @@ export class UsersController {
       );
     } catch (error: unknown) {
       if (error instanceof Error) {
-        throw new BadRequestException('', {
-          cause: error.message,
-          description: 'Some error description',
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
         });
       }
     }
