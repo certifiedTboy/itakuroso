@@ -36,7 +36,7 @@ export class UsersService {
     await this.mailerService.sendMail(
       user.email,
       'Verification Token',
-      user.verificationCode!,
+      user.verificationCode,
     );
     return user;
   }
@@ -54,13 +54,13 @@ export class UsersService {
       return null; // User not found or verification code is invalid
     }
     // Clear the verification code after successful verification
-    user.verificationCode = null;
+    user.verificationCode = '';
     await user.save();
     return user;
   }
 
-  async findUser(id: string): Promise<User | null> {
-    return this.userModel.findById(id).exec();
+  async checkIfUserExist(query: object): Promise<User | null> {
+    return this.userModel.findOne(query);
   }
 
   /**
