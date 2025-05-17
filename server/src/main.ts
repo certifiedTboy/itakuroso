@@ -1,5 +1,7 @@
 import { NestFactory } from '@nestjs/core';
-import { VersioningType } from '@nestjs/common';
+import { BadRequestException, VersioningType } from '@nestjs/common';
+import { ValidationPipe } from '@nestjs/common';
+// import { BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -31,6 +33,25 @@ async function bootstrap() {
    * It allows you to handle exceptions in a centralized manner,
    */
   app.useGlobalFilters(new HttpExceptionFilter());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // strips unknown properties
+      forbidNonWhitelisted: true, // throws error for extra fields
+      transform: true, // transforms payloads to DTO instances
+      stopAtFirstError: true, // stops at the first validation error
+
+      exceptionFactory: (errors) => {
+        const errorMessage = errors[0].constraints
+          ? Object.values(errors[0].constraints).join(', ')
+          : '';
+        throw new BadRequestException('', {
+          cause: errorMessage,
+          description: errorMessage,
+        });
+      },
+    }),
+  );
 
   const config = new DocumentBuilder()
     .setTitle('itakuroso API')

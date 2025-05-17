@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { HttpExceptionFilter } from './common/exceptions/http-exceptions.filter';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -14,6 +15,14 @@ import { MongooseModule } from '@nestjs/mongoose';
       isGlobal: true, // makes the config accessible globally
       cache: true, // caches the config for performance
     }),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        {
+          ttl: 60000,
+          limit: 10,
+        },
+      ],
+    }),
     UsersModule,
   ],
   controllers: [AppController],
@@ -22,6 +31,10 @@ import { MongooseModule } from '@nestjs/mongoose';
     {
       provide: APP_FILTER,
       useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
     },
   ],
 })

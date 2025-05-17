@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { MailerService } from 'src/common/mailer/mailer.service';
+import { MailerService } from '../common/mailer/mailer.service';
 import { User } from './schemas/user-schema';
 import { UserDocument } from './schemas/user-schema';
 import { CreateUserDto } from './dto/create-user.dto';
-import { CodeGenerator } from 'src/helpers/code-generator';
+import { CodeGenerator } from '../helpers/code-generator';
 
 /**
  * @class UsersService
@@ -33,11 +33,11 @@ export class UsersService {
       verificationCode: otp,
     });
     const user = await createdUser.save();
-    await this.mailerService.sendMail(
-      user.email,
-      'Verification Token',
-      user.verificationCode,
-    );
+    // await this.mailerService.sendMail(
+    //   user.email,
+    //   'Verification Token',
+    //   user.verificationCode,
+    // );
     return user;
   }
 
@@ -53,10 +53,14 @@ export class UsersService {
     if (!user) {
       return null; // User not found or verification code is invalid
     }
-    // Clear the verification code after successful verification
-    user.verificationCode = '';
-    await user.save();
-    return user;
+    // Update user verification status and clear verification code
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { _id: user?._id },
+      { isVerified: true, verificationCode: null },
+      { returnDocument: 'after' },
+    );
+
+    return updatedUser;
   }
 
   async checkIfUserExist(query: object): Promise<User | null> {
