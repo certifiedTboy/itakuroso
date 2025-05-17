@@ -8,6 +8,13 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 
+/**
+ * @class UsersController
+ * @description Handles all user-related HTTP requests.
+ * This includes creating users and verifying them.
+ * @version 1.0
+ * @path /api/v1/users
+ */
 @Controller({
   path: 'users',
   version: '1',
@@ -15,6 +22,14 @@ import { ResponseHandler } from '../common/response-handler/response-handler';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  /**
+   * @method createUser
+   * @description Handles user creation requests.
+   * Validates the input data and checks if the user already exists.
+   * If not, creates a new user and sends a verification email.
+   * @param {CreateUserDto} createUserDto - The data transfer object containing user details.
+  
+   */
   @Post('create')
   async createUser(@Body() createUserDto: CreateUserDto) {
     try {
@@ -52,6 +67,12 @@ export class UsersController {
     }
   }
 
+  /**
+   * @method verifyUser
+   * @description Handles user verification requests.
+   * Validates the input data and verifies the user using the provided verification code.
+   * @param {VerifyUserDto} verifyUserDto - The data transfer object containing the verification code.
+   */
   @Patch('verify')
   async verifyUser(@Body() verifyUserDto: VerifyUserDto) {
     try {
