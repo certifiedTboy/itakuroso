@@ -53,10 +53,14 @@ export class UsersService {
     if (!user) {
       return null; // User not found or verification code is invalid
     }
-    // Clear the verification code after successful verification
-    user.verificationCode = '';
-    await user.save();
-    return user;
+    // Update user verification status and clear verification code
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { _id: user?._id },
+      { isVerified: true, verificationCode: null },
+      { returnDocument: 'after' },
+    );
+
+    return updatedUser;
   }
 
   async checkIfUserExist(query: object): Promise<User | null> {

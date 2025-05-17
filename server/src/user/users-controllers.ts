@@ -9,13 +9,13 @@ import { VerifyUserDto } from './dto/verify-user.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 
 @Controller({
-  path: 'users/create',
+  path: 'users',
   version: '1',
 })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
+  @Post('create')
   async createUser(@Body() createUserDto: CreateUserDto) {
     try {
       const userWithEmailExist = await this.usersService.checkIfUserExist({
@@ -52,7 +52,7 @@ export class UsersController {
     }
   }
 
-  @Patch()
+  @Patch('verify')
   async verifyUser(@Body() verifyUserDto: VerifyUserDto) {
     try {
       const result = await this.usersService.verifyUser(

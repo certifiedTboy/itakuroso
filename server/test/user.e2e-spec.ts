@@ -29,6 +29,8 @@ afterAll(async () => {
   await app.close();
 });
 
+let verificationCode: string;
+
 describe('/api/v1/users (POST)', () => {
   it('should return 400 if correct user data is not provided', async () => {
     const response = await request(app.getHttpServer())
@@ -58,11 +60,44 @@ describe('/api/v1/users (POST)', () => {
         verificationCode: string;
       };
     };
+
+    verificationCode = body.data.verificationCode;
+
     expect(body.statusCode).toBe(201);
     expect(body.data.email).toBe(userData.email);
     expect(body.data.phoneNumber).toBe(userData.phoneNumber);
     expect(body.data.verificationCode).toBeDefined();
     expect(body.data.verificationCode).toHaveLength(6);
     expect(body.data.verificationCode).toMatch(/^\d{6}$/);
+  });
+});
+
+describe('/api/v1/users/verify (PATCH', () => {
+  it('should return 400 if verification code is not provided', async () => {
+    await request(app.getHttpServer())
+      .patch('/users/verify')
+      .send({ verificationCode: '' })
+      .expect(500);
+  });
+
+  it('should return 200 if verification code is valid', async () => {
+    const response = await request(app.getHttpServer())
+      .patch('/users/verify')
+      .send({ verificationCode });
+
+    const body = response.body as {
+      statusCode: number;
+      message: string;
+      data: {
+        verificationCode: string;
+        isVerified: boolean;
+      };
+    };
+
+    expect(body).toHaveProperty('statusCode', 200);
+    expect(body).toHaveProperty('message', 'User verified successfully');
+
+    expect(body.data.isVerified).toBe(true);
+    expect(body.data.verificationCode).toBe(null);
   });
 });
