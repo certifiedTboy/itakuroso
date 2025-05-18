@@ -20,6 +20,7 @@ import {
   initialWindowMetrics,
 } from "react-native-safe-area-context";
 import { Provider } from "react-redux";
+import MainTabs from "./tab/main-tabs";
 
 const Stack = createNativeStackNavigator();
 
@@ -82,6 +83,14 @@ export default function RootLayout() {
                 name="verification-screen"
                 options={{ headerShown: false }}
                 component={VerificationScreen}
+              />
+
+              <Stack.Screen
+                name="main-tabs"
+                options={{
+                  headerShown: false,
+                }}
+                component={MainTabs}
               />
             </Stack.Navigator>
           </SafeAreaView>
