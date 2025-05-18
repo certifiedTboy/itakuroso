@@ -1,15 +1,17 @@
 import ErrorModal from "@/components/modals/ErrorModal";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
-import { formValidation } from "@/helpers/form-validation";
+import { validateRegform } from "@/helpers/form-validation";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useCreateNewUserMutation } from "@/lib/apis/userApis";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Formik } from "formik";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, TextInput, View } from "react-native";
+import { Image, StyleSheet, View, useColorScheme } from "react-native";
+import { TextInput } from "react-native-paper";
 
 /**
  * type definition for the RegScreen component
@@ -21,13 +23,18 @@ type RegScreenProps = {
 /**
  * yup validation schema for the registration form
  */
-const SignupSchema = formValidation();
+const SignupSchema = validateRegform();
 
 const RegScreen = ({ navigation }: RegScreenProps) => {
   const [showModalError, setShowModalError] = useState(false);
 
-  const [createNewUser, { isSuccess, error, isError }] =
+  const [createNewUser, { data, isSuccess, error, isError, isLoading }] =
     useCreateNewUserMutation();
+
+  /**
+   * useColorScheme hook to get the current color scheme of the device
+   */
+  const theme = useColorScheme();
 
   /**
    * useThemeColor hook to define placeholder color for the input fields
@@ -39,7 +46,10 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
 
   useEffect(() => {
     if (isSuccess) {
-      navigation.navigate("verification-screen");
+      navigation.navigate("verification-screen", {
+        email: data?.data?.email,
+        phoneNumber: data?.data?.phoneNumber,
+      });
     }
 
     if (isError) {
@@ -47,13 +57,27 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
     }
   }, [isSuccess, isError]);
 
+  const createNewUserHandler = async (values: {
+    isValid: boolean;
+    value: { email: string; phoneNumber: string };
+  }) => {
+    const { email, phoneNumber } = values.value;
+
+    if (!email || !phoneNumber || !values.isValid) return;
+
+    await createNewUser({
+      email,
+      phoneNumber,
+    });
+  };
+
   return (
     <Formik
       initialValues={{ email: "", phoneNumber: "" }}
       onSubmit={(values) => console.log(values)}
       validationSchema={SignupSchema}
     >
-      {({ handleChange, handleBlur, values, errors }) => (
+      {({ handleChange, values, errors, handleBlur, isValid }) => (
         <ThemedView
           darkColor={Colors.dark.bgc}
           lightColor={Colors.light.bgc}
@@ -89,15 +113,16 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
           </View>
 
           <View style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Phone Number:</ThemedText>
+            {/* <ThemedText style={styles.inputLabel}>Phone Number:</ThemedText> */}
             <TextInput
               style={[styles.input, { color: placeholderColor }]}
               autoCapitalize="none"
-              placeholderTextColor={placeholderColor}
               keyboardType="number-pad"
               onBlur={handleBlur("phoneNumber")}
               onChangeText={handleChange("phoneNumber")}
               value={values.phoneNumber}
+              label={"Phone Number"}
+              mode={theme === "dark" ? "flat" : "outlined"}
             />
             {errors?.phoneNumber && (
               <ThemedText style={styles.errorText}>
@@ -105,9 +130,9 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
               </ThemedText>
             )}
 
-            <ThemedText style={[styles.inputLabel, { marginTop: 20 }]}>
+            {/* <ThemedText style={[styles.inputLabel, { marginTop: 20 }]}>
               Email:
-            </ThemedText>
+            </ThemedText> */}
             <TextInput
               style={[styles.input, { color: placeholderColor }]}
               autoCapitalize="none"
@@ -116,6 +141,8 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
               onBlur={handleBlur("email")}
               onChangeText={handleChange("email")}
               value={values.email}
+              label={"Email"}
+              mode={theme === "dark" ? "flat" : "outlined"}
             />
             {errors?.email && (
               <ThemedText style={styles.errorText}>{errors?.email}</ThemedText>
@@ -123,16 +150,15 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
 
             <View style={styles.btnContainer}>
               <ThemedButton
-                onPress={async () =>
-                  await createNewUser({
-                    phoneNumber: values.phoneNumber,
-                    email: values.email,
-                  })
-                }
+                onPress={() => createNewUserHandler({ isValid, value: values })}
                 darkBackground={Colors.dark.btnBgc}
                 lightBackground={Colors.light.btnBgc}
               >
-                <ThemedText>Next</ThemedText>
+                {!isLoading ? (
+                  <ThemedText>Next</ThemedText>
+                ) : (
+                  <LoaderSpinner color="#fff" />
+                )}
               </ThemedButton>
             </View>
           </View>
@@ -152,7 +178,6 @@ const styles = StyleSheet.create({
   textContainer: {
     width: "60%",
     alignItems: "center",
-    marginTop: 40,
     marginBottom: 50,
     marginHorizontal: "auto",
   },
@@ -173,7 +198,7 @@ const styles = StyleSheet.create({
   descTextContainer: {
     width: "80%",
     marginHorizontal: "auto",
-    marginTop: 10,
+    marginTop: -20,
   },
 
   descText: {
@@ -189,11 +214,12 @@ const styles = StyleSheet.create({
   },
 
   input: {
-    height: 40,
-    borderColor: "#333",
-    borderWidth: 1,
+    height: 50,
+    // borderColor: "#333",
+    // borderWidth: 1,
     marginTop: 20,
-    paddingHorizontal: 10,
+    // paddingHorizontal: 10,
+    // borderRadius: 10,
   },
 
   inputLabel: { marginBottom: -10 },

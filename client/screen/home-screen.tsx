@@ -81,7 +81,7 @@ const styles = StyleSheet.create({
   },
 
   btnContainer: {
-    width: 300,
+    width: 100,
     marginHorizontal: "auto",
     marginTop: 10,
     // justifyContent: "center",
