@@ -63,6 +63,11 @@ export class UsersService {
     return updatedUser;
   }
 
+  /**
+   * @method checkIfUserExist
+   * @description Checks if a user exists in the database based on the provided query.
+   * @param {object} query - The query object to search for the user.
+   */
   async checkIfUserExist(query: object): Promise<User | null> {
     return this.userModel.findOne(query);
   }
