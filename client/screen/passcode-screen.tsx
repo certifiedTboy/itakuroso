@@ -1,76 +1,11 @@
-// import ThemedButton from "@/components/ThemedButton";
-// import { ThemedText } from "@/components/ThemedText";
-// import { ThemedView } from "@/components/ThemedView";
-// import { Colors } from "@/constants/Colors";
-// import { StyleSheet, View } from "react-native";
-
-// const VerificationScreen = () => {
-//   return (
-//     <ThemedView
-//       style={styles.mainContainer}
-//       darkColor={Colors.dark.bgc}
-//       lightColor={Colors.light.bgc}
-//     >
-//       <View style={styles.inputContainer}>
-//         <ThemedText>Verification Screen</ThemedText>
-//         <OtpInput
-//           numberOfDigits={6}
-//           onTextChange={(text) => console.log(text)}
-//         />
-//       </View>
-
-//       <View style={styles.btnContainer}>
-//         <ThemedButton
-//           style={styles.btn}
-//           darkBackground={Colors.dark.btnBgc}
-//           lightBackground={Colors.light.btnBgc}
-//         >
-//           <ThemedText>Verify</ThemedText>
-//         </ThemedButton>
-//       </View>
-//     </ThemedView>
-//   );
-// };
-
-// export default VerificationScreen;
-
-// const styles = StyleSheet.create({
-//   mainContainer: {
-//     flex: 1,
-//     // justifyContent: "center",
-//     marginTop: 90,
-//     alignItems: "center",
-//   },
-
-//   inputContainer: {
-//     width: "80%",
-//     marginHorizontal: "auto",
-//     alignItems: "center",
-//     justifyContent: "center",
-//   },
-
-//   btnContainer: {
-//     marginTop: 20,
-//     width: 100,
-//   },
-
-//   btn: {
-//     width: 100,
-//   },
-
-//   // filledPinCodeContainer: {
-//   //   margin: 15,
-//   // },
-// });
-
 import ErrorModal from "@/components/modals/ErrorModal";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
-import { validateVerificationform } from "@/helpers/form-validation";
-import { useVerifyUserAccountMutation } from "@/lib/apis/userApis";
+import { validatePasscodeForm } from "@/helpers/form-validation";
+import { useUpdatePasscodeMutation } from "@/lib/apis/userApis";
 import { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Formik } from "formik";
@@ -94,46 +29,43 @@ type VerificationScreenProps = {
 /**
  * yup validation schema for the registration form
  */
-const VerificationSchema = validateVerificationform();
+const PasscodeSchema = validatePasscodeForm();
 
-const VerificationScreen = ({ navigation, route }: VerificationScreenProps) => {
+const PasscodeScreen = ({ navigation, route }: VerificationScreenProps) => {
   const [showModalError, setShowModalError] = useState(false);
 
-  const [verifyUserAccount, { isSuccess, data, error, isError, isLoading }] =
-    useVerifyUserAccountMutation();
+  const [updatePasscode, { isSuccess, error, isError, isLoading }] =
+    useUpdatePasscodeMutation();
 
   useEffect(() => {
     if (isSuccess) {
-      if (data?.message === "verification code updated") {
-        return;
-      } else {
-        navigation.navigate("passcode-screen", { email: route.params?.email });
-      }
+      navigation.navigate("main-tabs");
     }
 
     if (isError) {
       setShowModalError(true);
     }
-  }, [isSuccess, isError, data]);
+  }, [isSuccess, isError]);
 
   const verifyUserAccountHandler = async (values: {
     isValid: boolean;
-    value: { verificationCode: string };
+    value: { passcode: string };
   }) => {
-    const { verificationCode } = values.value;
+    const { passcode } = values.value;
 
-    if (!verificationCode || !values.isValid) return;
+    if (!passcode || !values.isValid) return;
 
-    await verifyUserAccount({
-      verificationCode,
+    await updatePasscode({
+      passcode,
+      email: route.params?.email,
     });
   };
 
   return (
     <Formik
-      initialValues={{ verificationCode: "" }}
+      initialValues={{ passcode: "" }}
       onSubmit={(values) => console.log(values)}
-      validationSchema={VerificationSchema}
+      validationSchema={PasscodeSchema}
     >
       {({ handleChange, values, errors, handleBlur, isValid }) => (
         <ThemedView
@@ -159,37 +91,27 @@ const VerificationScreen = ({ navigation, route }: VerificationScreenProps) => {
               style={styles.bubbleImage}
             />
 
-            <ThemedText style={styles.introText}>
-              Verify your account
-            </ThemedText>
+            <ThemedText style={styles.introText}>Choose a passcode</ThemedText>
           </View>
 
           <View style={styles.descTextContainer}>
-            {data && data?.message === `verification code updated` ? (
-              <ThemedText style={styles.descText}>
-                A new code has been sent to {route.params?.email} to verify your
-                account
-              </ThemedText>
-            ) : (
-              <ThemedText style={styles.descText}>
-                A code has been sent to {route.params?.email} and{" "}
-                {route.params?.phoneNumber}
-              </ThemedText>
-            )}
+            <ThemedText style={styles.descText}>
+              Choose a passcode that you will remember to secure your account
+            </ThemedText>
           </View>
 
           <View style={styles.inputContainer}>
             <OtpInput
               numberOfDigits={6}
-              onTextChange={handleChange("verificationCode")}
-              onBlur={() => handleBlur("verificationCode")}
+              onTextChange={handleChange("passcode")}
+              onBlur={() => handleBlur("passcode")}
               theme={{
                 pinCodeTextStyle: styles.pinCodeText,
               }}
             />
-            {errors?.verificationCode && (
+            {errors?.passcode && (
               <ThemedText style={styles.errorText}>
-                {errors.verificationCode}
+                {errors.passcode}
               </ThemedText>
             )}
 
@@ -202,7 +124,7 @@ const VerificationScreen = ({ navigation, route }: VerificationScreenProps) => {
                 lightBackground={Colors.light.btnBgc}
               >
                 {!isLoading ? (
-                  <ThemedText>Verify</ThemedText>
+                  <ThemedText>Continue</ThemedText>
                 ) : (
                   <LoaderSpinner color="#fff" />
                 )}
@@ -215,7 +137,7 @@ const VerificationScreen = ({ navigation, route }: VerificationScreenProps) => {
   );
 };
 
-export default VerificationScreen;
+export default PasscodeScreen;
 
 const styles = StyleSheet.create({
   container: {

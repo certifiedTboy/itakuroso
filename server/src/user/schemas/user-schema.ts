@@ -17,8 +17,14 @@ export class User {
   @Prop({ default: null })
   verificationCode: string;
 
+  @Prop()
+  verificationCodeExpiresIn: Date;
+
   @Prop({ default: false })
   isVerified: boolean;
+
+  @Prop()
+  passcode: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

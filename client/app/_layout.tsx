@@ -1,7 +1,11 @@
+import Icon from "@/components/ui/Icon";
+import { isAuthenticated } from "@/helpers/authentication";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
 import { store } from "@/lib/redux-store/store";
 import HomeScreen from "@/screen/home-screen";
+import PasscodeScreen from "@/screen/passcode-screen";
 import RegScreen from "@/screen/reg-screen";
 import VerificationScreen from "@/screen/verification-screen";
 import {
@@ -12,6 +16,7 @@ import {
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
 import "react-native-reanimated";
 import {
@@ -24,8 +29,86 @@ import MainTabs from "./tab/main-tabs";
 
 const Stack = createNativeStackNavigator();
 
-export default function RootLayout() {
+/**
+ * Authstack is the stack navigator for the authentication flow
+ * It contains the home screen, registration screen, verification screen and passcode screen
+ * user do not need to be authentacated to access this stack and its screens
+ */
+const AuthStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="home-screen"
+        options={{
+          // title: "Itakurọsọ",
+          headerShown: false,
+        }}
+        component={HomeScreen}
+      />
+      <Stack.Screen
+        name="reg-screen"
+        options={{ headerShown: false }}
+        component={RegScreen}
+      />
+
+      <Stack.Screen
+        name="verification-screen"
+        options={{ headerShown: false }}
+        component={VerificationScreen}
+      />
+
+      <Stack.Screen
+        name="passcode-screen"
+        options={{ headerShown: false }}
+        component={PasscodeScreen}
+      />
+    </Stack.Navigator>
+  );
+};
+
+/**
+ * AuthenticatedStack is the stack navigator for the authenticated flow
+ * It contains the main tabs screen
+ * user need to be authentacated to access this stack and its screens
+ * it is the main stack tab navigator for the app which contains screens such as chat, status AI and calls screens
+ */
+const AuthenticatedStack = () => {
+  return (
+    <Stack.Navigator>
+      <Stack.Screen
+        name="main-tabs"
+        options={{
+          // headerShown: false,
+
+          headerRight: () => <Icon name="settings" size={25} color="black" />,
+        }}
+        component={MainTabs}
+      />
+    </Stack.Navigator>
+  );
+};
+
+/**
+ * Navigation is the main navigation component for the app
+ * It contains the auth stack and authenticated stack
+ * It also handles the theme and status bar
+ */
+const Navigation = () => {
   const colorScheme = useColorScheme();
+  const [userIsAuthenticated, setUseIsauthenticated] = useState(false);
+  const [getCurrentUser] = useGetCurrentUserMutation();
+
+  useEffect(() => {
+    const checkIfUserAutenticated = async () => {
+      const result = await isAuthenticated();
+      if (result) {
+        setUseIsauthenticated(true);
+      }
+    };
+    checkIfUserAutenticated();
+
+    getCurrentUser(null);
+  }, []);
 
   const backgroundColor = useThemeColor(
     { light: "#fff", dark: "#000" },
@@ -42,60 +125,28 @@ export default function RootLayout() {
   }
 
   return (
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <StatusBar
+        style="auto"
+        translucent={true}
+        backgroundColor={backgroundColor}
+      />
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        <SafeAreaView
+          style={styles.container}
+          edges={["top", "bottom", "left", "right"]}
+        >
+          {userIsAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
+        </SafeAreaView>
+      </SafeAreaProvider>
+    </ThemeProvider>
+  );
+};
+
+export default function RootLayout() {
+  return (
     <Provider store={store}>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <StatusBar
-          style="auto"
-          translucent={true}
-          backgroundColor={backgroundColor}
-        />
-        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-          <SafeAreaView
-            style={styles.container}
-            edges={["top", "bottom", "left", "right"]}
-          >
-            <Stack.Navigator
-            // screenOptions={
-            //   {
-            //     // headerStyle: { backgroundColor: backgroundColor },
-            //     // headerTitleStyle: {
-            //     //   fontSize: 30,
-            //     //   fontWeight: "bold",
-            //     // },
-            //   }
-            // }
-            >
-              <Stack.Screen
-                name="home-screen"
-                options={{
-                  // title: "Itakurọsọ",
-                  headerShown: false,
-                }}
-                component={HomeScreen}
-              />
-              <Stack.Screen
-                name="reg-screen"
-                options={{ headerShown: false }}
-                component={RegScreen}
-              />
-
-              <Stack.Screen
-                name="verification-screen"
-                options={{ headerShown: false }}
-                component={VerificationScreen}
-              />
-
-              <Stack.Screen
-                name="main-tabs"
-                options={{
-                  headerShown: false,
-                }}
-                component={MainTabs}
-              />
-            </Stack.Navigator>
-          </SafeAreaView>
-        </SafeAreaProvider>
-      </ThemeProvider>
+      <Navigation />
     </Provider>
   );
 }

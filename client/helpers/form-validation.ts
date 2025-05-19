@@ -22,3 +22,13 @@ export const validateVerificationform = () => {
 
   return Schema;
 };
+
+export const validatePasscodeForm = () => {
+  const Schema = Yup.object().shape({
+    passcode: Yup.string()
+      .required("Passcode is required")
+      .matches(/^\d{6}$/, "Passcode must be 6 digits"),
+  });
+
+  return Schema;
+};

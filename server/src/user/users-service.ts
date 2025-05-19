@@ -1,11 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { MailerService } from '../common/mailer/mailer.service';
+import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { User } from './schemas/user-schema';
 import { UserDocument } from './schemas/user-schema';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasscodeDto } from './dto/update-passcode.dto';
 import { CodeGenerator } from '../helpers/code-generator';
+import { Time } from '../helpers/time';
 
 /**
  * @class UsersService
@@ -27,10 +30,49 @@ export class UsersService {
    * @throws {Error} - Throws an error if the user creation fails.
    */
   async create(createUserDto: CreateUserDto): Promise<UserDocument> {
+    // check if user with the same email or phone number already exists
+    const userWithEmailExist = await this.checkIfUserExist({
+      email: createUserDto.email,
+    });
+
+    if (userWithEmailExist) {
+      if (userWithEmailExist.phoneNumber !== createUserDto.phoneNumber) {
+        throw new BadRequestException('', {
+          cause: 'The phone number and email belong to different users',
+          description: 'invalid credentials',
+        });
+      }
+
+      const otp = CodeGenerator.generateOtp();
+      const verificationCodeExpiresIn = Time.getTimeInOneHour();
+
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        { email: userWithEmailExist.email },
+        { verificationCode: otp, isVerified: false, verificationCodeExpiresIn },
+        { new: true },
+      );
+
+      if (!updatedUser) {
+        throw new BadRequestException('', {
+          cause: 'Something went wrong',
+          description: 'Something went wrong',
+        });
+      }
+
+      // await this.mailerService.sendMail(
+      //   updatedUser.email,
+      //   'Verification Token',
+      //   updatedUser.verificationCode,
+      // );
+      return updatedUser;
+    }
+
     const otp = CodeGenerator.generateOtp();
+    const verificationCodeExpiresIn = Time.getTimeInOneHour();
     const createdUser = new this.userModel({
       ...createUserDto,
       verificationCode: otp,
+      verificationCodeExpiresIn,
     });
     const user = await createdUser.save();
     // await this.mailerService.sendMail(
@@ -50,14 +92,46 @@ export class UsersService {
    */
   async verifyUser(verificationCode: string): Promise<UserDocument | null> {
     const user = await this.findUserByVerificationCode(verificationCode);
+
+    console.log(user);
+
     if (!user) {
-      return null; // User not found or verification code is invalid
+      // User not found or verification code is invalid
+      throw new BadRequestException('', {
+        cause: 'invalid verification code',
+        description: 'Some error description',
+      });
     }
+
+    // Check if the verification code has expired
+    if (Time.checkIfTimeIsExpired(user.verificationCodeExpiresIn)) {
+      const otp = CodeGenerator.generateOtp();
+      const verificationCodeExpiresIn = Time.getTimeInOneHour();
+
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        { email: user.email },
+        { verificationCode: otp, isVerified: false, verificationCodeExpiresIn },
+        { new: true },
+      );
+
+      // await this.mailerService.sendMail(
+      //   updatedUser.email,
+      //   'Verification Token',
+      //   updatedUser.verificationCode,
+      // );
+
+      return updatedUser;
+    }
+
     // Update user verification status and clear verification code
     const updatedUser = await this.userModel.findOneAndUpdate(
       { _id: user?._id },
-      { isVerified: true, verificationCode: null },
-      { returnDocument: 'after' },
+      {
+        isVerified: true,
+        verificationCode: null,
+        verificationCodeExpiresIn: null,
+      },
+      { new: true },
     );
 
     return updatedUser;
@@ -84,5 +158,29 @@ export class UsersService {
     verificationCode: string,
   ): Promise<UserDocument | null> {
     return await this.userModel.findOne({ verificationCode });
+  }
+
+  /**
+   * @method updateUserPasscode
+   * @description Updates the user's passcode.
+   * @param {UpdatePasscodeDto} updatePasscodeDto - The data transfer object containing the new passcode and email.
+   * @returns {Promise<UserDocument | null>} - The updated user object or null if not found.
+   * @throws {Error} - Throws an error if the update process fails.
+   */
+  async updateUserPasscode(
+    updatePasscodeDto: UpdatePasscodeDto,
+  ): Promise<UserDocument | null> {
+    const { passcode, email } = updatePasscodeDto;
+
+    // hash the passcode and save it to the database
+    const hashedPasscode = await PasscodeHashing.hashPassword(passcode);
+
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { email },
+      { passcode: hashedPasscode },
+      { new: true },
+    );
+
+    return updatedUser;
   }
 }

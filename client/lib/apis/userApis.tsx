@@ -1,4 +1,6 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { setCurrentUser } from "../redux/auth-slice";
 
 let baseUrl = process.env.EXPO_PUBLIC_API_URL;
 
@@ -6,12 +8,12 @@ export const userApis = createApi({
   reducerPath: "userApis",
   baseQuery: fetchBaseQuery({
     baseUrl,
-    // prepareHeaders: async (headers, { getState }) => {
-    //   const token = process.env.EXPO_PUBLIC_API_KEY;
+    prepareHeaders: async (headers, { getState }) => {
+      const authToken = await AsyncStorage.getItem("authToken");
 
-    //   headers.set("Authorization", `Bearer ${token}`);
-    //   return headers;
-    // },
+      headers.set("Authorization", `Bearer ${authToken}`);
+      return headers;
+    },
   }),
 
   endpoints: (builder) => ({
@@ -30,8 +32,56 @@ export const userApis = createApi({
         body: payload,
       }),
     }),
+
+    updatePasscode: builder.mutation({
+      query: (payload) => ({
+        url: `/auth/login`,
+        method: "POST",
+        body: payload,
+      }),
+
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          if (data) {
+            const { authToken } = data.data;
+
+            await AsyncStorage.setItem("authToken", authToken);
+            dispatch(setCurrentUser({ currentUser: data.data }));
+          }
+        } catch (error) {
+          // console.log(error);
+        }
+      },
+    }),
+
+    getCurrentUser: builder.mutation({
+      query: (payload) => ({
+        url: `/`,
+        method: "GET",
+      }),
+
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          await queryFulfilled;
+
+          // if (data) {
+          // const { authToken } = data.data;
+
+          dispatch(setCurrentUser({ currentUser: null }));
+          // }
+        } catch (error) {
+          // console.log(error);
+        }
+      },
+    }),
   }),
 });
 
-export const { useCreateNewUserMutation, useVerifyUserAccountMutation } =
-  userApis;
+export const {
+  useCreateNewUserMutation,
+  useVerifyUserAccountMutation,
+  useUpdatePasscodeMutation,
+  useGetCurrentUserMutation,
+} = userApis;
