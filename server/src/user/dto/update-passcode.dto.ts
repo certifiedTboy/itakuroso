@@ -1,11 +1,11 @@
 import { IsString, IsNotEmpty, IsEmail } from 'class-validator';
 
-export class AuthDto {
+export class UpdatePasscodeDto {
   @IsString()
   @IsNotEmpty()
   readonly passcode: string;
 
+  @IsString()
   @IsEmail()
-  @IsNotEmpty()
   readonly email: string;
 }

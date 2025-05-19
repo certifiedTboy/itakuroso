@@ -28,9 +28,9 @@ export class AuthControllers {
   @Post('login')
   async login(@Body() authDto: AuthDto) {
     try {
-      const { passCode, email } = authDto;
+      const { passcode, email } = authDto;
 
-      const result = await this.authService.signIn(passCode, email);
+      const result = await this.authService.signIn(passcode, email);
 
       return ResponseHandler.ok(200, 'login successful', result);
     } catch (error: unknown) {

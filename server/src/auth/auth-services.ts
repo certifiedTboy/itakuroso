@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { UsersService } from '../user/users-service';
 
 @Injectable()
@@ -10,7 +11,7 @@ export class AuthService {
   ) {}
 
   async signIn(
-    passCode: string,
+    passcode: string,
     email: string,
   ): Promise<{ authToken: string }> {
     const user = await this.usersService.checkIfUserExist({ email });
@@ -22,11 +23,38 @@ export class AuthService {
       });
     }
 
-    const payload = {
-      email: user.email,
-      sub: user.phoneNumber,
-    };
+    if (user && user.passcode && user.isVerified) {
+      const passcodeMatch = await PasscodeHashing.verifyPassword(
+        passcode,
+        user.passcode,
+      );
 
-    return { authToken: await this.jwtService.signAsync(payload) };
+      if (!passcodeMatch) {
+        throw new UnauthorizedException('', {
+          cause: `Invalid passcode`,
+          description: 'Invalid passcode',
+        });
+      }
+
+      const payload = {
+        email: user.email,
+        sub: user.phoneNumber,
+      };
+
+      return { authToken: await this.jwtService.signAsync(payload) };
+    } else {
+      // update user passcode
+      const updatedUser = await this.usersService.updateUserPasscode({
+        passcode,
+        email: user?.email,
+      });
+
+      const payload = {
+        email: updatedUser!.email,
+        sub: updatedUser!.phoneNumber,
+      };
+
+      return { authToken: await this.jwtService.signAsync(payload) };
+    }
   }
 }

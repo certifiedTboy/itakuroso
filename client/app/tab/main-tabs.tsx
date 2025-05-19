@@ -15,10 +15,15 @@ const MainTabs = () => {
     "background"
   );
 
+  const tintColor = useThemeColor(
+    { light: Colors.light.btnBgc, dark: Colors.dark.text },
+    "text"
+  );
+
   return (
     <Tab.Navigator
       screenOptions={({ route, navigation }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
+        tabBarIcon: ({ focused, color }) => {
           let iconName;
 
           if (route.name === "Chats") {
@@ -44,12 +49,14 @@ const MainTabs = () => {
         headerStyle: {
           backgroundColor: backgroundColor,
         },
+        headerTintColor: tintColor,
         headerStatusBarHeight: 1,
         tabBarStyle: {
           height: 70,
           justifyContent: "center",
           alignItems: "center",
           paddingTop: 5,
+          backgroundColor: backgroundColor,
         },
 
         tabBarLabelStyle: {

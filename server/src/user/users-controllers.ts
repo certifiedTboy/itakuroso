@@ -33,27 +33,6 @@ export class UsersController {
   @Post('create')
   async createUser(@Body() createUserDto: CreateUserDto) {
     try {
-      const userWithEmailExist = await this.usersService.checkIfUserExist({
-        email: createUserDto.email,
-      });
-
-      const userWithPhoneExist = await this.usersService.checkIfUserExist({
-        phoneNumber: createUserDto.phoneNumber,
-      });
-
-      if (userWithEmailExist) {
-        throw new BadRequestException('', {
-          cause: `User with this email already exists`,
-          description: 'User with this email already exists',
-        });
-      }
-
-      if (userWithPhoneExist) {
-        throw new BadRequestException('', {
-          cause: `User with this phone already exists`,
-          description: 'User with this email already exists',
-        });
-      }
       const result = await this.usersService.create(createUserDto);
 
       return ResponseHandler.ok(201, 'User created successfully', result || {});
@@ -80,18 +59,16 @@ export class UsersController {
         verifyUserDto.verificationCode,
       );
 
-      if (!result) {
-        throw new BadRequestException('', {
-          cause: 'invalid verification code',
-          description: 'Some error description',
-        });
+      /**
+       * we check if the result still contains the verification code
+       * which indicates that the initial verification has exceeded one hour before usage
+       * if the verification code is expired, a new one is generated and returned with result and also sent to the user as an email
+       */
+      if (result?.verificationCode) {
+        return ResponseHandler.ok(200, `verification code updated`, result);
       }
 
-      return ResponseHandler.ok(
-        200,
-        'User verified successfully',
-        result || {},
-      );
+      return ResponseHandler.ok(200, 'User verified successfully', result!);
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {
