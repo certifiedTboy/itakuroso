@@ -1,11 +1,24 @@
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
+import MenuDropdown from "@/components/dropdown/MenuDropdown";
 
-const AllChatsScreen = () => {
+const AllChatsScreen = ({ navigation }: { navigation: any }) => {
+  const options = [
+    {
+      label: "Settings",
+      onPress: () => navigation.navigate("Settings"),
+    },
+    {
+      label: "Help",
+      onPress: () => navigation.navigate("Help"),
+    },
+    {
+      label: "Logout",
+      onPress: () => console.log("Logout pressed"),
+    },
+  ];
   return (
-    <ThemedView>
-      <ThemedText>All Chats</ThemedText>
-    </ThemedView>
+    // <ThemedView>
+    <MenuDropdown options={options} />
+    // </ThemedView>
   );
 };
 
