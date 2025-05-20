@@ -1,118 +1,154 @@
 import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { DropdownContext } from "@/lib/context/dropdown-context";
+import React, { useContext, useState } from "react";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
+import { SceneMap, TabView } from "react-native-tab-view";
+
 import AIScreen from "@/screen/ai-screen";
 import AllChatsScreen from "@/screen/allchats-screen";
 import CallsScreen from "@/screen/calls-screen";
 import StatusScreen from "@/screen/status-screen";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 
-const Tab = createBottomTabNavigator();
+const renderScene = SceneMap({
+  chats: AllChatsScreen,
+  status: StatusScreen,
+  ai: AIScreen,
+  calls: CallsScreen,
+});
 
 const MainTabs = () => {
+  const [index, setIndex] = useState(0);
+  const [routes] = useState([
+    { key: "chats", title: "Itakurọsọ", icon: "chatbubbles-outline" },
+    { key: "status", title: "Status", icon: "newspaper-outline" },
+    { key: "ai", title: "Itakurọsọ AI", icon: "diamond-outline" },
+    { key: "calls", title: "Calls", icon: "call-outline" },
+  ]);
+
+  const { toggleDropdown } = useContext(DropdownContext);
+
   const backgroundColor = useThemeColor(
     { light: Colors.light.bgc, dark: Colors.dark.bgc },
     "background"
   );
 
   const tintColor = useThemeColor(
+    { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
+    "text"
+  );
+
+  const titleColor = useThemeColor(
     { light: Colors.light.btnBgc, dark: Colors.dark.text },
     "text"
   );
 
+  const headerIconColor = useThemeColor(
+    { light: "#000", dark: "#fff" },
+    "text"
+  );
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route, navigation }) => ({
-        tabBarIcon: ({ focused, color }) => {
-          let iconName;
+    <View style={{ flex: 1 }}>
+      {/* Optional header */}
+      <View style={[styles.header, { backgroundColor }]}>
+        <Text
+          style={[
+            routes[index].key === "chats"
+              ? styles.mainTitle
+              : styles.headerTitle,
 
-          if (route.name === "Chats") {
-            iconName = focused ? "chatbubbles" : "chatbubbles-outline";
-          } else if (route.name === "Status") {
-            iconName = focused ? "newspaper" : "newspaper-outline";
-          } else if (route.name === "Calls") {
-            iconName = focused ? "call" : "call-outline";
-          } else {
-            iconName = focused ? "diamond" : "diamond-outline";
-          }
+            { color: titleColor },
+          ]}
+        >
+          {routes[index].title}
+        </Text>
+        <Pressable style={{ marginTop: 10 }}>
+          <Icon
+            name="ellipsis-vertical"
+            onPress={toggleDropdown}
+            size={25}
+            color={headerIconColor}
+          />
+        </Pressable>
+      </View>
 
+      {/* Swipeable content */}
+      <TabView
+        navigationState={{ index, routes }}
+        renderScene={renderScene}
+        onIndexChange={setIndex}
+        initialLayout={{ width: Dimensions.get("window").width }}
+        swipeEnabled
+        renderTabBar={() => null} // we use a custom tab bar
+      />
+
+      {/* Custom Bottom Tab Bar */}
+      <View style={[styles.tabBar, { backgroundColor }]}>
+        {routes.map((route, idx) => {
+          const isFocused = index === idx;
           return (
-            <Icon
-              name={iconName}
-              size={30}
-              color={color}
-              onPress={() => navigation.navigate(route.name)}
-            />
+            <Pressable
+              key={route.key}
+              style={styles.tabItem}
+              onPress={() => setIndex(idx)}
+            >
+              <Icon
+                name={
+                  isFocused ? route.icon.replace("-outline", "") : route.icon
+                }
+                size={30}
+                color={isFocused ? tintColor : "#999"}
+                onPress={() => setIndex(idx)}
+              />
+              <Text
+                style={{
+                  color: isFocused ? tintColor : "#999",
+                  fontSize: 12,
+                  marginTop: 2,
+                }}
+              >
+                {route.title}
+              </Text>
+            </Pressable>
           );
-        },
-
-        headerStyle: {
-          backgroundColor: backgroundColor,
-        },
-        headerTintColor: tintColor,
-        headerStatusBarHeight: 1,
-        tabBarStyle: {
-          height: 70,
-          justifyContent: "center",
-          alignItems: "center",
-          paddingTop: 5,
-          backgroundColor: backgroundColor,
-        },
-
-        tabBarLabelStyle: {
-          fontWeight: "bold",
-          fontSize: 15,
-          marginTop: 6,
-        },
-      })}
-    >
-      <Tab.Screen
-        name="Chats"
-        options={{
-          headerTitle: "Itakurọsọ",
-
-          headerTitleStyle: {
-            fontSize: 30,
-            fontWeight: "bold",
-          },
-        }}
-        component={AllChatsScreen}
-      />
-
-      <Tab.Screen
-        name="Status"
-        options={{
-          headerTitle: "Status",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-        component={StatusScreen}
-      />
-
-      <Tab.Screen
-        name="AI"
-        options={{
-          headerTitle: "Itakurọsọ-AI",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-        component={AIScreen}
-      />
-
-      <Tab.Screen
-        name="Calls"
-        options={{
-          headerTitle: "Calls",
-          headerTitleStyle: {
-            fontWeight: "bold",
-          },
-        }}
-        component={CallsScreen}
-      />
-    </Tab.Navigator>
+        })}
+      </View>
+    </View>
   );
 };
 
 export default MainTabs;
+
+const styles = StyleSheet.create({
+  header: {
+    height: 60,
+    paddingHorizontal: 15,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    elevation: 2,
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+  },
+
+  mainTitle: {
+    fontSize: 30,
+    fontWeight: "bold",
+  },
+
+  tabBar: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#333",
+  },
+  tabItem: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+});

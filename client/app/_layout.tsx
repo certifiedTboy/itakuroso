@@ -1,8 +1,8 @@
-import Icon from "@/components/ui/Icon";
 import { isAuthenticated } from "@/helpers/authentication";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
+import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
 import HomeScreen from "@/screen/home-screen";
 import PasscodeScreen from "@/screen/passcode-screen";
@@ -77,11 +77,9 @@ const AuthenticatedStack = () => {
     <Stack.Navigator>
       <Stack.Screen
         name="main-tabs"
-        options={{
-          // headerShown: false,
-
-          headerRight: () => <Icon name="settings" size={25} color="black" />,
-        }}
+        options={() => ({
+          headerShown: false,
+        })}
         component={MainTabs}
       />
     </Stack.Navigator>
@@ -125,21 +123,23 @@ const Navigation = () => {
   }
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-      <StatusBar
-        style="auto"
-        translucent={true}
-        backgroundColor={backgroundColor}
-      />
-      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-        <SafeAreaView
-          style={styles.container}
-          edges={["top", "bottom", "left", "right"]}
-        >
-          {userIsAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
-        </SafeAreaView>
-      </SafeAreaProvider>
-    </ThemeProvider>
+    <DropdownContextProvider>
+      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+        <StatusBar
+          style="auto"
+          translucent={true}
+          backgroundColor={backgroundColor}
+        />
+        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+          <SafeAreaView
+            style={styles.container}
+            edges={["top", "bottom", "left", "right"]}
+          >
+            {userIsAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </ThemeProvider>
+    </DropdownContextProvider>
   );
 };
 
