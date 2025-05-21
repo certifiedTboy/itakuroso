@@ -2,24 +2,31 @@ import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { DropdownContext } from "@/lib/context/dropdown-context";
-import React, { useContext, useState } from "react";
-import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
-import { SceneMap, TabView } from "react-native-tab-view";
-
 import AIScreen from "@/screen/ai-screen";
 import AllChatsScreen from "@/screen/allchats-screen";
 import CallsScreen from "@/screen/calls-screen";
 import StatusScreen from "@/screen/status-screen";
-
-const renderScene = SceneMap({
-  chats: AllChatsScreen,
-  status: StatusScreen,
-  ai: AIScreen,
-  calls: CallsScreen,
-});
+import React, { useContext, useState } from "react";
+import {
+  Dimensions,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { SceneMap, TabView } from "react-native-tab-view";
 
 const MainTabs = () => {
   const [index, setIndex] = useState(0);
+
+  const renderScene = SceneMap({
+    chats: AllChatsScreen,
+    status: StatusScreen,
+    ai: AIScreen,
+    calls: CallsScreen,
+  });
+
   const [routes] = useState([
     { key: "chats", title: "Itakurọsọ", icon: "chatbubbles-outline" },
     { key: "status", title: "Status", icon: "newspaper-outline" },
@@ -49,10 +56,24 @@ const MainTabs = () => {
     "text"
   );
 
+  const shadowStyle = {
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.2,
+        shadowRadius: 1.41,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  };
+
   return (
     <View style={{ flex: 1 }}>
       {/* Optional header */}
-      <View style={[styles.header, { backgroundColor }]}>
+      <View style={[styles.header, { backgroundColor, ...shadowStyle }]}>
         <Text
           style={[
             routes[index].key === "chats"
@@ -128,7 +149,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    elevation: 2,
   },
   headerTitle: {
     fontSize: 20,
