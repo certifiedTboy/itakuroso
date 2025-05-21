@@ -1,8 +1,26 @@
-import { Controller, Post, Body } from '@nestjs/common';
-import { BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Req,
+  BadRequestException,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import { Request } from 'express';
 import { AuthService } from './auth-services';
 import { AuthDto } from './dto/auth.dto';
+import { AuthGuard } from '../guard/auth-guard';
 import { ResponseHandler } from '../common/response-handler/response-handler';
+
+// Extend Express Request interface to include 'user'
+declare module 'express' {
+  interface Request {
+    user?: { email: string; phoneNumber: string }; // Replace 'any' with your actual User type if available
+    authToken?: string; // Optional: if you want to store the token in the request
+  }
+}
 
 /**
  * @class AuthControllers
@@ -36,6 +54,34 @@ export class AuthControllers {
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method getCurrentUser
+   * @description Handles requests to get the current user's information.
+   */
+
+  @Get('current-user')
+  @UseGuards(AuthGuard)
+  async getCurrentUser(@Req() req: Request) {
+    try {
+      const authToken = req.authToken;
+
+      if (!authToken) {
+        throw new BadRequestException('No token provided');
+      }
+
+      const user = await this.authService.verifyToken(authToken);
+
+      return ResponseHandler.ok(200, 'User retrieved successfully', user);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
           cause: error.cause,
           description: error.message,
         });

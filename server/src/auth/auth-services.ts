@@ -13,7 +13,7 @@ export class AuthService {
   async signIn(
     passcode: string,
     email: string,
-  ): Promise<{ authToken: string }> {
+  ): Promise<{ authToken: string; updatedUser?: any }> {
     const user = await this.usersService.checkIfUserExist({ email });
 
     if (!user) {
@@ -54,7 +54,27 @@ export class AuthService {
         sub: updatedUser!.phoneNumber,
       };
 
-      return { authToken: await this.jwtService.signAsync(payload) };
+      return {
+        authToken: await this.jwtService.signAsync(payload),
+        updatedUser,
+      };
+    }
+  }
+
+  async verifyToken(token: string) {
+    try {
+      const decoded: { [key: string]: any } =
+        await this.jwtService.verifyAsync(token);
+      console.log(decoded);
+      return decoded;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log(error);
+        throw new UnauthorizedException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
     }
   }
 }

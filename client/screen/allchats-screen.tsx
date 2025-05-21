@@ -2,9 +2,11 @@ import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { AuthContext } from "@/lib/context/auth-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useContext, useState } from "react";
+
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 
@@ -20,6 +22,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const navigate = useNavigation();
 
   const theme = useColorScheme();
+
+  const authCtx = useContext(AuthContext);
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
@@ -37,7 +41,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     },
     {
       label: "Logout",
-      onPress: () => console.log("Logout pressed"),
+      onPress: async () => authCtx.logout(),
     },
   ];
 
