@@ -10,7 +10,6 @@ export const userApis = createApi({
     baseUrl,
     prepareHeaders: async (headers, { getState }) => {
       const authToken = await AsyncStorage.getItem("authToken");
-
       headers.set("Authorization", `Bearer ${authToken}`);
       return headers;
     },
@@ -57,19 +56,21 @@ export const userApis = createApi({
     }),
 
     getCurrentUser: builder.mutation({
-      query: (payload) => ({
-        url: `/`,
+      query: () => ({
+        url: `/auth/current-user`,
         method: "GET",
       }),
 
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
-          await queryFulfilled;
+          const { data } = await queryFulfilled;
+
+          // console.log(data);
 
           // if (data) {
           // const { authToken } = data.data;
 
-          dispatch(setCurrentUser({ currentUser: null }));
+          // dispatch(setCurrentUser({ currentUser: null }));
           // }
         } catch (error) {
           // console.log(error);

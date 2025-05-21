@@ -1,7 +1,6 @@
-import { isAuthenticated } from "@/helpers/authentication";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
+import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
 import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
 import ChatScreen from "@/screen/chat-screen";
@@ -19,7 +18,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import * as Contacts from "expo-contacts";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
-import { useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { StyleSheet } from "react-native";
 import "react-native-reanimated";
 import {
@@ -120,21 +119,9 @@ const AuthenticatedStack = () => {
  * It also handles the theme and status bar
  */
 const Navigation = () => {
+  const authCtx = useContext(AuthContext);
+
   const colorScheme = useColorScheme();
-  const [userIsAuthenticated, setUseIsauthenticated] = useState(false);
-  const [getCurrentUser] = useGetCurrentUserMutation();
-
-  useEffect(() => {
-    const checkIfUserAutenticated = async () => {
-      const result = await isAuthenticated();
-      if (result) {
-        setUseIsauthenticated(true);
-      }
-    };
-    checkIfUserAutenticated();
-
-    getCurrentUser(null);
-  }, []);
 
   const backgroundColor = useThemeColor(
     { light: "#fff", dark: "#000" },
@@ -163,7 +150,7 @@ const Navigation = () => {
             style={styles.container}
             edges={["top", "bottom", "left", "right"]}
           >
-            {userIsAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
+            {authCtx.isAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
           </SafeAreaView>
         </SafeAreaProvider>
       </ThemeProvider>
@@ -174,7 +161,9 @@ const Navigation = () => {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <Navigation />
+      <AuthContextProvider>
+        <Navigation />
+      </AuthContextProvider>
     </Provider>
   );
 }

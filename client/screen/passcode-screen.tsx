@@ -8,8 +8,10 @@ import { validatePasscodeForm } from "@/helpers/form-validation";
 import { useUpdatePasscodeMutation } from "@/lib/apis/userApis";
 import { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
+import { AuthContext } from "@/lib/context/auth-context";
 import { Formik } from "formik";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Image, StyleSheet, View } from "react-native";
 import { OtpInput } from "react-native-otp-entry";
 
@@ -34,18 +36,20 @@ const PasscodeSchema = validatePasscodeForm();
 const PasscodeScreen = ({ navigation, route }: VerificationScreenProps) => {
   const [showModalError, setShowModalError] = useState(false);
 
-  const [updatePasscode, { isSuccess, error, isError, isLoading }] =
+  const authCtx = useContext(AuthContext);
+
+  const [updatePasscode, { isSuccess, data, error, isError, isLoading }] =
     useUpdatePasscodeMutation();
 
   useEffect(() => {
     if (isSuccess) {
-      navigation.navigate("main-tabs");
+      authCtx.authenticate(data?.data?.authToken);
     }
 
     if (isError) {
       setShowModalError(true);
     }
-  }, [isSuccess, isError]);
+  }, [isError, isSuccess]);
 
   const verifyUserAccountHandler = async (values: {
     isValid: boolean;
