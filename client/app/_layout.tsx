@@ -4,6 +4,8 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
 import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
+import ChatScreen from "@/screen/chat-screen";
+import ContactListsScreen from "@/screen/contact-lists-screen";
 import HomeScreen from "@/screen/home-screen";
 import PasscodeScreen from "@/screen/passcode-screen";
 import RegScreen from "@/screen/reg-screen";
@@ -14,6 +16,7 @@ import {
   ThemeProvider,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import * as Contacts from "expo-contacts";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
@@ -35,6 +38,20 @@ const Stack = createNativeStackNavigator();
  * user do not need to be authentacated to access this stack and its screens
  */
 const AuthStack = () => {
+  /**
+   * request permission to access users contacts
+   */
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Contacts.requestPermissionsAsync();
+
+      if (status !== "granted") {
+        await Contacts.requestPermissionsAsync();
+      }
+    })();
+  }, []);
+
   return (
     <Stack.Navigator>
       <Stack.Screen
@@ -81,6 +98,17 @@ const AuthenticatedStack = () => {
           headerShown: false,
         })}
         component={MainTabs}
+      />
+
+      <Stack.Screen
+        name="chat-screen"
+        // options={{ headerShown: false }}
+        component={ChatScreen}
+      />
+
+      <Stack.Screen
+        name="contact-lists-screen"
+        component={ContactListsScreen}
       />
     </Stack.Navigator>
   );
