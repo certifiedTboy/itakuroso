@@ -3,6 +3,13 @@ import { JwtService } from '@nestjs/jwt';
 import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { UsersService } from '../user/users-service';
 
+/**
+ * @class AuthService
+ * @description Handles authentication-related operations.
+ * This includes signing in users and verifying JWT tokens.
+ * @version 1.0
+ * @path /api/v1/auth
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -10,6 +17,14 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
+  /**
+   * @method signIn
+   * @description Handles user sign-in operations.
+   * Validates the input data and checks if the user exists.
+   * If valid, generates a JWT token for the user.
+   * @param {string} passcode - The user's passcode.
+   * @param {string} email - The user's email address.
+   */
   async signIn(
     passcode: string,
     email: string,
@@ -61,20 +76,44 @@ export class AuthService {
     }
   }
 
+  /**
+   * @method verifyToken
+   * @description Verifies the provided JWT token.
+   * If valid, returns the decoded token data.
+   * @param {string} token - The JWT token to verify.
+   */
   async verifyToken(token: string) {
     try {
-      const decoded: { [key: string]: any } =
+      const decoded: { email: string; iat: string; sub: string; exp: string } =
         await this.jwtService.verifyAsync(token);
-      console.log(decoded);
-      return decoded;
+
+      const currentUser = await this.usersService.checkIfUserExist({
+        email: decoded.email,
+      });
+
+      return currentUser;
     } catch (error: unknown) {
       if (error instanceof Error) {
-        console.log(error);
         throw new UnauthorizedException('', {
-          cause: error.cause,
+          cause: error.message,
           description: error.message,
         });
       }
     }
+  }
+
+  /**
+   * @method generateNewToken
+   * @description Generates a new JWT token for the user.
+   * @param {string} email - The user's email address.
+   */
+  async generateNewToken(email: string) {
+    const user = await this.usersService.checkIfUserExist({ email });
+    const payload = {
+      email: user?.email,
+      sub: user?.phoneNumber,
+    };
+
+    return { authToken: await this.jwtService.signAsync(payload) };
   }
 }

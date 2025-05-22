@@ -9,7 +9,8 @@ export const userApis = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: async (headers, { getState }) => {
-      const authToken = await AsyncStorage.getItem("authToken");
+      const authToken = await AsyncStorage.getItem("token");
+
       headers.set("Authorization", `Bearer ${authToken}`);
       return headers;
     },
@@ -65,13 +66,28 @@ export const userApis = createApi({
         try {
           const { data } = await queryFulfilled;
 
-          // console.log(data);
+          dispatch(setCurrentUser({ currentUser: data.data }));
+        } catch (error) {
+          if (error.error.data.message === "jwt expired") {
+            console.log("Token expired");
+            //  dispatch(userApis.endpoints.getNewToken.initiate({}))
+          }
+        }
+      },
+    }),
 
-          // if (data) {
-          // const { authToken } = data.data;
+    getNewToken: builder.mutation({
+      query: (payload) => ({
+        url: `/auth/new-token`,
+        method: "GET",
+        body: payload,
+      }),
 
-          // dispatch(setCurrentUser({ currentUser: null }));
-          // }
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          // dispatch(setCurrentUser({ currentUser: data.data }));
         } catch (error) {
           // console.log(error);
         }

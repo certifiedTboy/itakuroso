@@ -1,36 +1,49 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useState } from "react";
+import { useGetCurrentUserMutation } from "../apis/userApis";
 
 type AuthContextType = {
-  token: string | null;
   isAuthenticated: boolean;
   authenticate: (token: string) => void;
+  checkUserIsAuthenticated: () => void;
   logout: () => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
-  token: null,
   isAuthenticated: false,
   authenticate: (token: string) => {},
+  checkUserIsAuthenticated: () => {},
   logout: () => {},
 });
 
 const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [authToken, setAuthToken] = useState<string | null>(null);
+  const [getCurrentUser] = useGetCurrentUserMutation();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
-  const authenticate = (token: string) => {
-    setAuthToken(token);
-    AsyncStorage.setItem("token", token);
+  const authenticate = async (token: string) => {
+    await AsyncStorage.setItem("token", token);
+    setIsAuthenticated(true);
   };
 
-  const logout = () => {
-    setAuthToken(null);
-    AsyncStorage.removeItem("token");
+  const logout = async () => {
+    await AsyncStorage.removeItem("token");
+    setIsAuthenticated(false);
+  };
+
+  const checkUserIsAuthenticated = async () => {
+    const token = await AsyncStorage.getItem("token");
+
+    if (!token) {
+      return setIsAuthenticated(false);
+    }
+
+    getCurrentUser(null);
+    setIsAuthenticated(true);
   };
 
   const value = {
-    token: authToken,
-    isAuthenticated: !!authToken,
+    checkUserIsAuthenticated,
+    isAuthenticated,
     authenticate,
     logout,
   };

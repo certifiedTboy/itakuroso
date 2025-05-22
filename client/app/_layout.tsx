@@ -121,6 +121,10 @@ const AuthenticatedStack = () => {
 const Navigation = () => {
   const authCtx = useContext(AuthContext);
 
+  useEffect(() => {
+    authCtx.checkUserIsAuthenticated();
+  }, []);
+
   const colorScheme = useColorScheme();
 
   const backgroundColor = useThemeColor(

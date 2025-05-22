@@ -65,7 +65,6 @@ export class AuthControllers {
    * @method getCurrentUser
    * @description Handles requests to get the current user's information.
    */
-
   @Get('current-user')
   @UseGuards(AuthGuard)
   async getCurrentUser(@Req() req: Request) {
@@ -78,7 +77,38 @@ export class AuthControllers {
 
       const user = await this.authService.verifyToken(authToken);
 
-      return ResponseHandler.ok(200, 'User retrieved successfully', user);
+      return ResponseHandler.ok(200, 'User retrieved successfully', user!);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method getNewToken
+   * @description Handles requests to generate a new token for the user.
+   * Validates the input data and checks if the user exists.
+   * If valid, generates a new JWT token for the user.
+   * @param {AuthDto} authDto - The data transfer object containing user credentials.
+   * @param {Request} req - The HTTP request object.
+   */
+  @Get('new-token')
+  @UseGuards(AuthGuard)
+  async getNewtoken(@Req() req: Request, @Body() authDto: AuthDto) {
+    try {
+      const authToken = req.authToken;
+
+      if (!authToken) {
+        throw new BadRequestException('No token provided');
+      }
+
+      const token = await this.authService.generateNewToken(authDto.email);
+
+      return ResponseHandler.ok(200, 'new token generated successfully', token);
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {
