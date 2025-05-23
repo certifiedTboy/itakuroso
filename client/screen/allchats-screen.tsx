@@ -3,10 +3,10 @@ import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AuthContext } from "@/lib/context/auth-context";
+import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
 import { useCallback, useContext, useState } from "react";
-
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 
@@ -23,6 +23,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   const theme = useColorScheme();
 
+  const { toggleDropdown } = useContext(DropdownContext);
   const authCtx = useContext(AuthContext);
 
   const textColor = useThemeColor(
@@ -41,7 +42,10 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     },
     {
       label: "Logout",
-      onPress: async () => authCtx.logout(),
+      onPress: () => {
+        authCtx.logout();
+        toggleDropdown();
+      },
     },
   ];
 
@@ -75,13 +79,15 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       <View style={styles.contianer}>
         <Searchbar
           iconColor={textColor}
-          inputStyle={{ color: textColor }}
+          inputStyle={{
+            color: textColor,
+          }}
           placeholder="Search"
           placeholderTextColor={textColor}
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={{
-            backgroundColor: theme === "dark" ? "#333" : "#fff",
+            backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
             margin: 10,
           }}
         />

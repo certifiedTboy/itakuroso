@@ -4,26 +4,25 @@ import { useNavigation } from "@react-navigation/native";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 import { ThemedText } from "../ThemedText";
-import Icon from "../ui/Icon";
+
+const { width } = Dimensions.get("window");
 
 type ChatCardProps = {
-  sender: string;
-  message: string;
-  time: string;
-  image: any;
+  contactName?: string;
+  phoneNumber: string;
+  isActiveUser?: boolean;
+  contactImage: any;
   onNavigate?: () => void;
 };
 
-const ChatCard = ({
-  sender,
-  message,
-  time,
-  image,
+const ContactCard = ({
+  contactName,
+  phoneNumber,
+  isActiveUser,
+  contactImage,
   onNavigate,
 }: ChatCardProps) => {
   const navigation = useNavigation();
-
-  const { width } = Dimensions.get("window");
 
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
@@ -37,52 +36,43 @@ const ChatCard = ({
 
   return (
     <Pressable
-      onPress={() => {
-        navigation.navigate("chat-screen");
-      }}
+      onPress={() => navigation.navigate("chat-screen")}
       style={({ pressed }) => [
         pressed && { opacity: 0.8 },
         styles.cardContainer,
         { backgroundColor: cardBg },
       ]}
     >
-      {/* Image + Sender/Message Block */}
       <View style={styles.leftContainer}>
-        <Avatar.Image size={50} source={image} />
-        <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
-          <ThemedText style={styles.sender}>{sender}</ThemedText>
+        <Avatar.Image size={50} source={contactImage} />
+        <View style={styles.textContainer}>
+          <ThemedText style={styles.sender}>{contactName}</ThemedText>
           <View style={styles.messageRow}>
-            <Icon name="checkmark-done-outline" size={14} color="#969494FF" />
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
               style={[styles.message, { color: textColor }]}
             >
-              {message}
+              {phoneNumber}
             </Text>
           </View>
         </View>
       </View>
 
-      {/* Time and Counter */}
       <View style={styles.rightContainer}>
         <ThemedText
           darkColor="#969494FF"
           lightColor={Colors.light.btnBgc}
           style={styles.time}
         >
-          {time}
+          Invite
         </ThemedText>
-
-        <View style={styles.counter}>
-          <ThemedText style={styles.counterText}>2</ThemedText>
-        </View>
       </View>
     </Pressable>
   );
 };
 
-export default ChatCard;
+export default ContactCard;
 
 const styles = StyleSheet.create({
   cardContainer: {
@@ -109,6 +99,7 @@ const styles = StyleSheet.create({
   textContainer: {
     flexDirection: "column",
     justifyContent: "center",
+    maxWidth: width * 0.62,
     gap: 4,
   },
   messageRow: {
@@ -135,7 +126,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   counter: {
-    backgroundColor: Colors.light.btnBgc,
+    backgroundColor: "#0263FFFF",
     width: 20,
     height: 20,
     borderRadius: 10,

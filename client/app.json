@@ -33,11 +33,17 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ], 
-       [
+      ],
+      [
         "expo-contacts",
         {
           "contactsPermission": "Allow $(Itakuroso) to access your contacts."
+        }
+      ],
+       [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow $(Itakuroso) to access your microphone."
         }
       ]
     ],

@@ -2,14 +2,33 @@ import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { Image, StyleSheet, View } from "react-native";
+import { Dimensions, Image, Linking, StyleSheet, View } from "react-native";
 
 type HomeScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
 };
 
+const { width } = Dimensions.get("window");
+
 const HomeScreen = ({ navigation }: HomeScreenInterface) => {
+  const textColor = useThemeColor(
+    { light: Colors.light.text, dark: Colors.dark.text },
+    "text"
+  );
+
+  const openWebsite = async () => {
+    const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      // console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
+
   return (
     <ThemedView
       style={styles.container}
@@ -37,6 +56,20 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
         >
           <ThemedText style={styles.btnText}>Continue</ThemedText>
         </ThemedButton>
+      </View>
+
+      <View style={styles.footerTextContainer}>
+        <ThemedText
+          style={{
+            textAlign: "center",
+            marginTop: 20,
+            fontSize: 15,
+            color: textColor,
+          }}
+          onPress={() => openWebsite()}
+        >
+          See who created me!
+        </ThemedText>
       </View>
     </ThemedView>
   );
@@ -69,7 +102,7 @@ const styles = StyleSheet.create({
   },
 
   imageBgContainer: {
-    width: "70%",
+    width: width * 0.7,
     padding: 20,
     borderRadius: 15,
   },
@@ -91,6 +124,14 @@ const styles = StyleSheet.create({
   btnText: {
     fontWeight: "condensedBold",
     fontSize: 17,
+  },
+
+  footerTextContainer: {
+    width: "100%",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-end",
+    marginBottom: 30,
   },
 });
 

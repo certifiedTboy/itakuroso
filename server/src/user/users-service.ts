@@ -93,8 +93,6 @@ export class UsersService {
   async verifyUser(verificationCode: string): Promise<UserDocument | null> {
     const user = await this.findUserByVerificationCode(verificationCode);
 
-    console.log(user);
-
     if (!user) {
       // User not found or verification code is invalid
       throw new BadRequestException('', {

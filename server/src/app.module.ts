@@ -8,10 +8,8 @@ import { AppService } from './app.service';
 import { UsersModule } from './user/users-module';
 import { AuthModule } from './auth/auth-module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { ChatGateway } from './chat/chat.gateway';
 
-const MONGO_URI = new ConfigService().get<string>('PORT');
-
-console.log(MONGO_URI);
 @Module({
   imports: [
     MongooseModule.forRootAsync({
@@ -66,6 +64,7 @@ console.log(MONGO_URI);
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
+    ChatGateway,
   ],
 })
 export class AppModule {}

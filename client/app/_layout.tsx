@@ -1,6 +1,7 @@
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
+import ChatContextProvider from "@/lib/context/chat-context";
 import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
 import ChatScreen from "@/screen/chat-screen";
@@ -40,7 +41,6 @@ const AuthStack = () => {
   /**
    * request permission to access users contacts
    */
-
   useEffect(() => {
     (async () => {
       const { status } = await Contacts.requestPermissionsAsync();
@@ -51,34 +51,44 @@ const AuthStack = () => {
     })();
   }, []);
 
+  const backgroundColor = useThemeColor(
+    { light: "#fff", dark: "#000" },
+    "background"
+  );
+
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="home-screen"
-        options={{
-          // title: "Itakurọsọ",
-          headerShown: false,
-        }}
-        component={HomeScreen}
-      />
-      <Stack.Screen
-        name="reg-screen"
-        options={{ headerShown: false }}
-        component={RegScreen}
-      />
+    <SafeAreaView
+      style={[{ backgroundColor: backgroundColor }, styles.container]}
+      edges={["top", "bottom", "left", "right"]}
+    >
+      <Stack.Navigator>
+        <Stack.Screen
+          name="home-screen"
+          options={{
+            // title: "Itakurọsọ",
+            headerShown: false,
+          }}
+          component={HomeScreen}
+        />
+        <Stack.Screen
+          name="reg-screen"
+          options={{ headerShown: false }}
+          component={RegScreen}
+        />
 
-      <Stack.Screen
-        name="verification-screen"
-        options={{ headerShown: false }}
-        component={VerificationScreen}
-      />
+        <Stack.Screen
+          name="verification-screen"
+          options={{ headerShown: false }}
+          component={VerificationScreen}
+        />
 
-      <Stack.Screen
-        name="passcode-screen"
-        options={{ headerShown: false }}
-        component={PasscodeScreen}
-      />
-    </Stack.Navigator>
+        <Stack.Screen
+          name="passcode-screen"
+          options={{ headerShown: false }}
+          component={PasscodeScreen}
+        />
+      </Stack.Navigator>
+    </SafeAreaView>
   );
 };
 
@@ -89,27 +99,40 @@ const AuthStack = () => {
  * it is the main stack tab navigator for the app which contains screens such as chat, status AI and calls screens
  */
 const AuthenticatedStack = () => {
+  const backgroundColor = useThemeColor(
+    { light: "#fff", dark: "#000" },
+    "background"
+  );
+
   return (
-    <Stack.Navigator>
-      <Stack.Screen
-        name="main-tabs"
-        options={() => ({
-          headerShown: false,
-        })}
-        component={MainTabs}
-      />
+    <ChatContextProvider>
+      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor } }}>
+        <Stack.Screen
+          name="main-tabs"
+          options={() => ({
+            headerShown: false,
+          })}
+          component={MainTabs}
+        />
 
-      <Stack.Screen
-        name="chat-screen"
-        // options={{ headerShown: false }}
-        component={ChatScreen}
-      />
+        <Stack.Screen
+          name="chat-screen"
+          options={{
+            animation: "slide_from_right",
+          }}
+          // options={{ headerShown: false }}
+          component={ChatScreen}
+        />
 
-      <Stack.Screen
-        name="contact-lists-screen"
-        component={ContactListsScreen}
-      />
-    </Stack.Navigator>
+        <Stack.Screen
+          name="contact-lists-screen"
+          component={ContactListsScreen}
+          options={{
+            animation: "slide_from_right",
+          }}
+        />
+      </Stack.Navigator>
+    </ChatContextProvider>
   );
 };
 
@@ -121,12 +144,11 @@ const AuthenticatedStack = () => {
 const Navigation = () => {
   const authCtx = useContext(AuthContext);
 
-  const colorScheme = useColorScheme();
+  useEffect(() => {
+    authCtx.checkUserIsAuthenticated();
+  }, []);
 
-  const backgroundColor = useThemeColor(
-    { light: "#fff", dark: "#000" },
-    "background"
-  );
+  const colorScheme = useColorScheme();
 
   const [loaded] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
@@ -140,18 +162,9 @@ const Navigation = () => {
   return (
     <DropdownContextProvider>
       <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <StatusBar
-          style="auto"
-          translucent={true}
-          backgroundColor={backgroundColor}
-        />
+        <StatusBar style="auto" translucent={true} />
         <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-          <SafeAreaView
-            style={styles.container}
-            edges={["top", "bottom", "left", "right"]}
-          >
-            {authCtx.isAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
-          </SafeAreaView>
+          {authCtx.isAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
         </SafeAreaProvider>
       </ThemeProvider>
     </DropdownContextProvider>

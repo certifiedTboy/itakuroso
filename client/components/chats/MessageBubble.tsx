@@ -1,0 +1,180 @@
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import { Audio } from "expo-av";
+import React from "react";
+import {
+  Image,
+  Linking,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+type Message = {
+  type: "text" | "image" | "audio" | "file";
+  content: string;
+  name?: string; // for file display
+  isSender: boolean;
+  avatarUrl?: string; // URL for the sender's avatar
+};
+
+const MessageBubble = ({ message }: { message: Message }) => {
+  const cardBg = useThemeColor(
+    { light: Colors.light.background, dark: Colors.dark.background },
+    "background"
+  );
+
+  const playAudio = async () => {
+    try {
+      const { sound } = await Audio.Sound.createAsync({ uri: message.content });
+      await sound.playAsync();
+    } catch (err) {
+      console.error("Audio playback error:", err);
+    }
+  };
+
+  const handleOpenFile = () => {
+    Linking.openURL(message.content);
+  };
+
+  return (
+    <View
+      style={[
+        {
+          flexDirection: "row",
+        },
+        message.isSender
+          ? { alignSelf: "flex-end" }
+          : { alignSelf: "flex-start" },
+      ]}
+    >
+      {!message.isSender && (
+        <Image
+          source={require("../../assets/images/avatar.png")}
+          style={styles.avatar}
+        />
+      )}
+
+      <View
+        style={[
+          styles.container,
+          message.isSender ? styles.sender : styles.receiver,
+
+          !message.isSender && {
+            backgroundColor: cardBg,
+          },
+          // {
+          //   backgroundColor: message.isSender ? "#007AFF" : "#fff",
+          // },
+        ]}
+      >
+        {message.type === "image" && (
+          <Image
+            source={require("../../assets/images/avatar.png")}
+            style={styles.image}
+          />
+        )}
+
+        {message.type === "file" && (
+          <TouchableOpacity style={styles.fileButton} onPress={handleOpenFile}>
+            <MaterialCommunityIcons name="file" size={30} color="#007AFF" />
+            <Text style={styles.fileName}>{message.name || "Open File"}</Text>
+          </TouchableOpacity>
+        )}
+
+        {message.type === "text" && (
+          <Text
+            style={[message.isSender ? styles.senderText : styles.receiverText]}
+          >
+            {message.content}
+          </Text>
+        )}
+
+        {message.type === "audio" && (
+          <TouchableOpacity style={styles.audioButton} onPress={playAudio}>
+            <Ionicons name="play-circle" size={30} color="#fff" />
+            <Text style={styles.audioText}>Play Audio</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </View>
+  );
+};
+
+export default MessageBubble;
+
+const styles = StyleSheet.create({
+  container: {
+    maxWidth: "75%",
+    marginVertical: 4,
+    padding: 10,
+    borderRadius: 15,
+  },
+  sender: {
+    backgroundColor: "#DCF8C6",
+    alignSelf: "flex-end",
+    borderTopRightRadius: 0,
+    elevation: 2, // Android
+    shadowColor: "#000", // iOS
+    shadowOffset: { width: 0, height: 1 }, // iOS
+    shadowOpacity: 0.2, // iOS
+    shadowRadius: 1.41, // iOS
+  },
+
+  receiver: {
+    backgroundColor: "#fff",
+    alignSelf: "flex-start",
+    borderTopLeftRadius: 0,
+    elevation: 2, // Android
+    shadowColor: "#000", // iOS
+    shadowOffset: { width: 0, height: 1 }, // iOS
+    shadowOpacity: 0.2, // iOS
+    shadowRadius: 1.41, // iOS
+  },
+  senderText: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: "#333",
+  },
+
+  receiverText: {
+    fontSize: 14,
+    fontWeight: "400",
+    color: Colors.light.btnBgc,
+  },
+  image: {
+    width: 180,
+    height: 180,
+    borderRadius: 10,
+  },
+  audioButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.light.btnBgc,
+    borderRadius: 10,
+    padding: 8,
+  },
+  audioText: {
+    color: "#fff",
+    marginLeft: 10,
+    fontWeight: "500",
+  },
+  fileButton: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  fileName: {
+    marginLeft: 8,
+    color: "#007AFF",
+    textDecorationLine: "underline",
+  },
+
+  avatar: {
+    width: 22,
+    height: 22,
+    borderRadius: 15,
+    marginRight: 6,
+  },
+});
