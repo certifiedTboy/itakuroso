@@ -38,6 +38,7 @@ export class UsersController {
       return ResponseHandler.ok(201, 'User created successfully', result || {});
     } catch (error) {
       if (error instanceof Error) {
+        console.log(error);
         throw new BadRequestException('', {
           cause: error.cause,
           description: error.message,
