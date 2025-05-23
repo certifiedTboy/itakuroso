@@ -8,7 +8,8 @@ import { AppService } from './app.service';
 import { UsersModule } from './user/users-module';
 import { AuthModule } from './auth/auth-module';
 import { MongooseModule } from '@nestjs/mongoose';
-import { ChatGateway } from './chat/chat.gateway';
+// import { ChatGateway } from './chat/chat.gateway';
+import { ChatModule } from './chat/chat-module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ChatGateway } from './chat/chat.gateway';
      */
     AuthModule,
     UsersModule,
+    ChatModule,
   ],
   controllers: [AppController],
 
@@ -64,7 +66,6 @@ import { ChatGateway } from './chat/chat.gateway';
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
     },
-    ChatGateway,
   ],
 })
 export class AppModule {}

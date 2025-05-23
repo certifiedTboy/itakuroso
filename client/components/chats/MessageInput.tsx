@@ -1,6 +1,6 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -10,7 +10,9 @@ import {
 } from "react-native";
 
 import { Colors } from "@/constants/Colors";
+import { useColorScheme } from "@/hooks/useColorScheme.web";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { ChatContext } from "@/lib/context/chat-context";
 import {
   AudioModule,
   RecordingPresets,
@@ -19,19 +21,23 @@ import {
 } from "expo-audio";
 import * as ImagePicker from "expo-image-picker";
 
+import EmojiModal from "react-native-emoji-modal";
+
 type ChatInputProps = {
-  onSendMessage: (message: {
-    type: string;
-    content: string;
-    name?: string;
-  }) => void;
+  receiverId: string;
 };
 
-const MessageInput = ({ onSendMessage }: ChatInputProps) => {
+const MessageInput = ({ receiverId }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
+  // const ref = useRef<IWaveformRef>(null);
+
+  /**
+   * chatContext
+   */
+  const chatCtx = useContext(ChatContext);
 
   const placeholderTextColor = useThemeColor(
     { light: "#333", dark: "#fff" },
@@ -47,6 +53,7 @@ const MessageInput = ({ onSendMessage }: ChatInputProps) => {
   );
 
   const textInputColor = useThemeColor({ light: "#333", dark: "#fff" }, "text");
+  const theme = useColorScheme();
 
   /**
    * AudioRecorder is used to record audio messages.
@@ -106,10 +113,10 @@ const MessageInput = ({ onSendMessage }: ChatInputProps) => {
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({ base64: true });
     if (!result.canceled) {
-      onSendMessage({
-        type: "image",
-        content: `data:image/jpeg;base64,${result.assets[0].base64}`,
-      });
+      // onSendMessage({
+      //   type: "image",
+      //   content: `data:image/jpeg;base64,${result.assets[0].base64}`,
+      // });
     }
   };
 
@@ -128,24 +135,39 @@ const MessageInput = ({ onSendMessage }: ChatInputProps) => {
 
   const handleSend = () => {
     if (message.trim()) {
-      onSendMessage({ type: "text", content: message });
+      chatCtx.sendMessage(message, receiverId);
       setMessage("");
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* {showEmoji && (
-        <EmojiSelector
-          onEmojiSelected={(emoji) => console.log(emoji)}
-          showSearchBar={true}
-          showTabs={true}
-          // category={"all"}
-          columns={8}
+      {showEmoji && (
+        <EmojiModal
+          onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
+          onPressOutside={() => console.log("pressed outside")}
+          searchStyle={{
+            backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+          }}
+          emojiSize={35}
+          containerStyle={{ backgroundColor: textInputBackgroundColor }}
+          // modalStyle={}
         />
-      )} */}
+      )}
 
       <View style={styles.row}>
+        {/* {audioUri && (
+          <Waveform
+            mode="static"
+            ref={ref}
+            path={audioUri}
+            candleSpace={2}
+            candleWidth={4}
+            scrubColor="white"
+            onPlayerStateChange={(playerState) => console.log(playerState)}
+            onPanStateChange={(isMoving) => console.log(isMoving)}
+          />
+        )} */}
         <TextInput
           placeholderTextColor={placeholderTextColor}
           style={[
@@ -159,8 +181,9 @@ const MessageInput = ({ onSendMessage }: ChatInputProps) => {
           value={message}
           onChangeText={setMessage}
           onFocus={() => setShowEmoji(false)}
+          editable={!isRecording}
+          selectTextOnFocus={!isRecording}
         />
-
         {!isRecording && (
           <View
             style={{
@@ -187,7 +210,6 @@ const MessageInput = ({ onSendMessage }: ChatInputProps) => {
             </TouchableOpacity>
           </View>
         )}
-
         <View style={{ marginLeft: 5 }}>
           {message ? (
             <TouchableOpacity onPress={handleSend}>

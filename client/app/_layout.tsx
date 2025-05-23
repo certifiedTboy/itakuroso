@@ -20,7 +20,7 @@ import * as Contacts from "expo-contacts";
 import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
-import { StyleSheet } from "react-native";
+import { StyleSheet, Text, View } from "react-native";
 import "react-native-reanimated";
 import {
   SafeAreaProvider,
@@ -117,9 +117,28 @@ const AuthenticatedStack = () => {
 
         <Stack.Screen
           name="chat-screen"
-          options={{
+          options={({ route }) => ({
+            headerTitle: () => {
+              return (
+                <View style={{ marginLeft: -23, width: "100%" }}>
+                  <Text
+                    style={{ color: "#fff", fontWeight: "500", fontSize: 16 }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {route.params!.contactName ??
+                      route.params!.phoneNumber ??
+                      "Chat"}
+                  </Text>
+                </View>
+              );
+            },
             animation: "slide_from_right",
-          }}
+            headerTitleStyle: {
+              fontSize: 16,
+              fontWeight: "bold",
+            },
+          })}
           // options={{ headerShown: false }}
           component={ChatScreen}
         />

@@ -1,7 +1,8 @@
 import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
-import { useCallback, useEffect, useState } from "react";
+import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useCallback, useContext, useEffect, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -13,6 +14,8 @@ import {
   // TouchableWithoutFeedback,
   View,
 } from "react-native";
+
+import { ChatContext } from "@/lib/context/chat-context";
 
 let currentUser = "user1";
 
@@ -29,10 +32,34 @@ const messages = Array.from({ length: 20 }, (_, i) => ({
 
 // Replace with actual user ID
 
-const ChatScreen = () => {
+type ChatScreenProps = {
+  navigation: NativeStackNavigationProp<any>;
+  route: {
+    params: {
+      contactName: string;
+      phoneNumber: string;
+    };
+  };
+};
+
+const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
   const [chatMessages, setMessages] = useState(messages);
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
 
+  const chatCtx = useContext(ChatContext);
+
+  const { contactName, phoneNumber } = route.params;
+
+  useEffect(() => {
+    if (contactName || phoneNumber) {
+      chatCtx.joinRoom({ contactName, phoneNumber });
+    }
+  }, [route.params]);
+
+  /**
+   * this was implemented to help the positioning of the chat input
+   * when the keyboard is open and when it is closed
+   */
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       Platform.OS === "android" ? "keyboardDidShow" : "keyboardWillShow",
@@ -93,7 +120,7 @@ const ChatScreen = () => {
         <View
           style={[styles.messageInput, { bottom: isKeyboardVisible ? 80 : 0 }]}
         >
-          <MessageInput onSendMessage={() => {}} />
+          <MessageInput receiverId={phoneNumber} />
         </View>
       </ThemedView>
     </KeyboardAvoidingView>

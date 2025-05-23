@@ -1,3 +1,4 @@
+import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
@@ -9,8 +10,6 @@ import { useNavigation } from "expo-router";
 import { useCallback, useContext, useState } from "react";
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
-
-import ChatCard from "@/components/chats/ChatCard";
 
 type AllChatsScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
