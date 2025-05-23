@@ -15,6 +15,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { SceneMap, TabView } from "react-native-tab-view";
 
 const MainTabs = () => {
@@ -35,6 +36,11 @@ const MainTabs = () => {
   ]);
 
   const { toggleDropdown } = useContext(DropdownContext);
+
+  const safeAreaBackground = useThemeColor(
+    { light: "#fff", dark: "#000" },
+    "background"
+  );
 
   const backgroundColor = useThemeColor(
     { light: Colors.light.bgc, dark: Colors.dark.bgc },
@@ -71,78 +77,84 @@ const MainTabs = () => {
   };
 
   return (
-    <View style={{ flex: 1 }}>
-      {/* Optional header */}
-      <View style={[styles.header, { backgroundColor, ...shadowStyle }]}>
-        <Text
-          style={[
-            routes[index].key === "chats"
-              ? styles.mainTitle
-              : styles.headerTitle,
+    <SafeAreaView
+      style={[{ backgroundColor: safeAreaBackground }, styles.container]}
+      edges={["top", "bottom", "left", "right"]}
+    >
+      <View style={{ flex: 1 }}>
+        {/* Optional header */}
+        <View style={[styles.header, { backgroundColor, ...shadowStyle }]}>
+          <Text
+            style={[
+              routes[index].key === "chats"
+                ? styles.mainTitle
+                : styles.headerTitle,
 
-            { color: titleColor },
-          ]}
-        >
-          {routes[index].title}
-        </Text>
-        <Pressable style={{ marginTop: 10 }}>
-          <Icon
-            name="ellipsis-vertical"
-            onPress={toggleDropdown}
-            size={25}
-            color={headerIconColor}
-          />
-        </Pressable>
-      </View>
+              { color: titleColor },
+            ]}
+          >
+            {routes[index].title}
+          </Text>
+          <Pressable style={{ marginTop: 10 }}>
+            <Icon
+              name="ellipsis-vertical"
+              onPress={toggleDropdown}
+              size={25}
+              color={headerIconColor}
+            />
+          </Pressable>
+        </View>
 
-      {/* Swipeable content */}
-      <TabView
-        navigationState={{ index, routes }}
-        renderScene={renderScene}
-        onIndexChange={setIndex}
-        initialLayout={{ width: Dimensions.get("window").width }}
-        swipeEnabled
-        renderTabBar={() => null} // we use a custom tab bar
-      />
+        {/* Swipeable content */}
+        <TabView
+          navigationState={{ index, routes }}
+          renderScene={renderScene}
+          onIndexChange={setIndex}
+          initialLayout={{ width: Dimensions.get("window").width }}
+          swipeEnabled
+          renderTabBar={() => null} // we use a custom tab bar
+        />
 
-      {/* Custom Bottom Tab Bar */}
-      <View style={[styles.tabBar, { backgroundColor }]}>
-        {routes.map((route, idx) => {
-          const isFocused = index === idx;
-          return (
-            <Pressable
-              key={route.key}
-              style={styles.tabItem}
-              onPress={() => setIndex(idx)}
-            >
-              <Icon
-                name={
-                  isFocused ? route.icon.replace("-outline", "") : route.icon
-                }
-                size={30}
-                color={isFocused ? tintColor : "#999"}
+        {/* Custom Bottom Tab Bar */}
+        <View style={[styles.tabBar, { backgroundColor }]}>
+          {routes.map((route, idx) => {
+            const isFocused = index === idx;
+            return (
+              <Pressable
+                key={route.key}
+                style={styles.tabItem}
                 onPress={() => setIndex(idx)}
-              />
-              <Text
-                style={{
-                  color: isFocused ? tintColor : "#999",
-                  fontSize: 12,
-                  marginTop: 2,
-                }}
               >
-                {route.title}
-              </Text>
-            </Pressable>
-          );
-        })}
+                <Icon
+                  name={
+                    isFocused ? route.icon.replace("-outline", "") : route.icon
+                  }
+                  size={30}
+                  color={isFocused ? tintColor : "#999"}
+                  onPress={() => setIndex(idx)}
+                />
+                <Text
+                  style={{
+                    color: isFocused ? tintColor : "#999",
+                    fontSize: 12,
+                    marginTop: 2,
+                  }}
+                >
+                  {route.title}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 export default MainTabs;
 
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   header: {
     height: 60,
     paddingHorizontal: 15,

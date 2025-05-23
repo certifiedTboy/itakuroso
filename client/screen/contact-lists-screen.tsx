@@ -1,4 +1,4 @@
-import ContactCard from "@/components/chats/ContactCard";
+import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
 import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
@@ -139,7 +139,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   );
 
   return (
-    <ThemedView>
+    <ThemedView darkColor="#000" lightColor="#fff">
       <View>
         <FlatList
           data={contacts}

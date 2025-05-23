@@ -79,13 +79,15 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       <View style={styles.contianer}>
         <Searchbar
           iconColor={textColor}
-          inputStyle={{ color: textColor }}
+          inputStyle={{
+            color: textColor,
+          }}
           placeholder="Search"
           placeholderTextColor={textColor}
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={{
-            backgroundColor: theme === "dark" ? "#333" : "#fff",
+            backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
             margin: 10,
           }}
         />

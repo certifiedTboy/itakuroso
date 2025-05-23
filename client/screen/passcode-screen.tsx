@@ -5,14 +5,14 @@ import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { validatePasscodeForm } from "@/helpers/form-validation";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { useUpdatePasscodeMutation } from "@/lib/apis/userApis";
+import { AuthContext } from "@/lib/context/auth-context";
 import { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
-import { AuthContext } from "@/lib/context/auth-context";
 import { Formik } from "formik";
 import { useContext, useEffect, useState } from "react";
-import { Image, StyleSheet, View } from "react-native";
+import { Image, Linking, StyleSheet, View } from "react-native";
 import { OtpInput } from "react-native-otp-entry";
 
 export type RootStackParamList = {
@@ -33,8 +33,24 @@ type VerificationScreenProps = {
  */
 const PasscodeSchema = validatePasscodeForm();
 
-const PasscodeScreen = ({ navigation, route }: VerificationScreenProps) => {
+const PasscodeScreen = ({ route }: VerificationScreenProps) => {
   const [showModalError, setShowModalError] = useState(false);
+
+  const textColor = useThemeColor(
+    { light: Colors.light.text, dark: Colors.dark.text },
+    "text"
+  );
+
+  const openWebsite = async () => {
+    const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      // console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
 
   const authCtx = useContext(AuthContext);
 
@@ -135,6 +151,20 @@ const PasscodeScreen = ({ navigation, route }: VerificationScreenProps) => {
               </ThemedButton>
             </View>
           </View>
+
+          <View style={styles.footerTextContainer}>
+            <ThemedText
+              style={{
+                textAlign: "center",
+                marginTop: 20,
+                fontSize: 15,
+                color: textColor,
+              }}
+              onPress={() => openWebsite()}
+            >
+              See DevTee!
+            </ThemedText>
+          </View>
         </ThemedView>
       )}
     </Formik>
@@ -157,9 +187,10 @@ const styles = StyleSheet.create({
   },
 
   bubbleImage: {
-    width: "10%",
+    width: 50,
     height: 200,
     resizeMode: "contain",
+    marginBottom: 15,
   },
 
   introText: {
@@ -207,5 +238,13 @@ const styles = StyleSheet.create({
     color: Colors.light.errorText,
     fontSize: 12,
     marginVertical: 5,
+  },
+
+  footerTextContainer: {
+    width: "100%",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-end",
+    marginBottom: 30,
   },
 });

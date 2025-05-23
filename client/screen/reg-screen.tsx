@@ -10,7 +10,7 @@ import { useCreateNewUserMutation } from "@/lib/apis/userApis";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Formik } from "formik";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, View, useColorScheme } from "react-native";
+import { Image, Linking, StyleSheet, View, useColorScheme } from "react-native";
 import { TextInput } from "react-native-paper";
 
 /**
@@ -27,6 +27,22 @@ const SignupSchema = validateRegform();
 
 const RegScreen = ({ navigation }: RegScreenProps) => {
   const [showModalError, setShowModalError] = useState(false);
+
+  const openWebsite = async () => {
+    const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
+    const supported = await Linking.canOpenURL(url);
+
+    if (supported) {
+      await Linking.openURL(url);
+    } else {
+      // console.log(`Don't know how to open this URL: ${url}`);
+    }
+  };
+
+  const textColor = useThemeColor(
+    { light: Colors.light.text, dark: Colors.dark.text },
+    "text"
+  );
 
   const [createNewUser, { data, isSuccess, error, isError, isLoading }] =
     useCreateNewUserMutation();
@@ -162,6 +178,20 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
               </ThemedButton>
             </View>
           </View>
+
+          <View style={styles.footerTextContainer}>
+            <ThemedText
+              style={{
+                textAlign: "center",
+                marginTop: 20,
+                fontSize: 15,
+                color: textColor,
+              }}
+              onPress={() => openWebsite()}
+            >
+              See who created me!
+            </ThemedText>
+          </View>
         </ThemedView>
       )}
     </Formik>
@@ -183,9 +213,10 @@ const styles = StyleSheet.create({
   },
 
   bubbleImage: {
-    width: "10%",
+    width: 50,
     height: 200,
     resizeMode: "contain",
+    marginBottom: 15,
   },
 
   introText: {
@@ -215,11 +246,7 @@ const styles = StyleSheet.create({
 
   input: {
     height: 50,
-    // borderColor: "#333",
-    // borderWidth: 1,
     marginTop: 20,
-    // paddingHorizontal: 10,
-    // borderRadius: 10,
   },
 
   inputLabel: { marginBottom: -10 },
@@ -234,5 +261,13 @@ const styles = StyleSheet.create({
     color: Colors.light.errorText,
     fontSize: 12,
     marginBottom: 5,
+  },
+
+  footerTextContainer: {
+    width: "100%",
+    alignItems: "center",
+    flex: 1,
+    justifyContent: "flex-end",
+    marginBottom: 30,
   },
 });
