@@ -6,14 +6,10 @@ export type ChatDocument = mongoose.HydratedDocument<Chat>;
 
 @Schema()
 export class Chat {
-  @Prop()
-  _id?: mongoose.Schema.Types.ObjectId;
-
   @Prop({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true,
-    unique: true,
   })
   senderId: User;
 

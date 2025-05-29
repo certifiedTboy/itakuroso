@@ -8,9 +8,11 @@ import Icon from "../ui/Icon";
 
 type ChatCardProps = {
   sender: string;
-  message: string;
-  time: string;
-  image: any;
+  message?: string;
+  time?: string;
+  image?: any;
+  contactName: string;
+  phoneNumber: string;
   onNavigate?: () => void;
 };
 
@@ -19,6 +21,8 @@ const ChatCard = ({
   message,
   time,
   image,
+  contactName,
+  phoneNumber,
   onNavigate,
 }: ChatCardProps) => {
   const navigation = useNavigation();
@@ -38,7 +42,11 @@ const ChatCard = ({
   return (
     <Pressable
       onPress={() => {
-        navigation.navigate("chat-screen");
+        // @ts-ignore
+        navigation.navigate("chat-screen", {
+          contactName,
+          phoneNumber,
+        });
       }}
       style={({ pressed }) => [
         pressed && { opacity: 0.8 },

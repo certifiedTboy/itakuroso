@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { Audio } from "expo-av";
 import React from "react";
 import {
   Image,
@@ -13,11 +12,12 @@ import {
 } from "react-native";
 
 type Message = {
-  type: "text" | "image" | "audio" | "file";
-  content: string;
-  name?: string; // for file display
+  message: string;
+  senderId: string;
+  _id: string;
+  createdAt: string;
+  type: string;
   isSender: boolean;
-  avatarUrl?: string; // URL for the sender's avatar
 };
 
 const MessageBubble = ({ message }: { message: Message }) => {
@@ -26,17 +26,8 @@ const MessageBubble = ({ message }: { message: Message }) => {
     "background"
   );
 
-  const playAudio = async () => {
-    try {
-      const { sound } = await Audio.Sound.createAsync({ uri: message.content });
-      await sound.playAsync();
-    } catch (err) {
-      console.error("Audio playback error:", err);
-    }
-  };
-
   const handleOpenFile = () => {
-    Linking.openURL(message.content);
+    Linking.openURL(message.message);
   };
 
   return (
@@ -80,7 +71,9 @@ const MessageBubble = ({ message }: { message: Message }) => {
         {message.type === "file" && (
           <TouchableOpacity style={styles.fileButton} onPress={handleOpenFile}>
             <MaterialCommunityIcons name="file" size={30} color="#007AFF" />
-            <Text style={styles.fileName}>{message.name || "Open File"}</Text>
+            <Text style={styles.fileName}>
+              {message.message || "Open File"}
+            </Text>
           </TouchableOpacity>
         )}
 
@@ -88,12 +81,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
           <Text
             style={[message.isSender ? styles.senderText : styles.receiverText]}
           >
-            {message.content}
+            {message.message}
           </Text>
         )}
 
         {message.type === "audio" && (
-          <TouchableOpacity style={styles.audioButton} onPress={playAudio}>
+          <TouchableOpacity style={styles.audioButton}>
             <Ionicons name="play-circle" size={30} color="#fff" />
             <Text style={styles.audioText}>Play Audio</Text>
           </TouchableOpacity>

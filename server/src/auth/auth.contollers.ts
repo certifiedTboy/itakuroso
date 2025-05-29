@@ -14,14 +14,6 @@ import { AuthDto } from './dto/auth.dto';
 import { AuthGuard } from '../guard/auth-guard';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 
-// Extend Express Request interface to include 'user'
-declare module 'express' {
-  interface Request {
-    user?: { email: string; phoneNumber: string }; // Replace 'any' with your actual User type if available
-    authToken?: string; // Optional: if you want to store the token in the request
-  }
-}
-
 /**
  * @class AuthControllers
  * @description Handles all authentication-related HTTP requests.
@@ -67,17 +59,15 @@ export class AuthControllers {
    */
   @Get('current-user')
   @UseGuards(AuthGuard)
-  async getCurrentUser(@Req() req: Request) {
+  getCurrentUser(@Req() req: Request) {
     try {
-      const authToken = req.authToken;
+      const currentUser = req.user;
 
-      if (!authToken) {
-        throw new BadRequestException('No token provided');
-      }
-
-      const user = await this.authService.verifyToken(authToken);
-
-      return ResponseHandler.ok(200, 'User retrieved successfully', user!);
+      return ResponseHandler.ok(
+        200,
+        'User retrieved successfully',
+        currentUser,
+      );
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {
@@ -98,17 +88,22 @@ export class AuthControllers {
    */
   @Get('new-token')
   @UseGuards(AuthGuard)
-  async getNewtoken(@Req() req: Request, @Body() authDto: AuthDto) {
+  async getNewtoken(@Req() req: Request) {
     try {
-      const authToken = req.authToken;
+      const currentUser = req.user;
 
-      if (!authToken) {
-        throw new BadRequestException('No token provided');
+      if (currentUser) {
+        const token = await this.authService.generateNewToken(
+          currentUser?.email,
+          currentUser?.phoneNumber,
+        );
+
+        return ResponseHandler.ok(
+          200,
+          'new token generated successfully',
+          token,
+        );
       }
-
-      const token = await this.authService.generateNewToken(authDto.email);
-
-      return ResponseHandler.ok(200, 'new token generated successfully', token);
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {

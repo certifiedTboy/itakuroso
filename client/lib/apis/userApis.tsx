@@ -67,7 +67,7 @@ export const userApis = createApi({
           const { data } = await queryFulfilled;
 
           dispatch(setCurrentUser({ currentUser: data.data }));
-        } catch (error) {
+        } catch (error: unknown) {
           if (error.error.data.message === "jwt expired") {
             console.log("Token expired");
             //  dispatch(userApis.endpoints.getNewToken.initiate({}))

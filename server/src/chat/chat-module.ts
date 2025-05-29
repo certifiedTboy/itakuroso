@@ -5,13 +5,17 @@ import { Room, RoomSchema } from './schemas/room-schema';
 import { ChatService } from './chat-services';
 import { UsersModule } from 'src/user/users-module';
 import { ChatGateway } from './chat.gateway';
+import { ChatControllers } from './chat-controllers';
+import { AuthModule } from 'src/auth/auth-module';
 
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }]),
     UsersModule,
+    AuthModule,
   ],
   providers: [ChatGateway, ChatService],
+  controllers: [ChatControllers],
   exports: [ChatService], // Export ChatService to use in other modules
 })
 export class ChatModule {}

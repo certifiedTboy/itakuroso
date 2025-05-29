@@ -20,7 +20,6 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 import * as ImagePicker from "expo-image-picker";
-
 import EmojiModal from "react-native-emoji-modal";
 
 type ChatInputProps = {
@@ -133,9 +132,9 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
     return setShowEmoji(!showEmoji);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (message.trim()) {
-      chatCtx.sendMessage(message, receiverId);
+      await chatCtx.sendMessage(message);
       setMessage("");
     }
   };
@@ -143,18 +142,19 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
   return (
     <View style={styles.container}>
       {showEmoji && (
-        <EmojiModal
-          onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
-          onPressOutside={() => console.log("pressed outside")}
-          searchStyle={{
-            backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
-          }}
-          emojiSize={35}
-          containerStyle={{ backgroundColor: textInputBackgroundColor }}
-          // modalStyle={}
-        />
+        <View style={{ position: "absolute", bottom: 60, left: 0, right: 0 }}>
+          <EmojiModal
+            onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
+            onPressOutside={() => console.log("pressed outside")}
+            searchStyle={{
+              backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+            }}
+            emojiSize={35}
+            containerStyle={{ backgroundColor: textInputBackgroundColor }}
+            // modalStyle={}
+          />
+        </View>
       )}
-
       <View style={styles.row}>
         {/* {audioUri && (
           <Waveform
@@ -168,6 +168,7 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
             onPanStateChange={(isMoving) => console.log(isMoving)}
           />
         )} */}
+
         <TextInput
           placeholderTextColor={placeholderTextColor}
           style={[
@@ -184,6 +185,7 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
           editable={!isRecording}
           selectTextOnFocus={!isRecording}
         />
+
         {!isRecording && (
           <View
             style={{
@@ -212,7 +214,7 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
         )}
         <View style={{ marginLeft: 5 }}>
           {message ? (
-            <TouchableOpacity onPress={handleSend}>
+            <TouchableOpacity onPress={async () => await handleSend()}>
               <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
             </TouchableOpacity>
           ) : (
@@ -236,7 +238,7 @@ export default MessageInput;
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    // flex: 1,
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,

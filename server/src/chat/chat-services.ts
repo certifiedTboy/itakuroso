@@ -14,6 +14,14 @@ export class ChatService {
   users: { contactName: string; roomId: string; phoneNumber: string }[] = [];
   constructor(@InjectModel(Room.name) private roomModel: Model<RoomDocument>) {}
 
+  /**
+   * @method userJoin
+   * @description Adds a user to the active users list or updates their information if they already exist.
+   * @param {Object} params - The parameters containing user details.
+   * @param {string} params.contactName - The name of the user.
+   * @param {string} params.roomId - The ID of the room the user is joining.
+   * @param {string} params.phoneNumber - The phone number of the user.
+   */
   userJoin({
     contactName,
     roomId,
@@ -42,6 +50,11 @@ export class ChatService {
     return user;
   }
 
+  /**
+   * @method getRoomUsers
+   * @description Retrieves all users in a specific room based on the room ID.
+   * @param {string} roomId - The ID of the room to find users in.
+   */
   getRoomUsers(roomId: string) {
     return this.users.filter(
       (activeUser: {
@@ -52,6 +65,11 @@ export class ChatService {
     );
   }
 
+  /**
+   * @method getCurrentUserByPhoneNumber
+   * @description Retrieves the current user based on their phone number.
+   * @param {string} phoneNumber - The phone number of the user to find.
+   */
   getCurrentUserByPhoneNumber(phoneNumber: string) {
     return this.users.find(
       (activeUser: {
@@ -62,12 +80,22 @@ export class ChatService {
     );
   }
 
+  /**
+   * @method getCurrentActiveRoom
+   * @description Retrieves the current active room based on the provided room ID.
+   * @param {string} roomId - The ID of the room to find.
+   */
   getCurrentActiveRoom(roomId: string) {
     return this.users.find(
       (activeUser: { roomId: string }) => activeUser.roomId === roomId,
     );
   }
 
+  /**
+   * @method userLeave
+   * @description Removes a user from the active users list based on their phone number.
+   * @param {string} phoneNumber - The phone number of the user to be removed.
+   */
   userLeave(phoneNumber: string) {
     const index = this.users.findIndex(
       (activeUser: { phoneNumber: string }) =>
@@ -81,16 +109,41 @@ export class ChatService {
 
   /**
    * @method createRoom
+   * @description Creates a new chat room with the provided details.
+   * @param {CreateRoomDto} createRoomDto - The data transfer object containing room details.
    */
   async createRoom(createRoomDto: CreateRoomDto) {
-    const createdRoom = new this.roomModel({
+    const userData = {
       ...createRoomDto,
-    });
+      members: [createRoomDto.currentUserId, createRoomDto.otherUserId],
+    };
+
+    const createdRoom = new this.roomModel(userData);
     const room = await createdRoom.save();
     return room;
   }
 
+  /**
+   * @method findRoomById
+   * @description Finds a room by its ID.
+   * @param {string} roomId - The ID of the room to find.
+   */
   async findRoomById(roomId: string) {
     return this.roomModel.findOne({ roomId }).populate('members').exec();
+  }
+
+  /**
+   * @method getAllRoomsByUser
+   * @description Retrieves all existing chat rooms from the database based on the currently logged in user.
+   */
+  async getAllRoomsByUser(userId: string) {
+    const rooms = await this.roomModel
+      .find({
+        members: { $all: [userId] },
+      })
+      .populate('members')
+      .exec();
+
+    return rooms;
   }
 }

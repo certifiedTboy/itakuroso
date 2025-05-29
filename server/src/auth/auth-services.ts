@@ -107,11 +107,10 @@ export class AuthService {
    * @description Generates a new JWT token for the user.
    * @param {string} email - The user's email address.
    */
-  async generateNewToken(email: string) {
-    const user = await this.usersService.checkIfUserExist({ email });
+  async generateNewToken(email: string, phoneNumber: string) {
     const payload = {
-      email: user?.email,
-      sub: user?.phoneNumber,
+      email,
+      sub: phoneNumber,
     };
 
     return { authToken: await this.jwtService.signAsync(payload) };

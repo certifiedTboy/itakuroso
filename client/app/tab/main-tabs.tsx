@@ -154,7 +154,9 @@ const MainTabs = () => {
 export default MainTabs;
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: {
+    flex: 1,
+  },
   header: {
     height: 60,
     paddingHorizontal: 15,
