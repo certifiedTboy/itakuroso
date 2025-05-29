@@ -1,18 +1,22 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Animated, Dimensions, StyleSheet, useColorScheme } from "react-native";
 import { Searchbar } from "react-native-paper";
 
 const { width } = Dimensions.get("window");
 const SearchInput = ({
   setShowSearch,
+  searchQuery,
   showSearchInput,
+  onSearchQuery,
 }: {
   setShowSearch: () => void;
   showSearchInput: boolean;
+  searchQuery: string;
+  onSearchQuery: (input: string) => void;
 }) => {
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
 
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
@@ -54,7 +58,7 @@ const SearchInput = ({
         inputStyle={{ color: textColor, marginVertical: -10 }}
         placeholder="Search name or number..."
         placeholderTextColor={textColor}
-        onChangeText={setSearchQuery}
+        onChangeText={(text) => onSearchQuery(text)}
         value={searchQuery}
         onIconPress={() => setShowSearch()}
         style={[

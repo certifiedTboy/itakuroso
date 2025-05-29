@@ -120,7 +120,11 @@ const AuthenticatedStack = () => {
           options={({ route }) => ({
             headerTitle: () => {
               return (
-                <View style={{ marginLeft: -23, width: "100%" }}>
+                <View
+                  style={{
+                    marginLeft: -23,
+                  }}
+                >
                   <Text
                     style={{ color: "#fff", fontWeight: "500", fontSize: 16 }}
                     numberOfLines={1}

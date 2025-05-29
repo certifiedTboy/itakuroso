@@ -3,13 +3,28 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { AuthService } from '../auth/auth-services';
+
+// Define a UserPayload interface that includes _id, email, and phoneNumber
+interface UserPayload {
+  _id: string;
+  email: string;
+  phoneNumber: string;
+}
+
+// Extend Express Request interface to include 'user'
+declare module 'express' {
+  interface Request {
+    user?: UserPayload;
+  }
+}
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  constructor(private readonly authService: AuthService) {}
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
     const authToken = request.headers['authorization'];
@@ -21,19 +36,24 @@ export class AuthGuard implements CanActivate {
       });
     }
 
-    if (!authToken) {
-      throw new UnauthorizedException('', {
-        cause: `No token provided`,
-        description: 'No token provided',
-      });
-      //   return false; // No token provided
+    if (authToken) {
+      const payload = (await this.authService.verifyToken(
+        authToken.split(' ')[1],
+      )) as UserPayload | null;
+
+      if (!payload) {
+        return false;
+      }
+
+      request.user = {
+        _id: payload._id,
+        email: payload.email,
+        phoneNumber: payload.phoneNumber,
+      }; // Assign the user data to the request object
+
+      return true;
+    } else {
+      return false;
     }
-
-    request.authToken = authToken.split(' ')[1]; // Mock user data for demonstration
-
-    // You can now add your custom auth logic
-    // return Boolean(request.user); // Example: only allow if user exists
-
-    return true;
   }
 }

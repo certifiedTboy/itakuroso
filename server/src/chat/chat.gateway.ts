@@ -10,7 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
-import { formatPhoneNumber } from '../helpers/chat-helpers';
+import { ChatHelpers } from '../helpers/chat-helpers';
 
 @WebSocketGateway({
   cors: {
@@ -50,8 +50,9 @@ export class ChatGateway
     },
     @ConnectedSocket() client: Socket,
   ) {
-    // console.log(data);
     const { roomId, userId, currentUserId } = data;
+
+    // console.log(currentUserId);
 
     // /**
     //  * add current user to temporary room
@@ -64,7 +65,9 @@ export class ChatGateway
 
     await client.join(user.roomId);
 
-    const formatedPhoneNumber = formatPhoneNumber(userId.phoneNumber);
+    const formatedPhoneNumber = ChatHelpers.formatPhoneNumber(
+      userId.phoneNumber,
+    );
 
     /**
      * check if the user with the phone number is a registered user
@@ -82,17 +85,30 @@ export class ChatGateway
       /**
        * for now, the active user will get a message to inform the other user to create an account
        */
-      this.server.to(roomId).emit('message', {
-        message: `Kinly invite ${userId.contactName} to create an account with his phone number: ${userId.phoneNumber} to join the chat`,
-      });
+      return this.server
+        .to(roomId)
+        .emit(
+          'message',
+          ChatHelpers.messageResponse(
+            `Kindly invite ${userId.contactName} to create an account with his phone number: ${userId.phoneNumber} to join the chat`,
+            ' ',
+            ChatHelpers.generateChatId(),
+          ),
+        );
     }
 
     // check if room already exist on database
     const roomExist = await this.chatService.findRoomById(roomId);
 
-    const currentUser = await this.usersService.checkIfUserExist({
+    /**
+     * check if current user with phone number exist on database
+     */
+    // Define a type for the user object returned by checkIfUserExist
+    type User = { _id?: string; [key: string]: any };
+
+    const currentUser = (await this.usersService.checkIfUserExist({
       phoneNumber: currentUserId.phoneNumber,
-    });
+    })) as User | null;
 
     if (!roomExist) {
       /**
@@ -101,8 +117,12 @@ export class ChatGateway
 
       await this.chatService.createRoom({
         roomId,
-        currentUserId: currentUser!._id!.toString(),
-        otherUserId: userWithPhoneExist!._id!.toString(),
+        currentUserId:
+          currentUser && currentUser._id ? String(currentUser._id) : '',
+        otherUserId:
+          userWithPhoneExist && (userWithPhoneExist as User)._id
+            ? String((userWithPhoneExist as User)._id)
+            : '',
         roomName: '',
         roomLink: '',
         roomImage: '',
@@ -113,11 +133,23 @@ export class ChatGateway
   @SubscribeMessage('message')
   handleMessage(
     @MessageBody()
-    data: { roomId: string; sender: string; content: string },
+    data: { roomId: string; senderId: string; content: string },
     @ConnectedSocket() client: Socket,
   ) {
-    console.log('Message received:', data);
-    // Emit to all clients
-    this.server.emit('message', data);
+    const { roomId } = data;
+    const user = this.chatService.getCurrentActiveRoom(roomId);
+
+    if (user) {
+      return this.server
+        .to(user?.roomId)
+        .emit(
+          'message',
+          ChatHelpers.messageResponse(
+            data.content,
+            data.senderId,
+            ChatHelpers.generateChatId(),
+          ),
+        );
+    }
   }
 }

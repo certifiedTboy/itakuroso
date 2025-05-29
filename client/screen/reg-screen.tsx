@@ -4,6 +4,7 @@ import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { createContactTable } from "@/helpers/database/contacts";
 import { validateRegform } from "@/helpers/form-validation";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useCreateNewUserMutation } from "@/lib/apis/userApis";
@@ -59,6 +60,16 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
     { light: "#000", dark: "#fff" },
     "background"
   );
+
+  useEffect(() => {
+    // Create the contact table if it doesn't exist
+    const onCreateContactTable = async () => {
+      console.log("Creating contact table...");
+      await createContactTable();
+    };
+
+    onCreateContactTable();
+  }, []);
 
   useEffect(() => {
     if (isSuccess) {

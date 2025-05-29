@@ -7,9 +7,6 @@ export type RoomDocument = mongoose.HydratedDocument<Room>;
 @Schema()
 export class Room {
   @Prop()
-  _id?: mongoose.Schema.Types.ObjectId;
-
-  @Prop()
   roomName: string;
 
   @Prop({ unique: true })

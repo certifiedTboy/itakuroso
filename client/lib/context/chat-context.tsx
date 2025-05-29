@@ -5,17 +5,20 @@ import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
 
 type ChatContextType = {
-  messages: { senderId: string; message: string }[];
+  messages: {
+    senderId: string;
+    message: string;
+    _id: string;
+    file?: string;
+    createdAt: string;
+    isSender?: boolean;
+    type: string;
+  }[];
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     roomId?: string
   ) => void;
-  sendMessage: (
-    message: string,
-    receiverId: string,
-    roomId?: string,
-    fileName?: string
-  ) => void;
+  sendMessage: (message: string, roomId?: string, fileName?: string) => void;
 };
 
 export const ChatContext = createContext<ChatContextType>({
@@ -24,12 +27,7 @@ export const ChatContext = createContext<ChatContextType>({
     userId: { contactName: string; phoneNumber: string },
     roomId?: string
   ) => {},
-  sendMessage: (
-    message: string,
-    receiverId: string,
-    roomId?: string,
-    fileName?: string
-  ) => {},
+  sendMessage: (message: string, roomId?: string, fileName?: string) => {},
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
@@ -37,12 +35,17 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     {
       senderId: string;
       message: string;
+      _id: string;
+      file?: string;
+      createdAt: string;
+      isSender?: boolean;
+      type: string;
     }[]
   >([]);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
-  const API_URL = "https://6ccb-102-89-22-229.ngrok-free.app";
+  const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
   const socket = useRef(io(API_URL));
 
@@ -89,21 +92,20 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // send message function
-  const sendMessage = (
+  const sendMessage = async (
     message: string,
-    receiverId: string,
     roomId?: string,
     fileName?: string
   ) => {
     let existingRoomId;
     if (!roomId) {
-      existingRoomId = AsyncStorage.getItem("roomId");
+      existingRoomId = await AsyncStorage.getItem("roomId");
     }
 
     socket.current.emit("message", {
       roomId: roomId ? roomId : existingRoomId,
       content: message,
-      receiverId: receiverId,
+      senderId: currentUser?.phoneNumber,
       fileName,
     });
   };
@@ -112,23 +114,22 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket.current;
 
     currentSocket.on("message", (message: any) => {
-      console.log("yoooooo");
-      console.log(message);
-      // console.log(message);
-      //   setSocketMessages((prevMessages) => [
-      //     ...prevMessages,
-      //     {
-      //       senderId: message.senderId,
-      //       message: message.message,
-      //       created_at: message?.messageSaved[0]?.created_at,
-      //       file: message?.reConstructBase64,
-      //       serverFile: message?.messageSaved[1]?.attachment,
-      //     },
-      //   ]);
+      setSocketMessages((prevMessages) => [
+        ...prevMessages,
+        {
+          senderId: message.senderId,
+          message: message.message,
+          _id: message._id,
+          createdAt: message.createdAt,
+          isSender: message.senderId === currentUser?.phoneNumber,
+          file: message?.file,
+          type: "text",
+        },
+      ]);
     });
 
     return () => {
-      currentSocket.off("newMessage");
+      currentSocket.off("message");
     };
   }, [socket]);
 

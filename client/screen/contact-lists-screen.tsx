@@ -2,6 +2,7 @@ import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
 import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
+import { insertContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import * as Contacts from "expo-contacts";
@@ -17,11 +18,16 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     { phoneNumber: string | ""; name: string }[]
   >([]);
   const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const headerTextColor = useThemeColor(
     { light: "#000", dark: "#fff" },
     "background"
   );
+
+  const onSearchQuery = (text: string) => {
+    setSearchQuery(text);
+  };
 
   /**
    * capture users contacts
@@ -58,6 +64,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             .filter((contact) => contact.phoneNumber !== "")
             .sort((a: any, b: any) => a.name.localeCompare(b.name));
           setContacts(contacts);
+          await insertContacts(contacts);
         }
       }
     })();
@@ -111,6 +118,8 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             <SearchInput
               setShowSearch={() => setShowSearch(false)}
               showSearchInput={showSearch}
+              onSearchQuery={onSearchQuery}
+              searchQuery={searchQuery}
             />
           )}
         </>

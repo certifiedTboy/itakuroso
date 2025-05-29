@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan"
     },
     "web": {
       "bundler": "metro",
@@ -40,10 +41,27 @@
           "contactsPermission": "Allow $(Itakuroso) to access your contacts."
         }
       ],
-       [
+      [
         "expo-audio",
         {
           "microphonePermission": "Allow $(Itakuroso) to access your microphone."
+        }
+      ],
+
+      [
+        "expo-sqlite",
+        {
+          "enableFTS": true,
+          "useSQLCipher": true,
+          "android": {
+           
+            "enableFTS": false,
+            "useSQLCipher": false
+          },
+          "ios": {
+           
+            "customBuildFlags": ["-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"]
+          }
         }
       ]
     ],
