@@ -37,6 +37,7 @@ const ContactCard = ({
   return (
     <Pressable
       onPress={() =>
+        //@ts-ignore
         navigation.navigate("chat-screen", { contactName, phoneNumber })
       }
       style={({ pressed }) => [

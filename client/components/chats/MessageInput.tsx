@@ -54,6 +54,10 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
   const textInputColor = useThemeColor({ light: "#333", dark: "#fff" }, "text");
   const theme = useColorScheme();
 
+  useEffect(() => {
+    chatCtx.updateSocketMessages(receiverId);
+  }, []);
+
   /**
    * AudioRecorder is used to record audio messages.
    * It uses the `expo-audio` library to handle audio recording.
@@ -134,7 +138,7 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
 
   const handleSend = async () => {
     if (message.trim()) {
-      await chatCtx.sendMessage(message);
+      await chatCtx.sendMessage(message, receiverId);
       setMessage("");
     }
   };

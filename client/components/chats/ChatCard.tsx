@@ -13,6 +13,7 @@ type ChatCardProps = {
   image?: any;
   contactName: string;
   phoneNumber: string;
+  roomId: string;
   onNavigate?: () => void;
 };
 
@@ -23,6 +24,7 @@ const ChatCard = ({
   image,
   contactName,
   phoneNumber,
+  roomId,
   onNavigate,
 }: ChatCardProps) => {
   const navigation = useNavigation();
@@ -46,6 +48,7 @@ const ChatCard = ({
         navigation.navigate("chat-screen", {
           contactName,
           phoneNumber,
+          roomId,
         });
       }}
       style={({ pressed }) => [

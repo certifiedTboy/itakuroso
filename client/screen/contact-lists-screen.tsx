@@ -40,9 +40,9 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       }
 
       if (status === "granted") {
-        const { data } = await Contacts.getContactsAsync({
-          // pageOffset: 0,
-        });
+        const { data } = await Contacts.getContactsAsync({});
+
+        console.table(data);
 
         if (data.length > 0) {
           const contacts = data

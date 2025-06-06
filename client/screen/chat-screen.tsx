@@ -1,5 +1,6 @@
 import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
+import { getChatsByRoomId } from "@/helpers/database/chats";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useContext, useEffect, useState } from "react";
 import {
@@ -22,6 +23,7 @@ type ChatScreenProps = {
     params: {
       contactName: string;
       phoneNumber: string;
+      roomId: string;
     };
   };
 };
@@ -38,6 +40,19 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
       chatCtx.joinRoom({ contactName, phoneNumber });
     }
   }, [route.params]);
+
+  useEffect(() => {
+    const onGetExistingMessages = async () => {
+      if (route?.params?.roomId) {
+        const messages = await getChatsByRoomId(route?.params?.roomId);
+        if (messages && messages.length > 0) {
+          return chatCtx.updateSocketMessages(messages);
+        }
+      }
+    };
+
+    onGetExistingMessages();
+  }, []);
 
   /**
    * this was implemented to help the positioning of the chat input
