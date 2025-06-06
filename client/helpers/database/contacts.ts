@@ -2,7 +2,8 @@ import * as SQLite from "expo-sqlite";
 
 export const createContactTable = async () => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso");
+    const db = await SQLite.openDatabaseAsync("itakuroso_new");
+
     if (db) {
       await db.execAsync(`
     PRAGMA journal_mode = WAL;
@@ -22,7 +23,7 @@ export const insertContacts = async (
   contacts: { id: string; name: string; phoneNumber: string }[]
 ) => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso");
+    const db = await SQLite.openDatabaseAsync("itakuroso_new");
 
     if (db) {
       for (const contact of contacts) {
@@ -39,7 +40,7 @@ export const insertContacts = async (
 
 export const getContacts = async () => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso");
+    const db = await SQLite.openDatabaseAsync("itakuroso_new");
 
     if (db) {
       const results = await db.getAllAsync(`SELECT * FROM contact`);

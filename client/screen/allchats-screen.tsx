@@ -3,6 +3,7 @@ import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
+import { createChatTable, getLastChatByRoomId } from "@/helpers/database/chats";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetExisitngRoomsMutation } from "@/lib/apis/chat-apis";
@@ -27,6 +28,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       roomName: string;
       roomImage: string;
       members: { name: string; profileImage?: string; phoneNumber: string }[];
+      lastMessage?: { isSender: boolean; message: string; timestamp: string };
     }[]
   >([]);
   const [getExisitngRooms, { data, error, isSuccess }] =
@@ -54,10 +56,16 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     const onLoadContacts = async () => {
       const contacts = await getContacts();
 
+      await createChatTable();
+
       if (data?.data && contacts && contacts.length > 0) {
         // console.log(data?.data[0]?.members);
         // console.log(contacts[50]);
-        data.data.forEach((room: any) =>
+        data.data.forEach(async (room: any) => {
+          const lastChat = await getLastChatByRoomId(room.roomId);
+
+          // console.log(lastChat);
+
           setRooms([
             {
               roomId: room.roomId,
@@ -77,16 +85,36 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
                   phoneNumber: member.phoneNumber,
                 };
               }),
+
+              lastMessage: {
+                // @ts-ignore
+                isSender: lastChat![0]?.senderId !== currentUser.phoneNumber,
+                // @ts-ignore
+                message: lastChat![0]?.message,
+                // @ts-ignore
+                timestamp: lastChat![0]?.timestamp,
+              },
             },
-          ])
-        );
+          ]);
+        });
       }
     };
 
     onLoadContacts();
   }, [data, isSuccess]);
 
-  console.log(rooms[0]?.members[1]);
+  // useEffect(() => {
+  //   if (rooms && rooms.length > 0) {
+  //     const onLoadChatInfo = async () => {
+  //       for (let room of rooms) {
+  //         const chats = await getChatsByRoomId(room.roomId);
+  //         console.log(chats);
+  //       }
+  //     };
+
+  //     onLoadChatInfo();
+  //   }
+  // }, [rooms]);
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
@@ -111,6 +139,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     },
   ];
 
+  // console.log(rooms[0]?.members);
+  // console.log(
+  //   rooms[0]?.members.find(
+  //     (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+  //   )
+  // );
+
   // Render the card
   // useCallback is used to prevent re-rendering of the card
   const RenderedCard = useCallback(
@@ -122,6 +157,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         roomName: string;
         roomImage: string;
         members: { name: string; profileImage?: string; phoneNumber: string }[];
+        lastMessage?: { isSender: boolean; message: string; timestamp: string };
       };
     }) => (
       <ChatCard
@@ -145,9 +181,10 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
             (member: any) => member.phoneNumber !== currentUser?.phoneNumber
           )?.phoneNumber!
         }
-        // message={item.message}
+        message={item.lastMessage?.message || ""}
         // time={item.time}
         image={require("../assets/images/avatar.png")}
+        roomId={item.roomId}
       />
     ),
     []

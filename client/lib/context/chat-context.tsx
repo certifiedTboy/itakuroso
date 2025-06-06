@@ -1,7 +1,9 @@
 import { generateRoomId } from "@/helpers/chat-helpers";
+import { insertChat } from "@/helpers/database/chats";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
+
 import { io } from "socket.io-client";
 
 type ChatContextType = {
@@ -18,7 +20,13 @@ type ChatContextType = {
     userId: { contactName: string; phoneNumber: string },
     roomId?: string
   ) => void;
-  sendMessage: (message: string, roomId?: string, fileName?: string) => void;
+  sendMessage: (
+    message: string,
+    otherUserId: string,
+    roomId?: string,
+    fileName?: string
+  ) => void;
+  updateSocketMessages: (messages: []) => void;
 };
 
 export const ChatContext = createContext<ChatContextType>({
@@ -27,7 +35,13 @@ export const ChatContext = createContext<ChatContextType>({
     userId: { contactName: string; phoneNumber: string },
     roomId?: string
   ) => {},
-  sendMessage: (message: string, roomId?: string, fileName?: string) => {},
+  sendMessage: (
+    message: string,
+    otherUserId: string,
+    roomId?: string,
+    fileName?: string
+  ) => {},
+  updateSocketMessages: (messages: []) => {},
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
@@ -48,26 +62,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
   const socket = useRef(io(API_URL));
-
-  //   const updateSocketMessages = (messages?: any, messageId?: string) => {
-  //     if (messageId) return setSocketMessages([]);
-  //     if (messages && messages.length > 0) {
-  //       const sortedItems = sortChatMessagesByTime(messages);
-
-  //       sortedItems.slice(1).forEach((message: any) => {
-  //         setSocketMessages((prevMessages) => [
-  //           ...prevMessages,
-  //           {
-  //             senderId: message.sender.id,
-  //             message: message.message,
-  //             created_at: message.created_at,
-  //             serverFile: message?.message_attachment?.attachment,
-  //             file: null,
-  //           },
-  //         ]);
-  //       });
-  //     }
-  //   };
 
   // join room function
   const joinRoom = (
@@ -94,6 +88,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   // send message function
   const sendMessage = async (
     message: string,
+    otherUserId: string,
     roomId?: string,
     fileName?: string
   ) => {
@@ -107,6 +102,16 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       content: message,
       senderId: currentUser?.phoneNumber,
       fileName,
+    });
+
+    /**
+     * save chat locally on sqlite storage
+     */
+    await insertChat({
+      senderId: otherUserId,
+      currentUserId: currentUser?.phoneNumber,
+      message,
+      roomId: roomId || existingRoomId || generateRoomId(),
     });
   };
 
@@ -133,10 +138,32 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket]);
 
+  const updateSocketMessages = async (messages: []) => {
+    return (
+      messages &&
+      messages.length > 0 &&
+      messages?.map((message: any) =>
+        setSocketMessages([
+          ...message,
+          {
+            senderId: message.currentUserId,
+            isSender: message.currentUserId === currentUser?.phoneNumber,
+            message: message.message,
+            _id: message.id,
+            createdAt: message.timestamp,
+            type: "text",
+            file: message?.file,
+          },
+        ])
+      )
+    );
+  };
+
   const value = {
     messages: socketMessages,
     joinRoom,
     sendMessage,
+    updateSocketMessages,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
