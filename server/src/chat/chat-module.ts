@@ -7,10 +7,17 @@ import { UsersModule } from 'src/user/users-module';
 import { ChatGateway } from './chat.gateway';
 import { ChatControllers } from './chat-controllers';
 import { AuthModule } from 'src/auth/auth-module';
+import { Chat, ChatSchema } from './schemas/chat-schema';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: Room.name, schema: RoomSchema }]),
+    MongooseModule.forFeature([
+      {
+        name: Room.name,
+        schema: RoomSchema,
+      },
+      { name: Chat.name, schema: ChatSchema },
+    ]),
     UsersModule,
     AuthModule,
   ],

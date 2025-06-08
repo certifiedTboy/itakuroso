@@ -1,8 +1,7 @@
 import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
-import { getChatsByRoomId } from "@/helpers/database/chats";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   FlatList,
@@ -11,6 +10,9 @@ import {
   Platform,
   StyleSheet,
 } from "react-native";
+import { useSelector } from "react-redux";
+
+import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 
 import { ThemedView } from "@/components/ThemedView";
 import { ChatContext } from "@/lib/context/chat-context";
@@ -30,29 +32,51 @@ type ChatScreenProps = {
 
 const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const [getChatsByRoomId, { data, error, isSuccess }] =
+    useGetChatsByRoomIdMutation();
+
+  const { currentUser } = useSelector((state: any) => state.authState);
 
   const chatCtx = useContext(ChatContext);
 
-  const { contactName, phoneNumber } = route.params;
+  const { contactName, phoneNumber, roomId } = route.params;
+
+  const flatListRef = useRef(null);
 
   useEffect(() => {
-    if (contactName || phoneNumber) {
-      chatCtx.joinRoom({ contactName, phoneNumber });
+    if (!roomId) {
+      chatCtx.joinRoom(
+        { contactName, phoneNumber },
+        { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email }
+      );
+    } else {
+      chatCtx.joinRoom(
+        { contactName, phoneNumber },
+        { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
+        roomId
+      );
+      getChatsByRoomId(roomId);
     }
   }, [route.params]);
 
   useEffect(() => {
     const onGetExistingMessages = async () => {
-      if (route?.params?.roomId) {
-        const messages = await getChatsByRoomId(route?.params?.roomId);
-        if (messages && messages.length > 0) {
-          return chatCtx.updateSocketMessages(messages);
-        }
-      }
+      await chatCtx.updateSocketMessages(data?.data, currentUser);
     };
 
-    onGetExistingMessages();
-  }, []);
+    if (isSuccess && data?.data) {
+      onGetExistingMessages();
+    }
+  }, [isSuccess]);
+
+  useEffect(() => {
+    if (chatCtx.messages.length > 0) {
+      //@ts-ignore
+      flatListRef.current?.scrollToOffset({ animated: true, offset: 0 });
+    }
+  }, [chatCtx.messages]);
 
   /**
    * this was implemented to help the positioning of the chat input
@@ -79,6 +103,22 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     };
   }, []);
 
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", (e) => {
+      setKeyboardHeight(e.endCoordinates.height);
+    });
+
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  // console.log("Socket Messages: ", chatCtx.messages);
   // Render the card
   // useCallback is used to prevent re-rendering of the card
   const RenderedCard = useCallback(
@@ -94,35 +134,39 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
         isSender: boolean;
         file?: string;
       };
-    }) => <MessageBubble message={item} />,
+    }) => (
+      <MessageBubble
+        message={{
+          ...item,
+          isSender: item.senderId === currentUser?.phoneNumber,
+        }}
+      />
+    ),
     []
   );
 
   return (
     <ThemedView
-      style={styles.messagesContainer}
+      style={[styles.messagesContainer]}
       darkColor="#000"
       lightColor="#fff"
     >
       <FlatList
-        data={chatCtx.messages.map((msg: any) => ({
-          ...msg,
-          type: "text",
-          isSender: msg.isSender ?? false,
-        }))}
+        data={chatCtx.messages}
+        ref={flatListRef}
         renderItem={RenderedCard}
         keyExtractor={(item: any) => item._id}
         numColumns={1}
         scrollEventThrottle={16} // Improves performance
         // onEndReached={handleEndReached} // Trigger when reaching the end
         onEndReachedThreshold={0.5} // Adjust sensitivity
-        inverted
+        contentContainerStyle={styles.messageContentStyle}
       />
 
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <MessageInput receiverId={phoneNumber} />
+        <MessageInput receiverId={phoneNumber} roomId={roomId} />
       </KeyboardAvoidingView>
     </ThemedView>
   );
@@ -135,6 +179,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 9,
     flex: 1,
   },
+
+  messageContentStyle: { flexGrow: 1, justifyContent: "flex-end" },
 
   messageInput: {
     padding: 10,

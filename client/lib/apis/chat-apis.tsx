@@ -22,7 +22,15 @@ export const chatApis = createApi({
         method: "GET",
       }),
     }),
+
+    getChatsByRoomId: builder.mutation({
+      query: (roomId) => ({
+        url: `/chats/${roomId}`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
-export const { useGetExisitngRoomsMutation } = chatApis;
+export const { useGetExisitngRoomsMutation, useGetChatsByRoomIdMutation } =
+  chatApis;

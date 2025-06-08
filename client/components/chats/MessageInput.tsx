@@ -9,6 +9,8 @@ import {
   View,
 } from "react-native";
 
+import { useSelector } from "react-redux";
+
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -24,14 +26,17 @@ import EmojiModal from "react-native-emoji-modal";
 
 type ChatInputProps = {
   receiverId: string;
+  roomId: string;
 };
 
-const MessageInput = ({ receiverId }: ChatInputProps) => {
+const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
   // const ref = useRef<IWaveformRef>(null);
+
+  const { currentUser } = useSelector((state: any) => state.authState);
 
   /**
    * chatContext
@@ -53,10 +58,6 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
 
   const textInputColor = useThemeColor({ light: "#333", dark: "#fff" }, "text");
   const theme = useColorScheme();
-
-  useEffect(() => {
-    chatCtx.updateSocketMessages(receiverId);
-  }, []);
 
   /**
    * AudioRecorder is used to record audio messages.
@@ -138,7 +139,15 @@ const MessageInput = ({ receiverId }: ChatInputProps) => {
 
   const handleSend = async () => {
     if (message.trim()) {
-      await chatCtx.sendMessage(message, receiverId);
+      await chatCtx.sendMessage(
+        message,
+        receiverId,
+        {
+          phoneNumber: currentUser?.phoneNumber,
+          email: currentUser?.email,
+        },
+        roomId
+      );
       setMessage("");
     }
   };

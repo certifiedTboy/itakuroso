@@ -3,7 +3,7 @@ import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
-import { createChatTable, getLastChatByRoomId } from "@/helpers/database/chats";
+// import { createChatTable, getLastChatByRoomId } from "@/helpers/database/chats";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetExisitngRoomsMutation } from "@/lib/apis/chat-apis";
@@ -56,16 +56,10 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     const onLoadContacts = async () => {
       const contacts = await getContacts();
 
-      await createChatTable();
+      // await createChatTable();
 
       if (data?.data && contacts && contacts.length > 0) {
-        // console.log(data?.data[0]?.members);
-        // console.log(contacts[50]);
-        data.data.forEach(async (room: any) => {
-          const lastChat = await getLastChatByRoomId(room.roomId);
-
-          // console.log(lastChat);
-
+        data.data.map(async (room: any) => {
           setRooms([
             {
               roomId: room.roomId,
@@ -88,11 +82,12 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
               lastMessage: {
                 // @ts-ignore
-                isSender: lastChat![0]?.senderId !== currentUser.phoneNumber,
+                isSender:
+                  room?.lastMessage?.senderId !== currentUser.phoneNumber,
                 // @ts-ignore
-                message: lastChat![0]?.message,
+                message: room?.lastMessage?.content,
                 // @ts-ignore
-                timestamp: lastChat![0]?.timestamp,
+                timestamp: room?.lastMessage?.timestamp,
               },
             },
           ]);
@@ -102,19 +97,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
     onLoadContacts();
   }, [data, isSuccess]);
-
-  // useEffect(() => {
-  //   if (rooms && rooms.length > 0) {
-  //     const onLoadChatInfo = async () => {
-  //       for (let room of rooms) {
-  //         const chats = await getChatsByRoomId(room.roomId);
-  //         console.log(chats);
-  //       }
-  //     };
-
-  //     onLoadChatInfo();
-  //   }
-  // }, [rooms]);
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
@@ -139,12 +121,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     },
   ];
 
-  // console.log(rooms[0]?.members);
-  // console.log(
-  //   rooms[0]?.members.find(
-  //     (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-  //   )
-  // );
+  // console.log("Rooms: ", rooms[0]?.lastMessage);
 
   // Render the card
   // useCallback is used to prevent re-rendering of the card
@@ -157,32 +134,19 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         roomName: string;
         roomImage: string;
         members: { name: string; profileImage?: string; phoneNumber: string }[];
-        lastMessage?: { isSender: boolean; message: string; timestamp: string };
+        lastMessage?: {
+          isSender: boolean;
+          message: string;
+          timestamp: string;
+          isRead: boolean;
+        };
       };
     }) => (
       <ChatCard
-        sender={
-          (item.members &&
-            item.members.find(
-              (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-            )?.name!) ||
-          item.members.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.phoneNumber!
-        }
-        contactName={
-          item.members &&
-          item.members.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.name!
-        }
-        phoneNumber={
-          item.members.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.phoneNumber!
-        }
-        message={item.lastMessage?.message || ""}
-        // time={item.time}
+        members={item.members}
+        message={item.lastMessage?.message}
+        time={item.lastMessage?.timestamp}
+        // isSender={item.lastMessage?.isSender}
         image={require("../assets/images/avatar.png")}
         roomId={item.roomId}
       />
@@ -215,7 +179,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
         <View>
           <FlatList
-            data={rooms && rooms.length > 0 && rooms}
+            data={rooms}
             renderItem={RenderedCard}
             keyExtractor={(item) => item.roomId}
             numColumns={1}

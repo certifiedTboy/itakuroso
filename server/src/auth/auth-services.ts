@@ -28,7 +28,7 @@ export class AuthService {
   async signIn(
     passcode: string,
     email: string,
-  ): Promise<{ authToken: string; updatedUser?: any }> {
+  ): Promise<{ authToken: string; updatedUser?: any; user?: any }> {
     const user = await this.usersService.checkIfUserExist({ email });
 
     if (!user) {
@@ -56,7 +56,7 @@ export class AuthService {
         sub: user.phoneNumber,
       };
 
-      return { authToken: await this.jwtService.signAsync(payload) };
+      return { authToken: await this.jwtService.signAsync(payload), user };
     } else {
       // update user passcode
       const updatedUser = await this.usersService.updateUserPasscode({

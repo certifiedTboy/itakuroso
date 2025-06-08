@@ -4,7 +4,7 @@ import { User } from '../../user/schemas/user-schema';
 
 export type RoomDocument = mongoose.HydratedDocument<Room>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Room {
   @Prop()
   roomName: string;
@@ -20,6 +20,14 @@ export class Room {
 
   @Prop()
   roomImage: string;
+
+  @Prop({ type: Object })
+  lastMessage: {
+    content: string;
+    senderId: string;
+    timestamp: Date;
+    isRead: boolean;
+  };
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);
