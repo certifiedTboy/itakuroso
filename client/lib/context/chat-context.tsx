@@ -22,7 +22,7 @@ type ChatContextType = {
     otherUserId: string,
     currentUser: { phoneNumber: string; email: string },
     roomId?: string,
-    fileName?: string
+    file?: string
   ) => void;
   updateSocketMessages: (
     messages: [],
@@ -42,7 +42,7 @@ export const ChatContext = createContext<ChatContextType>({
     otherUserId: string,
     currentUser: { phoneNumber: string; email: string },
     roomId?: string,
-    fileName?: string
+    file?: string
   ) => {},
   updateSocketMessages: (
     messages: [],
@@ -88,13 +88,13 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     otherUserId: string,
     currentUser: { phoneNumber: string; email: string },
     roomId?: string,
-    fileName?: string
+    file?: string
   ) => {
     socket.current.emit("message", {
       roomId: roomId,
       content: message,
       senderId: currentUser?.phoneNumber,
-      fileName,
+      file,
     });
   };
 

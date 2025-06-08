@@ -28,7 +28,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       roomName: string;
       roomImage: string;
       members: { name: string; profileImage?: string; phoneNumber: string }[];
-      lastMessage?: { isSender: boolean; message: string; timestamp: string };
+      lastMessage?: {
+        isSender: boolean;
+        message: string;
+        timestamp: string;
+        isRead?: boolean;
+        containsFile?: boolean;
+      };
     }[]
   >([]);
   const [getExisitngRooms, { data, error, isSuccess }] =
@@ -81,13 +87,12 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
               }),
 
               lastMessage: {
-                // @ts-ignore
                 isSender:
                   room?.lastMessage?.senderId !== currentUser.phoneNumber,
-                // @ts-ignore
                 message: room?.lastMessage?.content,
-                // @ts-ignore
                 timestamp: room?.lastMessage?.timestamp,
+                isRead: room?.lastMessage?.isRead,
+                containsFile: room?.lastMessage?.containsFile,
               },
             },
           ]);
@@ -139,6 +144,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           message: string;
           timestamp: string;
           isRead: boolean;
+          containsFile?: boolean;
         };
       };
     }) => (
@@ -149,6 +155,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         // isSender={item.lastMessage?.isSender}
         image={require("../assets/images/avatar.png")}
         roomId={item.roomId}
+        isRead={item.lastMessage?.isRead}
+        containsFile={item.lastMessage?.containsFile}
       />
     ),
     []

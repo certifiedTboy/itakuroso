@@ -165,6 +165,7 @@ export class ChatGateway
           senderId: data.senderId,
           timestamp: new Date(),
           isRead: false,
+          containsFile: !!data.file,
         };
 
         await roomExist.save();
@@ -178,6 +179,7 @@ export class ChatGateway
             data.content,
             data.senderId,
             ChatHelpers.generateChatId(),
+            data.file,
           ),
         );
     }
