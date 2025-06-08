@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
 
 export class CreateRoomDto {
   @IsString()
@@ -24,4 +24,13 @@ export class CreateRoomDto {
   @IsString()
   @IsOptional()
   readonly otherUserId: string;
+
+  @IsObject()
+  @IsOptional()
+  readonly lastMessage?: {
+    content: string;
+    senderId: string;
+    timestamp: Date;
+    isRead: boolean;
+  };
 }

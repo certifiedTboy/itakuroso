@@ -1,33 +1,39 @@
 import { Colors } from "@/constants/Colors";
+import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useNavigation } from "@react-navigation/native";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
+import { useSelector } from "react-redux";
 import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
 type ChatCardProps = {
-  sender: string;
+  // sender: string;
+  members: { name: string; profileImage?: string; phoneNumber: string }[];
   message?: string;
   time?: string;
   image?: any;
-  contactName: string;
-  phoneNumber: string;
+  // contactName: string;
+  // phoneNumber: string;
   roomId: string;
   onNavigate?: () => void;
 };
 
 const ChatCard = ({
-  sender,
+  // sender,
+  members,
   message,
   time,
   image,
-  contactName,
-  phoneNumber,
+  // contactName,
+  // phoneNumber,
   roomId,
   onNavigate,
 }: ChatCardProps) => {
   const navigation = useNavigation();
+
+  const { currentUser } = useSelector((state: any) => state.authState);
 
   const { width } = Dimensions.get("window");
 
@@ -46,8 +52,12 @@ const ChatCard = ({
       onPress={() => {
         // @ts-ignore
         navigation.navigate("chat-screen", {
-          contactName,
-          phoneNumber,
+          contactName: members?.find(
+            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+          )?.name,
+          phoneNumber: members?.find(
+            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+          )?.phoneNumber,
           roomId,
         });
       }}
@@ -61,7 +71,14 @@ const ChatCard = ({
       <View style={styles.leftContainer}>
         <Avatar.Image size={50} source={image} />
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
-          <ThemedText style={styles.sender}>{sender}</ThemedText>
+          <ThemedText style={styles.sender}>
+            {members?.find(
+              (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+            )?.name ||
+              members?.find(
+                (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+              )?.phoneNumber}
+          </ThemedText>
           <View style={styles.messageRow}>
             <Icon name="checkmark-done-outline" size={14} color="#969494FF" />
             <Text
@@ -82,7 +99,7 @@ const ChatCard = ({
           lightColor={Colors.light.btnBgc}
           style={styles.time}
         >
-          {time}
+          {formatDate(time)}
         </ThemedText>
 
         <View style={styles.counter}>

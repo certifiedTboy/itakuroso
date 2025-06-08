@@ -52,14 +52,20 @@ export class ChatGateway
   ) {
     const { roomId, userId, currentUserId } = data;
 
-    // console.log(currentUserId);
+    let newRoomId: string;
+
+    if (!roomId) {
+      newRoomId = ChatHelpers.generateRoomId();
+    } else {
+      newRoomId = roomId;
+    }
 
     // /**
     //  * add current user to temporary room
     //  */
     const user = this.chatService.userJoin({
       contactName: currentUserId.email,
-      roomId,
+      roomId: newRoomId,
       phoneNumber: currentUserId.phoneNumber,
     });
 
@@ -86,7 +92,7 @@ export class ChatGateway
        * for now, the active user will get a message to inform the other user to create an account
        */
       return this.server
-        .to(roomId)
+        .to(user.roomId)
         .emit(
           'message',
           ChatHelpers.messageResponse(
@@ -98,7 +104,7 @@ export class ChatGateway
     }
 
     // check if room already exist on database
-    const roomExist = await this.chatService.findRoomById(roomId);
+    const roomExist = await this.chatService.findRoomById(user.roomId);
 
     /**
      * check if current user with phone number exist on database
@@ -116,7 +122,7 @@ export class ChatGateway
        */
 
       await this.chatService.createRoom({
-        roomId,
+        roomId: newRoomId,
         currentUserId:
           currentUser && currentUser._id ? String(currentUser._id) : '',
         otherUserId:
@@ -131,15 +137,39 @@ export class ChatGateway
   }
 
   @SubscribeMessage('message')
-  handleMessage(
+  async handleMessage(
     @MessageBody()
-    data: { roomId: string; senderId: string; content: string },
+    data: { roomId: string; senderId: string; content: string; file?: string },
     @ConnectedSocket() client: Socket,
   ) {
     const { roomId } = data;
+
     const user = this.chatService.getCurrentActiveRoom(roomId);
 
     if (user) {
+      const roomExist = await this.chatService.findRoomById(roomId);
+      /**
+       * save the message to the database
+       */
+      if (roomExist) {
+        await this.chatService.createChat({
+          roomId: roomExist._id.toString(),
+          senderId: data.senderId,
+          chatRoomId: roomExist.roomId,
+          message: data.content,
+          file: data?.file,
+        });
+
+        roomExist.lastMessage = {
+          content: data.content,
+          senderId: data.senderId,
+          timestamp: new Date(),
+          isRead: false,
+        };
+
+        await roomExist.save();
+      }
+
       return this.server
         .to(user?.roomId)
         .emit(

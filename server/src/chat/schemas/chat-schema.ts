@@ -1,19 +1,21 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { User } from '../../user/schemas/user-schema';
+import { Room } from './room-schema';
 import * as mongoose from 'mongoose';
 
 export type ChatDocument = mongoose.HydratedDocument<Chat>;
 
-@Schema()
+@Schema({ timestamps: true })
 export class Chat {
-  @Prop({
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true,
-  })
-  senderId: User;
+  @Prop()
+  senderId: string;
 
-  @Prop({ required: true, unique: true })
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Room', required: true })
+  roomId: Room;
+
+  @Prop({ required: true })
+  chatRoomId: string;
+
+  @Prop({ required: true })
   message: string;
 
   @Prop()

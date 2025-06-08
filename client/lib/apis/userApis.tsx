@@ -45,10 +45,11 @@ export const userApis = createApi({
           const { data } = await queryFulfilled;
 
           if (data) {
-            const { authToken } = data.data;
+            const { authToken, user } = data.data;
 
             await AsyncStorage.setItem("authToken", authToken);
-            dispatch(setCurrentUser({ currentUser: data.data }));
+
+            dispatch(setCurrentUser({ currentUser: user }));
           }
         } catch (error) {
           // console.log(error);

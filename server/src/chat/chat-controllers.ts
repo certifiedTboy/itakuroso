@@ -75,4 +75,27 @@ export class ChatControllers {
       throw new InternalServerErrorException('An unexpected error occurred');
     }
   }
+
+  @Get(':chatRoomId')
+  async getRoomChats(@Req() req: Request) {
+    const { chatRoomId } = req.params;
+
+    if (!chatRoomId) {
+      throw new BadRequestException('Room ID is required');
+    }
+
+    try {
+      const chats = await this.chatService.findChatByRoomId(chatRoomId);
+
+      return ResponseHandler.ok(200, 'Chats retrieved successfully', chats);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
 }

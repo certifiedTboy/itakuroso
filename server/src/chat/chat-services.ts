@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Room, RoomDocument } from './schemas/room-schema';
+import { Chat, ChatDocument } from './schemas/chat-schema';
 import { CreateRoomDto } from './dto/create-room.dto';
+import { CreateChatDto } from './dto/create-chat.dto';
 
 /**
  * @class UsersService
@@ -12,7 +14,10 @@ import { CreateRoomDto } from './dto/create-room.dto';
 @Injectable()
 export class ChatService {
   users: { contactName: string; roomId: string; phoneNumber: string }[] = [];
-  constructor(@InjectModel(Room.name) private roomModel: Model<RoomDocument>) {}
+  constructor(
+    @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
+    @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+  ) {}
 
   /**
    * @method userJoin
@@ -145,5 +150,36 @@ export class ChatService {
       .exec();
 
     return rooms;
+  }
+
+  /**
+   * @method createChat
+   * @description Creates a new chat message in the specified room.
+   * @param {CreateChatDto} CreateChatDto - The chat message to be created.
+   */
+  async createChat(createChatDto: CreateChatDto) {
+    const chatData = {
+      ...createChatDto,
+      senderId: createChatDto.senderId,
+      roomId: createChatDto.roomId,
+    };
+
+    const createdChat = new this.chatModel(chatData);
+    const chat = await createdChat.save();
+    return chat;
+  }
+
+  /**
+   * @method findChatByRoomId
+   * @description Finds all chat messages in a specific room by its ID.
+   * @param {string} chatRoomId - The ID of the room to find chat messages in.
+   * @returns {Promise<ChatDocument[]>} - A promise that resolves to an array of chat messages.
+   */
+  async findChatByRoomId(chatRoomId: string): Promise<ChatDocument[]> {
+    return this.chatModel
+      .find({ chatRoomId })
+      .populate('senderId')
+      .sort({ createdAt: -1 })
+      .exec();
   }
 }
