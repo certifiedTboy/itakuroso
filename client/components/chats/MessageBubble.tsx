@@ -1,15 +1,17 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import React from "react";
+import { useState } from "react";
 import {
   Image,
   Linking,
+  Pressable,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import ImagePreviewModal from "./ImagePreviewModal";
 
 type Message = {
   message: string;
@@ -18,9 +20,12 @@ type Message = {
   createdAt: string;
   type: string;
   isSender: boolean;
+  file?: string;
 };
 
 const MessageBubble = ({ message }: { message: Message }) => {
+  const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
@@ -31,68 +36,78 @@ const MessageBubble = ({ message }: { message: Message }) => {
   };
 
   return (
-    <View
-      style={[
-        {
-          flexDirection: "row",
-        },
-        message.isSender
-          ? { alignSelf: "flex-end" }
-          : { alignSelf: "flex-start" },
-      ]}
-    >
-      {!message.isSender && (
-        <Image
-          source={require("../../assets/images/avatar.png")}
-          style={styles.avatar}
-        />
-      )}
+    <>
+      <ImagePreviewModal
+        isVisible={imagePreviewVisible}
+        imageUrl={message?.file || ""}
+        onClose={() => setImagePreviewVisible(!imagePreviewVisible)}
+      />
 
       <View
         style={[
-          styles.container,
-          message.isSender ? styles.sender : styles.receiver,
-
-          !message.isSender && {
-            backgroundColor: cardBg,
+          {
+            flexDirection: "row",
           },
-          // {
-          //   backgroundColor: message.isSender ? "#007AFF" : "#fff",
-          // },
+          message.isSender
+            ? { alignSelf: "flex-end" }
+            : { alignSelf: "flex-start" },
         ]}
       >
-        {message.type === "image" && (
+        {!message.isSender && (
           <Image
             source={require("../../assets/images/avatar.png")}
-            style={styles.image}
+            style={styles.avatar}
           />
         )}
 
-        {message.type === "file" && (
-          <TouchableOpacity style={styles.fileButton} onPress={handleOpenFile}>
-            <MaterialCommunityIcons name="file" size={30} color="#007AFF" />
-            <Text style={styles.fileName}>
-              {message.message || "Open File"}
+        <View
+          style={[
+            styles.container,
+            message.isSender ? styles.sender : styles.receiver,
+
+            !message.isSender && {
+              backgroundColor: cardBg,
+            },
+          ]}
+        >
+          {message.type === "file" && (
+            <TouchableOpacity
+              style={styles.fileButton}
+              onPress={handleOpenFile}
+            >
+              <MaterialCommunityIcons name="file" size={30} color="#007AFF" />
+              <Text style={styles.fileName}>
+                {message.message || "Open File"}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          {message.type === "text" && (
+            <Text
+              style={[
+                message.isSender ? styles.senderText : styles.receiverText,
+                message.file && { marginBottom: 5 },
+              ]}
+            >
+              {message.message}
             </Text>
-          </TouchableOpacity>
-        )}
+          )}
 
-        {message.type === "text" && (
-          <Text
-            style={[message.isSender ? styles.senderText : styles.receiverText]}
-          >
-            {message.message}
-          </Text>
-        )}
+          {message.file && (
+            <Pressable onPress={() => setImagePreviewVisible(true)}>
+              <Image source={{ uri: message.file }} style={styles.image} />
+            </Pressable>
+          )}
 
-        {message.type === "audio" && (
-          <TouchableOpacity style={styles.audioButton}>
-            <Ionicons name="play-circle" size={30} color="#fff" />
-            <Text style={styles.audioText}>Play Audio</Text>
-          </TouchableOpacity>
-        )}
+          {message.type === "audio" && (
+            <TouchableOpacity style={styles.audioButton}>
+              <Ionicons name="play-circle" size={30} color="#fff" />
+              <Text style={styles.audioText}>Play Audio</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
-    </View>
+    </>
   );
 };
 

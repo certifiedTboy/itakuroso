@@ -27,6 +27,7 @@ export class Room {
     senderId: string;
     timestamp: Date;
     isRead: boolean;
+    containsFile?: boolean;
   };
 }
 

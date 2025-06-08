@@ -3,16 +3,19 @@ import * as DocumentPicker from "expo-document-picker";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
+  Image,
+  Pressable,
   StyleSheet,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 
-import { useSelector } from "react-redux";
+import Icon from "../ui/Icon";
 
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
+import useFileUpload from "@/hooks/useFileUpload";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ChatContext } from "@/lib/context/chat-context";
 import {
@@ -23,6 +26,8 @@ import {
 } from "expo-audio";
 import * as ImagePicker from "expo-image-picker";
 import EmojiModal from "react-native-emoji-modal";
+import { useSelector } from "react-redux";
+import ImagePreviewModal from "./ImagePreviewModal";
 
 type ChatInputProps = {
   receiverId: string;
@@ -34,9 +39,13 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
+  const [imagePreviewIsVisible, setImagePreviewIsVisible] = useState(false);
   // const ref = useRef<IWaveformRef>(null);
 
   const { currentUser } = useSelector((state: any) => state.authState);
+
+  const { uploadFile, uploadedFile, isUploading, clearUploadedFile } =
+    useFileUpload();
 
   /**
    * chatContext
@@ -130,15 +139,21 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
    */
   const handleFilePick = async () => {
     const result = await DocumentPicker.getDocumentAsync({});
-    console.log(result);
+
+    if (result && result?.assets && typeof uploadFile === "function") {
+      await uploadFile(result?.assets[0]?.uri);
+    }
   };
+
+  // console.log("file upload error: ", fileUploadError);
+  // console.log("uploaded file:", uploadedFile);
 
   const handleShowEmoji = () => {
     return setShowEmoji(!showEmoji);
   };
 
   const handleSend = async () => {
-    if (message.trim()) {
+    if (message.trim().length > 0 || uploadedFile?.uri) {
       await chatCtx.sendMessage(
         message,
         receiverId,
@@ -146,30 +161,89 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
           phoneNumber: currentUser?.phoneNumber,
           email: currentUser?.email,
         },
-        roomId
+        roomId,
+        uploadedFile?.uri
       );
       setMessage("");
+      clearUploadedFile();
     }
   };
 
+  // console.log(uploadedFile);
+
   return (
-    <View style={styles.container}>
-      {showEmoji && (
-        <View style={{ position: "absolute", bottom: 60, left: 0, right: 0 }}>
-          <EmojiModal
-            onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
-            onPressOutside={() => console.log("pressed outside")}
-            searchStyle={{
-              backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+    <>
+      <ImagePreviewModal
+        isVisible={imagePreviewIsVisible}
+        onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
+        imageUrl={uploadedFile.uri}
+      />
+      <View style={styles.container}>
+        {showEmoji && (
+          <View style={{ position: "absolute", bottom: 60, left: 0, right: 0 }}>
+            <EmojiModal
+              onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
+              onPressOutside={() => console.log("pressed outside")}
+              searchStyle={{
+                backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+              }}
+              emojiSize={35}
+              containerStyle={{ backgroundColor: textInputBackgroundColor }}
+              // modalStyle={}
+            />
+          </View>
+        )}
+
+        {uploadedFile && uploadedFile.uri && (
+          <View
+            style={{
+              flex: 1,
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              paddingHorizontal: 10,
+              marginVertical: 23,
+
+              // zIndex: 1,
             }}
-            emojiSize={35}
-            containerStyle={{ backgroundColor: textInputBackgroundColor }}
-            // modalStyle={}
-          />
-        </View>
-      )}
-      <View style={styles.row}>
-        {/* {audioUri && (
+          >
+            <Pressable
+              onPress={() => setImagePreviewIsVisible(true)}
+              style={{
+                width: 40,
+                borderRadius: 10,
+              }}
+            >
+              <Image
+                style={{
+                  width: "100%",
+                  height: 30,
+                  resizeMode: "contain",
+                  padding: 10,
+                  backgroundColor: "#7E7A7AFF",
+                }}
+                source={{ uri: uploadedFile?.uri }}
+              />
+            </Pressable>
+
+            <View
+              style={{
+                height: 40,
+
+                justifyContent: "center",
+              }}
+            >
+              <Icon
+                name="close-circle-outline"
+                size={25}
+                color="#fff"
+                onPress={() => console.log("pressed")}
+              />
+            </View>
+          </View>
+        )}
+        <View style={styles.row}>
+          {/* {audioUri && (
           <Waveform
             mode="static"
             ref={ref}
@@ -182,68 +256,69 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
           />
         )} */}
 
-        <TextInput
-          placeholderTextColor={placeholderTextColor}
-          style={[
-            styles.input,
-            {
-              backgroundColor: textInputBackgroundColor,
-              color: textInputColor,
-            },
-          ]}
-          placeholder="Type a message"
-          value={message}
-          onChangeText={setMessage}
-          onFocus={() => setShowEmoji(false)}
-          editable={!isRecording}
-          selectTextOnFocus={!isRecording}
-        />
+          <TextInput
+            placeholderTextColor={placeholderTextColor}
+            style={[
+              styles.input,
+              {
+                backgroundColor: textInputBackgroundColor,
+                color: textInputColor,
+              },
+            ]}
+            placeholder="Type a message"
+            value={message}
+            onChangeText={setMessage}
+            onFocus={() => setShowEmoji(false)}
+            editable={!isRecording}
+            selectTextOnFocus={!isRecording}
+          />
 
-        {!isRecording && (
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              marginLeft: -80,
-              zIndex: 1,
-            }}
-          >
-            {
-              <TouchableOpacity onPress={handleFilePick}>
-                <Ionicons name="attach" size={35} color="#B1B1B1FF" />
+          {!isRecording && (
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                marginLeft: -80,
+                zIndex: 1,
+              }}
+            >
+              {
+                <TouchableOpacity onPress={handleFilePick}>
+                  <Ionicons name="attach" size={35} color="#B1B1B1FF" />
+                </TouchableOpacity>
+              }
+
+              {false && (
+                <TouchableOpacity onPress={handleImagePick}>
+                  <Ionicons name="image" size={25} color="#B1B1B1FF" />
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity onPress={handleShowEmoji}>
+                <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
               </TouchableOpacity>
-            }
-
-            {false && (
-              <TouchableOpacity onPress={handleImagePick}>
-                <Ionicons name="image" size={35} color="#B1B1B1FF" />
+            </View>
+          )}
+          <View style={{ marginLeft: 5 }}>
+            {message || uploadedFile.uri.trim().length > 0 ? (
+              <TouchableOpacity onPress={async () => await handleSend()}>
+                <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity onPress={isRecording ? stopRecording : record}>
+                <MaterialIcons
+                  name={"keyboard-voice"}
+                  size={35}
+                  color={
+                    isRecording ? Colors.light.errorText : Colors.light.btnBgc
+                  }
+                />
               </TouchableOpacity>
             )}
-
-            <TouchableOpacity onPress={handleShowEmoji}>
-              <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
-            </TouchableOpacity>
           </View>
-        )}
-        <View style={{ marginLeft: 5 }}>
-          {message ? (
-            <TouchableOpacity onPress={async () => await handleSend()}>
-              <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity onPress={isRecording ? stopRecording : record}>
-              <MaterialIcons
-                name={"keyboard-voice"}
-                size={35}
-                color={
-                  isRecording ? Colors.light.errorText : Colors.light.btnBgc
-                }
-              />
-            </TouchableOpacity>
-          )}
         </View>
       </View>
-    </View>
+    </>
   );
 };
 

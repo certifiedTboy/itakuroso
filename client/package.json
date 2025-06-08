@@ -19,6 +19,7 @@
     "@react-navigation/elements": "^2.4.2",
     "@react-navigation/native": "^7.1.6",
     "@reduxjs/toolkit": "^2.8.2",
+    "cloudinary-react-native": "^1.0.1",
     "expo": "~53.0.9",
     "expo-audio": "~0.4.5",
     "expo-blur": "~14.1.4",

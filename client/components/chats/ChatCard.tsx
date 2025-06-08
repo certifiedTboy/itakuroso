@@ -9,26 +9,24 @@ import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
 type ChatCardProps = {
-  // sender: string;
   members: { name: string; profileImage?: string; phoneNumber: string }[];
   message?: string;
   time?: string;
   image?: any;
-  // contactName: string;
-  // phoneNumber: string;
+  isRead?: boolean;
+  containsFile?: boolean;
   roomId: string;
   onNavigate?: () => void;
 };
 
 const ChatCard = ({
-  // sender,
   members,
   message,
   time,
   image,
-  // contactName,
-  // phoneNumber,
   roomId,
+  isRead,
+  containsFile,
   onNavigate,
 }: ChatCardProps) => {
   const navigation = useNavigation();
@@ -46,6 +44,8 @@ const ChatCard = ({
     { light: Colors.light.btnBgc, dark: "#969494FF" },
     "text"
   );
+
+  // console.log("file", containsFile);
 
   return (
     <Pressable
@@ -102,8 +102,21 @@ const ChatCard = ({
           {formatDate(time)}
         </ThemedText>
 
-        <View style={styles.counter}>
-          <ThemedText style={styles.counterText}>2</ThemedText>
+        <View style={styles.counterContainer}>
+          {containsFile && (
+            <View>
+              <Icon
+                name="document-attach-outline"
+                size={18}
+                color="#969494FF"
+              />
+            </View>
+          )}
+          {!isRead && (
+            <View style={styles.counter}>
+              <ThemedText style={styles.counterText}></ThemedText>
+            </View>
+          )}
         </View>
       </View>
     </Pressable>
@@ -162,10 +175,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "500",
   },
+
+  counterContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    // marginTop: 4,
+  },
   counter: {
-    backgroundColor: Colors.light.btnBgc,
-    width: 20,
-    height: 20,
+    backgroundColor: Colors.light.errorText,
+    width: 15,
+    height: 15,
     borderRadius: 10,
     justifyContent: "center",
     alignItems: "center",
