@@ -72,10 +72,10 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
   }, [isSuccess]);
 
   useEffect(() => {
-    if (chatCtx.messages.length > 0) {
-      //@ts-ignore
-      flatListRef.current?.scrollToEnd({ animated: true });
-    }
+    // if (chatCtx.messages.length > 0) {
+    //@ts-ignore
+    flatListRef.current?.scrollToEnd({ animated: true });
+    // }
   }, [chatCtx.messages]);
 
   /**

@@ -9,6 +9,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetExisitngRoomsMutation } from "@/lib/apis/chat-apis";
 import { AuthContext } from "@/lib/context/auth-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
+import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
@@ -40,24 +41,50 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const [getExisitngRooms, { data, error, isSuccess }] =
     useGetExisitngRoomsMutation();
 
+  /**
+   * useSelector hook to get the current user from the Redux store
+   * This is used to identify the current user in the chat room
+   */
   const { currentUser } = useSelector((state: any) => state.authState);
 
+  /**
+   * useNavigation hook to navigate between screens
+   * This is used to navigate to the contact list screen when the floating button is pressed
+   */
   const navigate = useNavigation();
 
+  /**
+   * useColorScheme hook to get the current color scheme of the device
+   * This is used to set the background color of the search bar
+   */
   const theme = useColorScheme();
 
   const { toggleDropdown } = useContext(DropdownContext);
-
   const authCtx = useContext(AuthContext);
 
-  useEffect(() => {
-    const onLoadChatInfo = async () => {
-      getExisitngRooms(null);
-    };
+  /**
+   * useFocusEffect hook to perform actions when the screen is focused
+   * This is used to fetch existing chat rooms when the screen is focused
+   */
+  useFocusEffect(
+    useCallback(() => {
+      const onLoadChatInfo = async () => {
+        getExisitngRooms(null);
+      };
 
-    onLoadChatInfo();
-  }, []);
+      onLoadChatInfo();
 
+      // Optional cleanup
+      return () => {
+        console.log("Screen is unfocused");
+      };
+    }, [])
+  );
+
+  /**
+   * useEffect hook to fetch contacts and update the chat rooms
+   * This is used to get the contact names and images for each chat room
+   */
   useEffect(() => {
     const onLoadContacts = async () => {
       const contacts = await getContacts();
@@ -108,6 +135,10 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     "background"
   );
 
+  /**
+   * Options for the dropdown menu
+   * These options will be displayed when the user clicks on the menu icon
+   */
   const options = [
     {
       label: "Settings",

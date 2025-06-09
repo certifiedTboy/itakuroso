@@ -180,7 +180,7 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
       />
       <View style={styles.container}>
         {showEmoji && (
-          <View style={{ position: "absolute", bottom: 60, left: 0, right: 0 }}>
+          <View style={styles.emojiContainer}>
             <EmojiModal
               onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
               onPressOutside={() => console.log("pressed outside")}
@@ -195,44 +195,18 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
         )}
 
         {uploadedFile && uploadedFile.uri && (
-          <View
-            style={{
-              flex: 1,
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              paddingHorizontal: 10,
-              marginVertical: 23,
-
-              // zIndex: 1,
-            }}
-          >
+          <View style={styles.previewImageContainer}>
             <Pressable
               onPress={() => setImagePreviewIsVisible(true)}
-              style={{
-                width: 40,
-                borderRadius: 10,
-              }}
+              style={styles.imagePressable}
             >
               <Image
-                style={{
-                  width: "100%",
-                  height: 30,
-                  resizeMode: "contain",
-                  padding: 10,
-                  backgroundColor: "#7E7A7AFF",
-                }}
+                style={styles.previewImage}
                 source={{ uri: uploadedFile?.uri }}
               />
             </Pressable>
 
-            <View
-              style={{
-                height: 40,
-
-                justifyContent: "center",
-              }}
-            >
+            <View style={styles.iconContainer}>
               <Icon
                 name="close-circle-outline"
                 size={25}
@@ -274,14 +248,7 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
           />
 
           {!isRecording && (
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                marginLeft: -80,
-                zIndex: 1,
-              }}
-            >
+            <View style={styles.recordingContainer}>
               {
                 <TouchableOpacity onPress={handleFilePick}>
                   <Ionicons name="attach" size={35} color="#B1B1B1FF" />
@@ -326,7 +293,6 @@ export default MessageInput;
 
 const styles = StyleSheet.create({
   container: {
-    // flex: 1,
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
@@ -335,6 +301,39 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
+  imagePressable: {
+    width: 40,
+    borderRadius: 10,
+  },
+  previewImageContainer: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    marginVertical: 23,
+  },
+
+  iconContainer: {
+    height: 40,
+
+    justifyContent: "center",
+  },
+
+  previewImage: {
+    width: "100%",
+    height: 30,
+    resizeMode: "contain",
+    padding: 10,
+    backgroundColor: "#7E7A7AFF",
+  },
+  recordingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: -80,
+    zIndex: 1,
+  },
+  emojiContainer: { position: "absolute", bottom: 60, left: 0, right: 0 },
   input: {
     flex: 1,
     paddingHorizontal: 10,
