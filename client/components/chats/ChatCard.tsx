@@ -11,7 +11,7 @@ import Icon from "../ui/Icon";
 type ChatCardProps = {
   members: { name: string; profileImage?: string; phoneNumber: string }[];
   message?: string;
-  time?: string;
+  time: string;
   image?: any;
   isRead?: boolean;
   containsFile?: boolean;
@@ -44,8 +44,6 @@ const ChatCard = ({
     { light: Colors.light.btnBgc, dark: "#969494FF" },
     "text"
   );
-
-  // console.log("file", containsFile);
 
   return (
     <Pressable
