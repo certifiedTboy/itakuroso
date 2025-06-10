@@ -182,4 +182,18 @@ export class ChatService {
       .sort({ createdAt: -1 })
       .exec();
   }
+
+  /**
+   * @method updateLastMessageReadStatus
+   * @description Updates the read status of the last message in a chat room.
+   * @param {string} roomId - The ID of the room where the last message's read status needs to be updated.
+   */
+
+  async updateLastMessageReadStatus(roomId: string) {
+    return await this.roomModel.updateOne(
+      { roomId },
+      { 'lastMessage.isRead': true },
+      { new: true },
+    );
+  }
 }

@@ -146,6 +146,9 @@ export class ChatGateway
 
     const user = this.chatService.getCurrentActiveRoom(roomId);
 
+    // Check if there are morethan one active user in the room
+    const currentActiveUsers = this.chatService.getRoomUsers(roomId);
+
     if (user) {
       const roomExist = await this.chatService.findRoomById(roomId);
       /**
@@ -164,7 +167,7 @@ export class ChatGateway
           content: data.content,
           senderId: data.senderId,
           timestamp: new Date(),
-          isRead: false,
+          isRead: currentActiveUsers.length === 1 ? false : true,
           containsFile: !!data.file,
         };
 
@@ -183,5 +186,33 @@ export class ChatGateway
           ),
         );
     }
+  }
+
+  @SubscribeMessage('markMessageAsRead')
+  async handleMarkMessageAsRead(
+    @MessageBody() data: { roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+    await this.chatService.updateLastMessageReadStatus(roomId);
+
+    return this.server.to(roomId).emit('markMessageAsRead', {});
+  }
+
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom(
+    @MessageBody()
+    data: {
+      // roomId: string;
+      currentUserId: { phoneNumber: string };
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { currentUserId } = data;
+
+    /**
+     * remove current user from the room
+     */
+    this.chatService.userLeave(currentUserId.phoneNumber);
   }
 }

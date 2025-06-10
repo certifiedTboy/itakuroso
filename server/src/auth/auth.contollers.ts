@@ -98,10 +98,12 @@ export class AuthControllers {
           currentUser?.phoneNumber,
         );
 
+        const result = { authToken: token, user: currentUser };
+
         return ResponseHandler.ok(
           200,
           'new token generated successfully',
-          token,
+          result,
         );
       }
     } catch (error: unknown) {
