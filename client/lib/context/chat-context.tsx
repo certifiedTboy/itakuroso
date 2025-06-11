@@ -1,7 +1,7 @@
-// import { getChatsByRoomId } from "@/helpers/database/chats";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
-
 import { io } from "socket.io-client";
+
+const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
 type ChatContextType = {
   messages: {
@@ -28,6 +28,11 @@ type ChatContextType = {
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
   ) => void;
+
+  markMessageAsRead: (roomId: string) => void;
+  trigerRoomRefetch: () => void;
+  leaveRoom: (currentUserId: { phoneNumber: string }) => void;
+  triggerCount: number;
 };
 
 export const ChatContext = createContext<ChatContextType>({
@@ -48,6 +53,11 @@ export const ChatContext = createContext<ChatContextType>({
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
   ) => {},
+
+  markMessageAsRead: (roomId: string) => {},
+  trigerRoomRefetch: () => {},
+  leaveRoom: (currentUserId: { phoneNumber: string }) => {},
+  triggerCount: 0,
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
@@ -62,7 +72,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     }[]
   >([]);
 
-  const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
+  const [triggerCount, setTriggerCount] = useState(0);
 
   const socket = useRef(io(API_URL));
 
@@ -100,7 +110,10 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const currentSocket = socket.current;
+
     currentSocket.on("message", (message: any) => {
+      setTriggerCount((prevCount) => prevCount + 1);
+
       setSocketMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -119,6 +132,23 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket]);
 
+  const trigerRoomRefetch = () => {
+    return true;
+  };
+
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("markMessageAsRead", () => {
+      setTriggerCount((prevCount) => prevCount + 1);
+    });
+
+    return () => {
+      currentSocket.off("markMessageAsRead");
+    };
+  }, [socket]);
+
+  // update socket messages function
   const updateSocketMessages = async (
     messages: [],
     currentUser: { phoneNumber: string; email: string }
@@ -151,7 +181,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           isSender: message.senderId === currentUser?.phoneNumber,
           message: message.message,
           _id: message._id,
-          createdAt: message.timestamp,
+          createdAt: message.createdAt,
           type: "text",
           file: message?.file,
         };
@@ -159,11 +189,29 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
+  // mark message as read function
+  const markMessageAsRead = (roomId: string) => {
+    socket.current.emit("markMessageAsRead", {
+      roomId: roomId,
+    });
+  };
+
+  // leave room handler function
+  const leaveRoom = (currentUserId: string) => {
+    socket.current.emit("leaveRoom", {
+      currentUserId,
+    });
+  };
+
   const value = {
     messages: socketMessages,
     joinRoom,
     sendMessage,
     updateSocketMessages,
+    markMessageAsRead,
+    trigerRoomRefetch,
+    leaveRoom,
+    triggerCount,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

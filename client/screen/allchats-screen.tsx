@@ -3,11 +3,11 @@ import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
-// import { createChatTable, getLastChatByRoomId } from "@/helpers/database/chats";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetExisitngRoomsMutation } from "@/lib/apis/chat-apis";
 import { AuthContext } from "@/lib/context/auth-context";
+import { ChatContext } from "@/lib/context/chat-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
@@ -29,12 +29,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       roomName: string;
       roomImage: string;
       members: { name: string; profileImage?: string; phoneNumber: string }[];
-      lastMessage?: {
+      lastMessage: {
         isSender: boolean;
         message: string;
         timestamp: string;
-        isRead?: boolean;
+        isRead: boolean;
         containsFile?: boolean;
+        senderId: string;
       };
     }[]
   >([]);
@@ -61,74 +62,76 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   const { toggleDropdown } = useContext(DropdownContext);
   const authCtx = useContext(AuthContext);
+  const chatCtx = useContext(ChatContext);
 
   /**
    * useFocusEffect hook to perform actions when the screen is focused
    * This is used to fetch existing chat rooms when the screen is focused
    */
-  useFocusEffect(
-    useCallback(() => {
-      const onLoadChatInfo = async () => {
-        getExisitngRooms(null);
-      };
 
-      onLoadChatInfo();
+  useEffect(() => {
+    const onLoadChatInfo = async () => {
+      getExisitngRooms(null);
+    };
 
-      // Optional cleanup
-      return () => {
-        console.log("Screen is unfocused");
-      };
-    }, [])
-  );
+    onLoadChatInfo();
+  }, [chatCtx.triggerCount]);
 
   /**
    * useEffect hook to fetch contacts and update the chat rooms
    * This is used to get the contact names and images for each chat room
    */
-  useEffect(() => {
-    const onLoadContacts = async () => {
-      const contacts = await getContacts();
+  useFocusEffect(
+    useCallback(() => {
+      const onLoadContacts = async () => {
+        const contacts = await getContacts();
 
-      // await createChatTable();
+        // await createChatTable();
 
-      if (data?.data && contacts && contacts.length > 0) {
-        data.data.map(async (room: any) => {
-          setRooms([
-            {
-              roomId: room.roomId,
-              roomName: room.roomName,
-              roomImage: room.roomImage,
-              members: room.members.map((member: any) => {
-                const contact = contacts.find(
-                  (contact: any) =>
-                    formatPhoneNumber(contact.phoneNumber) ===
-                    formatPhoneNumber(member.phoneNumber)
-                );
+        if (data?.data && contacts && contacts.length > 0) {
+          data.data.map(async (room: any) => {
+            setRooms([
+              {
+                roomId: room.roomId,
+                roomName: room.roomName,
+                roomImage: room.roomImage,
+                members: room.members.map((member: any) => {
+                  const contact = contacts.find(
+                    (contact: any) =>
+                      formatPhoneNumber(contact.phoneNumber) ===
+                      formatPhoneNumber(member.phoneNumber)
+                  );
 
-                return {
-                  // @ts-ignore
-                  name: contact && contact.name,
-                  profileImage: member.profileImage,
-                  phoneNumber: member.phoneNumber,
-                };
-              }),
+                  return {
+                    // @ts-ignore
+                    name: contact && contact.name,
+                    profileImage: member.profileImage,
+                    phoneNumber: member.phoneNumber,
+                  };
+                }),
 
-              lastMessage: {
-                isSender:
-                  room?.lastMessage?.senderId !== currentUser.phoneNumber,
-                message: room?.lastMessage?.content,
-                timestamp: room?.lastMessage?.timestamp,
-                isRead: room?.lastMessage?.isRead,
-                containsFile: room?.lastMessage?.containsFile,
+                lastMessage: {
+                  isSender:
+                    room?.lastMessage?.senderId === currentUser.phoneNumber,
+                  message: room?.lastMessage?.content,
+                  timestamp: room?.lastMessage?.timestamp,
+                  isRead: room?.lastMessage?.isRead,
+                  containsFile: room?.lastMessage?.containsFile,
+                  senderId: room?.lastMessage?.senderId,
+                },
               },
-            },
-          ]);
-        });
-      }
-    };
+            ]);
+          });
+        }
+      };
 
-    onLoadContacts();
-  }, [data, isSuccess]);
+      onLoadContacts();
+
+      return () => {
+        // console.log("clear effect");
+      };
+    }, [isSuccess, data, error])
+  );
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
@@ -157,8 +160,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     },
   ];
 
-  // console.log("Rooms: ", rooms[0]?.lastMessage);
-
   // Render the card
   // useCallback is used to prevent re-rendering of the card
   const RenderedCard = useCallback(
@@ -170,12 +171,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         roomName: string;
         roomImage: string;
         members: { name: string; profileImage?: string; phoneNumber: string }[];
-        lastMessage?: {
+        lastMessage: {
           isSender: boolean;
           message: string;
           timestamp: string;
           isRead: boolean;
           containsFile?: boolean;
+          senderId: string;
         };
       };
     }) => (
@@ -183,11 +185,12 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         members={item.members}
         message={item.lastMessage?.message}
         time={item.lastMessage?.timestamp}
-        // isSender={item.lastMessage?.isSender}
+        isSender={item.lastMessage?.isSender}
         image={require("../assets/images/avatar.png")}
         roomId={item.roomId}
         isRead={item.lastMessage?.isRead}
         containsFile={item.lastMessage?.containsFile}
+        senderId={item.lastMessage?.senderId}
       />
     ),
     []

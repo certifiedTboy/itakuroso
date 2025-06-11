@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/Colors";
+import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
@@ -11,6 +12,9 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
+import Icon from "../ui/Icon";
 import ImagePreviewModal from "./ImagePreviewModal";
 
 type Message = {
@@ -20,6 +24,13 @@ type Message = {
   createdAt: string;
   type: string;
   isSender: boolean;
+  setMessageToRespondTo: ({
+    message,
+    _id,
+  }: {
+    message: string;
+    _id: string;
+  }) => void;
   file?: string;
 };
 
@@ -35,6 +46,32 @@ const MessageBubble = ({ message }: { message: Message }) => {
     Linking.openURL(message.message);
   };
 
+  const renderRightActions = () => (
+    <View style={styles.rightAction}>
+      <Icon
+        name="return-up-back-outline"
+        size={25}
+        color="#fff"
+        onPress={() => console.log("Delete message")}
+      />
+    </View>
+  );
+
+  const renderLeftActions = () => (
+    <View style={styles.rightAction}>
+      <Icon
+        name="return-up-back-outline"
+        size={25}
+        color="#fff"
+        onPress={() => console.log("Delete message")}
+      />
+    </View>
+  );
+
+  const getMessageDetails = (_id: string, messageText: string) => {
+    return message.setMessageToRespondTo({ _id, message: messageText });
+  };
+
   return (
     <>
       <ImagePreviewModal
@@ -43,70 +80,171 @@ const MessageBubble = ({ message }: { message: Message }) => {
         onClose={() => setImagePreviewVisible(!imagePreviewVisible)}
       />
 
-      <View
-        style={[
-          {
-            flexDirection: "row",
-          },
-          message.isSender
-            ? { alignSelf: "flex-end" }
-            : { alignSelf: "flex-start" },
-        ]}
-      >
-        {!message.isSender && (
-          <Image
-            source={require("../../assets/images/avatar.png")}
-            style={styles.avatar}
-          />
-        )}
-
-        <View
-          style={[
-            styles.container,
-            message.isSender ? styles.sender : styles.receiver,
-
-            !message.isSender && {
-              backgroundColor: cardBg,
-            },
-          ]}
-        >
-          {message.type === "file" && (
-            <TouchableOpacity
-              style={styles.fileButton}
-              onPress={handleOpenFile}
-            >
-              <MaterialCommunityIcons name="file" size={30} color="#007AFF" />
-              <Text style={styles.fileName}>
-                {message.message || "Open File"}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          {message.type === "text" && (
-            <Text
+      <GestureHandlerRootView>
+        {message?.isSender ? (
+          <Swipeable
+            renderRightActions={renderRightActions}
+            onSwipeableOpen={() =>
+              getMessageDetails(message._id, message.message)
+            }
+          >
+            <View
               style={[
-                message.isSender ? styles.senderText : styles.receiverText,
-                message.file && { marginBottom: 5 },
+                {
+                  flexDirection: "row",
+                },
+                message.isSender
+                  ? { alignSelf: "flex-end" }
+                  : { alignSelf: "flex-start" },
               ]}
             >
-              {message.message}
-            </Text>
-          )}
+              {!message.isSender && (
+                <Image
+                  source={require("../../assets/images/avatar.png")}
+                  style={styles.avatar}
+                />
+              )}
 
-          {message.file && (
-            <Pressable onPress={() => setImagePreviewVisible(true)}>
-              <Image source={{ uri: message.file }} style={styles.image} />
-            </Pressable>
-          )}
+              <View
+                style={[
+                  styles.container,
+                  message.isSender ? styles.sender : styles.receiver,
 
-          {message.type === "audio" && (
-            <TouchableOpacity style={styles.audioButton}>
-              <Ionicons name="play-circle" size={30} color="#fff" />
-              <Text style={styles.audioText}>Play Audio</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
+                  !message.isSender && {
+                    backgroundColor: cardBg,
+                  },
+                ]}
+              >
+                {message.type === "file" && (
+                  <TouchableOpacity
+                    style={styles.fileButton}
+                    onPress={handleOpenFile}
+                  >
+                    <MaterialCommunityIcons
+                      name="file"
+                      size={30}
+                      color="#007AFF"
+                    />
+                    <Text style={styles.fileName}>
+                      {message.message || "Open File"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text
+                  style={[
+                    message.isSender ? styles.senderText : styles.receiverText,
+                    message.file && { marginBottom: 5 },
+                  ]}
+                >
+                  {message.message}
+                </Text>
+
+                {message.file && (
+                  <Pressable onPress={() => setImagePreviewVisible(true)}>
+                    <Image
+                      source={{ uri: message.file }}
+                      style={styles.image}
+                    />
+                  </Pressable>
+                )}
+
+                {message.type === "audio" && (
+                  <TouchableOpacity style={styles.audioButton}>
+                    <Ionicons name="play-circle" size={30} color="#fff" />
+                    <Text style={styles.audioText}>Play Audio</Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text style={styles.messageTime}>
+                  {formatDate(message.createdAt)}
+                </Text>
+              </View>
+            </View>
+          </Swipeable>
+        ) : (
+          <Swipeable
+            renderLeftActions={renderLeftActions}
+            onSwipeableOpen={() =>
+              getMessageDetails(message._id, message.message)
+            }
+          >
+            <View
+              style={[
+                {
+                  flexDirection: "row",
+                },
+                message.isSender
+                  ? { alignSelf: "flex-end" }
+                  : { alignSelf: "flex-start" },
+              ]}
+            >
+              {!message.isSender && (
+                <Image
+                  source={require("../../assets/images/avatar.png")}
+                  style={styles.avatar}
+                />
+              )}
+
+              <View
+                style={[
+                  styles.container,
+                  message.isSender ? styles.sender : styles.receiver,
+
+                  !message.isSender && {
+                    backgroundColor: cardBg,
+                  },
+                ]}
+              >
+                {message.type === "file" && (
+                  <TouchableOpacity
+                    style={styles.fileButton}
+                    onPress={handleOpenFile}
+                  >
+                    <MaterialCommunityIcons
+                      name="file"
+                      size={30}
+                      color="#007AFF"
+                    />
+                    <Text style={styles.fileName}>
+                      {message.message || "Open File"}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text
+                  style={[
+                    message.isSender ? styles.senderText : styles.receiverText,
+                    message.file && { marginBottom: 5 },
+                  ]}
+                >
+                  {message.message}
+                </Text>
+
+                {message.file && (
+                  <Pressable onPress={() => setImagePreviewVisible(true)}>
+                    <Image
+                      source={{ uri: message.file }}
+                      style={styles.image}
+                    />
+                  </Pressable>
+                )}
+
+                {message.type === "audio" && (
+                  <TouchableOpacity style={styles.audioButton}>
+                    <Ionicons name="play-circle" size={30} color="#fff" />
+                    <Text style={styles.audioText}>Play Audio</Text>
+                  </TouchableOpacity>
+                )}
+
+                <Text style={styles.messageTime}>
+                  {formatDate(message.createdAt)}
+                </Text>
+              </View>
+            </View>
+          </Swipeable>
+        )}
+      </GestureHandlerRootView>
     </>
   );
 };
@@ -143,13 +281,13 @@ const styles = StyleSheet.create({
   },
   senderText: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: 700,
     color: "#333",
   },
 
   receiverText: {
     fontSize: 14,
-    fontWeight: "400",
+    fontWeight: 700,
     color: Colors.light.btnBgc,
   },
   image: {
@@ -184,5 +322,18 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 15,
     marginRight: 6,
+  },
+
+  messageTime: {
+    fontSize: 10,
+    fontWeight: 500,
+    marginVertical: 2,
+    color: "#888888",
+  },
+
+  rightAction: {
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
   },
 });
