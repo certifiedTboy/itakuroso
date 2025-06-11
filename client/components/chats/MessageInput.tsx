@@ -6,6 +6,7 @@ import {
   Image,
   Pressable,
   StyleSheet,
+  Text,
   TextInput,
   TouchableOpacity,
   View,
@@ -32,9 +33,17 @@ import ImagePreviewModal from "./ImagePreviewModal";
 type ChatInputProps = {
   receiverId: string;
   roomId: string;
+  messageToRespondTo?: {
+    message: string;
+    _id: string;
+  } | null;
 };
 
-const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
+const MessageInput = ({
+  receiverId,
+  roomId,
+  messageToRespondTo,
+}: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -170,6 +179,7 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
   };
 
   // console.log(uploadedFile);
+  // console.log(messageToRespondTo);
 
   return (
     <>
@@ -214,6 +224,15 @@ const MessageInput = ({ receiverId, roomId }: ChatInputProps) => {
                 onPress={() => console.log("pressed")}
               />
             </View>
+          </View>
+        )}
+        {messageToRespondTo && messageToRespondTo.message && (
+          <View style={styles.responseTextContainer}>
+            <Text
+              style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
+            >
+              {messageToRespondTo.message}
+            </Text>
           </View>
         )}
         <View style={styles.row}>
@@ -326,6 +345,16 @@ const styles = StyleSheet.create({
     resizeMode: "contain",
     padding: 10,
     backgroundColor: "#7E7A7AFF",
+  },
+
+  responseTextContainer: {
+    // flex: 1,
+    flexDirection: "row",
+    justifyContent: "flex-start",
+    // alignItems: "flex-start",
+    paddingHorizontal: 10,
+    marginVertical: 10,
+    // marginBottom: 40,
   },
   recordingContainer: {
     flexDirection: "row",

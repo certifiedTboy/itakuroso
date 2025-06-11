@@ -12,6 +12,8 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 
+import { useFocusEffect } from "@react-navigation/native";
+
 import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 
 import { ThemedView } from "@/components/ThemedView";
@@ -26,6 +28,8 @@ type ChatScreenProps = {
       contactName: string;
       phoneNumber: string;
       roomId: string;
+      senderId: string;
+      isRead: boolean;
     };
   };
 };
@@ -33,6 +37,11 @@ type ChatScreenProps = {
 const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  const [messageToRespondTo, setMessageToRespondTo] = useState<{
+    message: string;
+    _id: string;
+  } | null>(null);
 
   const [getChatsByRoomId, { data, error, isSuccess }] =
     useGetChatsByRoomIdMutation();
@@ -61,6 +70,22 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
     }
   }, [route.params]);
 
+  useFocusEffect(
+    useCallback(() => {
+      if (
+        route.params?.senderId !== currentUser?.phoneNumber &&
+        !route.params?.isRead
+      ) {
+        chatCtx.markMessageAsRead(roomId);
+      }
+
+      return () => {
+        chatCtx.leaveRoom({ phoneNumber: currentUser?.phoneNumber });
+        // console.log("Screen is unfocused");
+      };
+    }, [])
+  );
+
   useEffect(() => {
     const onGetExistingMessages = async () => {
       await chatCtx.updateSocketMessages(data?.data, currentUser);
@@ -70,13 +95,6 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
       onGetExistingMessages();
     }
   }, [isSuccess]);
-
-  useEffect(() => {
-    // if (chatCtx.messages.length > 0) {
-    //@ts-ignore
-    flatListRef.current?.scrollToEnd({ animated: true });
-    // }
-  }, [chatCtx.messages]);
 
   /**
    * this was implemented to help the positioning of the chat input
@@ -133,17 +151,32 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
         type: "text";
         isSender: boolean;
         file?: string;
+        setMessageToRespondTo: ({
+          message,
+          _id,
+        }: {
+          message: string;
+          _id: string;
+        }) => void;
       };
     }) => (
       <MessageBubble
         message={{
           ...item,
           isSender: item.senderId === currentUser?.phoneNumber,
+          setMessageToRespondTo: setMessageToRespondTo,
         }}
       />
     ),
     []
   );
+
+  useEffect(() => {
+    // if (chatCtx.messages.length > 0) {
+    //@ts-ignore
+    flatListRef.current?.scrollToEnd({ animated: true });
+    // }
+  }, [chatCtx.messages]);
 
   return (
     <ThemedView
@@ -166,7 +199,11 @@ const ChatScreen = ({ route, navigation }: ChatScreenProps) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <MessageInput receiverId={phoneNumber} roomId={roomId} />
+        <MessageInput
+          receiverId={phoneNumber}
+          roomId={roomId}
+          messageToRespondTo={messageToRespondTo}
+        />
       </KeyboardAvoidingView>
     </ThemedView>
   );

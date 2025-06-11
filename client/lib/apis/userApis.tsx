@@ -70,27 +70,31 @@ export const userApis = createApi({
           dispatch(setCurrentUser({ currentUser: data.data }));
         } catch (error: unknown) {
           if (error.error.data.message === "jwt expired") {
-            console.log("Token expired");
-            //  dispatch(userApis.endpoints.getNewToken.initiate({}))
+            dispatch(userApis.endpoints.getNewToken.initiate({}));
           }
         }
       },
     }),
 
     getNewToken: builder.mutation({
-      query: (payload) => ({
+      query: () => ({
         url: `/auth/new-token`,
         method: "GET",
-        body: payload,
       }),
 
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
         try {
           const { data } = await queryFulfilled;
 
-          // dispatch(setCurrentUser({ currentUser: data.data }));
+          if (data) {
+            const { authToken, user } = data.data;
+
+            await AsyncStorage.setItem("authToken", authToken);
+
+            dispatch(setCurrentUser({ currentUser: user }));
+          }
         } catch (error) {
-          // console.log(error);
+          console.log(error);
         }
       },
     }),

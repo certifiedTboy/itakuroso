@@ -16,6 +16,8 @@ type ChatCardProps = {
   isRead?: boolean;
   containsFile?: boolean;
   roomId: string;
+  isSender?: boolean;
+  senderId: string;
   onNavigate?: () => void;
 };
 
@@ -28,6 +30,8 @@ const ChatCard = ({
   isRead,
   containsFile,
   onNavigate,
+  isSender,
+  senderId,
 }: ChatCardProps) => {
   const navigation = useNavigation();
 
@@ -57,6 +61,8 @@ const ChatCard = ({
             (member: any) => member.phoneNumber !== currentUser?.phoneNumber
           )?.phoneNumber,
           roomId,
+          senderId,
+          isRead,
         });
       }}
       style={({ pressed }) => [
@@ -78,7 +84,7 @@ const ChatCard = ({
               )?.phoneNumber}
           </ThemedText>
           <View style={styles.messageRow}>
-            <Icon name="checkmark-done-outline" size={14} color="#969494FF" />
+            {/* <Icon name="checkmark-done-outline" size={14} color="#969494FF" /> */}
             <Text
               numberOfLines={1}
               ellipsizeMode="tail"
@@ -110,7 +116,7 @@ const ChatCard = ({
               />
             </View>
           )}
-          {!isRead && (
+          {!isRead && isSender && (
             <View style={styles.counter}>
               <ThemedText style={styles.counterText}></ThemedText>
             </View>
