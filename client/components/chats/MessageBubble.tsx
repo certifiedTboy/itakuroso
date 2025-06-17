@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { memo, useRef, useState } from "react";
 import {
   Image,
   Linking,
@@ -13,6 +13,7 @@ import {
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import Icon from "../ui/Icon";
 import ImagePreviewModal from "./ImagePreviewModal";
@@ -32,14 +33,21 @@ type Message = {
     _id: string;
   }) => void;
   file?: string;
+  replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
 };
 
 const MessageBubble = ({ message }: { message: Message }) => {
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const swipeableRef = useRef(null);
 
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
+  );
+
+  const actionIconColor = useThemeColor(
+    { light: "#333", dark: "#fff" },
+    "text"
   );
 
   const handleOpenFile = () => {
@@ -48,23 +56,13 @@ const MessageBubble = ({ message }: { message: Message }) => {
 
   const renderRightActions = () => (
     <View style={styles.rightAction}>
-      <Icon
-        name="return-up-back-outline"
-        size={25}
-        color="#fff"
-        onPress={() => console.log("Delete message")}
-      />
+      <Icon name="return-up-back-outline" size={25} color={actionIconColor} />
     </View>
   );
 
   const renderLeftActions = () => (
     <View style={styles.rightAction}>
-      <Icon
-        name="return-up-back-outline"
-        size={25}
-        color="#fff"
-        onPress={() => console.log("Delete message")}
-      />
+      <Icon name="return-up-back-outline" size={25} color={actionIconColor} />
     </View>
   );
 
@@ -84,9 +82,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
         {message?.isSender ? (
           <Swipeable
             renderRightActions={renderRightActions}
-            onSwipeableOpen={() =>
-              getMessageDetails(message._id, message.message)
-            }
+            ref={swipeableRef}
+            onSwipeableOpen={() => {
+              getMessageDetails(message._id, message.message);
+              // @ts-ignore
+              swipeableRef.current?.close();
+            }}
           >
             <View
               style={[
@@ -131,14 +132,24 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   </TouchableOpacity>
                 )}
 
-                <Text
-                  style={[
-                    message.isSender ? styles.senderText : styles.receiverText,
-                    message.file && { marginBottom: 5 },
-                  ]}
-                >
-                  {message.message}
-                </Text>
+                <View>
+                  {message?.replyTo && message?.replyTo?.replyToMessage && (
+                    <Text style={{ color: "#888888" }}>
+                      {message?.replyTo?.replyToMessage}
+                    </Text>
+                  )}
+
+                  <Text
+                    style={[
+                      message.isSender
+                        ? styles.senderText
+                        : styles.receiverText,
+                      message.file && { marginBottom: 5 },
+                    ]}
+                  >
+                    {message.message}
+                  </Text>
+                </View>
 
                 {message.file && (
                   <Pressable onPress={() => setImagePreviewVisible(true)}>
@@ -165,9 +176,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
         ) : (
           <Swipeable
             renderLeftActions={renderLeftActions}
-            onSwipeableOpen={() =>
-              getMessageDetails(message._id, message.message)
-            }
+            onSwipeableOpen={() => {
+              getMessageDetails(message._id, message.message);
+              // @ts-ignore
+              swipeableRef.current?.close();
+            }}
+            ref={swipeableRef}
           >
             <View
               style={[
@@ -210,6 +224,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
                       {message.message || "Open File"}
                     </Text>
                   </TouchableOpacity>
+                )}
+
+                {message?.replyTo && message?.replyTo?.replyToMessage && (
+                  <Text style={{ color: "#888" }}>
+                    {message?.replyTo?.replyToMessage}
+                  </Text>
                 )}
 
                 <Text
@@ -249,7 +269,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
   );
 };
 
-export default MessageBubble;
+export default memo(MessageBubble);
 
 const styles = StyleSheet.create({
   container: {

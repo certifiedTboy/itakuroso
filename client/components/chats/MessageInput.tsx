@@ -37,12 +37,20 @@ type ChatInputProps = {
     message: string;
     _id: string;
   } | null;
+  setMessageToRespondTo?: ({
+    message,
+    _id,
+  }: {
+    message: string;
+    _id: string;
+  }) => void;
 };
 
 const MessageInput = ({
   receiverId,
   roomId,
   messageToRespondTo,
+  setMessageToRespondTo,
 }: ChatInputProps) => {
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
@@ -163,17 +171,15 @@ const MessageInput = ({
 
   const handleSend = async () => {
     if (message.trim().length > 0 || uploadedFile?.uri) {
-      await chatCtx.sendMessage(
-        message,
-        receiverId,
-        {
-          phoneNumber: currentUser?.phoneNumber,
-          email: currentUser?.email,
-        },
+      await chatCtx.sendMessage({
+        content: message,
+        senderId: currentUser?.phoneNumber,
         roomId,
-        uploadedFile?.uri
-      );
+        file: uploadedFile?.uri,
+        messageToReplyId: messageToRespondTo?._id,
+      });
       setMessage("");
+      setMessageToRespondTo && setMessageToRespondTo(null);
       clearUploadedFile();
     }
   };

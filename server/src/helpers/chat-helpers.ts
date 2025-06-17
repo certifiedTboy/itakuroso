@@ -8,6 +8,10 @@ export class ChatHelpers {
     senderId: string,
     _id?: string,
     file?: string,
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+    },
   ): any {
     return {
       message,
@@ -15,6 +19,7 @@ export class ChatHelpers {
       _id,
       file: file || null,
       createdAt: new Date(),
+      replyTo: replyTo,
     };
   }
 

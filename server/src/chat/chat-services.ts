@@ -179,8 +179,18 @@ export class ChatService {
     return this.chatModel
       .find({ chatRoomId })
       .populate('senderId')
+      .populate('replyTo')
       .sort({ createdAt: -1 })
       .exec();
+  }
+
+  /**
+   * @method findChatById
+   * @description Finds a chat message by its ID.
+   * @param {string} chatId - The ID of the chat message to find.
+   */
+  async findChatById(chatId: string) {
+    return this.chatModel.findById(chatId).populate('senderId').exec();
   }
 
   /**

@@ -11,6 +11,7 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
 import { ChatHelpers } from '../helpers/chat-helpers';
+import { ChatDocument } from './schemas/chat-schema';
 
 @WebSocketGateway({
   cors: {
@@ -139,10 +140,18 @@ export class ChatGateway
   @SubscribeMessage('message')
   async handleMessage(
     @MessageBody()
-    data: { roomId: string; senderId: string; content: string; file?: string },
+    data: {
+      roomId: string;
+      senderId: string;
+      content: string;
+      file?: string;
+      messageToReplyId?: string;
+    },
     @ConnectedSocket() client: Socket,
   ) {
     const { roomId } = data;
+
+    let replyToMessage: ChatDocument | null = null;
 
     const user = this.chatService.getCurrentActiveRoom(roomId);
 
@@ -161,6 +170,7 @@ export class ChatGateway
           chatRoomId: roomExist.roomId,
           message: data.content,
           file: data?.file,
+          replyTo: data?.messageToReplyId,
         });
 
         roomExist.lastMessage = {
@@ -171,20 +181,27 @@ export class ChatGateway
           containsFile: !!data.file,
         };
 
+        if (data.messageToReplyId) {
+          replyToMessage = await this.chatService.findChatById(
+            data.messageToReplyId,
+          );
+        }
         await roomExist.save();
       }
 
-      return this.server
-        .to(user?.roomId)
-        .emit(
-          'message',
-          ChatHelpers.messageResponse(
-            data.content,
-            data.senderId,
-            ChatHelpers.generateChatId(),
-            data.file,
-          ),
-        );
+      return this.server.to(user?.roomId).emit(
+        'message',
+        ChatHelpers.messageResponse(
+          data.content,
+          data.senderId,
+          ChatHelpers.generateChatId(),
+          data.file,
+          {
+            replyToId: replyToMessage?._id.toString() || '',
+            replyToMessage: replyToMessage?.message || '',
+          },
+        ),
+      );
     }
   }
 
