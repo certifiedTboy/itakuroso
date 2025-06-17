@@ -11,6 +11,7 @@ type ChatContextType = {
     createdAt: string;
     type: string;
     file?: string;
+    replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
   }[];
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
@@ -36,7 +37,17 @@ type ChatContextType = {
 };
 
 export const ChatContext = createContext<ChatContextType>({
-  messages: [],
+  messages: [
+    {
+      senderId: "",
+      message: "",
+      _id: "",
+      createdAt: "",
+      type: "",
+      file: "",
+      replyTo: { replyToId: "", replyToMessage: "", senderId: "" },
+    },
+  ],
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
@@ -93,19 +104,14 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // send message function
-  const sendMessage = async (
-    message: string,
-    otherUserId: string,
-    currentUser: { phoneNumber: string; email: string },
-    roomId?: string,
-    file?: string
-  ) => {
-    socket.current.emit("message", {
-      roomId: roomId,
-      content: message,
-      senderId: currentUser?.phoneNumber,
-      file,
-    });
+  const sendMessage = async (messageData: {
+    content: string;
+    senderId: string;
+    roomId?: string;
+    file?: string;
+    messageToReplyId?: string;
+  }) => {
+    socket.current.emit("message", messageData);
   };
 
   useEffect(() => {
@@ -113,7 +119,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
 
     currentSocket.on("message", (message: any) => {
       setTriggerCount((prevCount) => prevCount + 1);
-
       setSocketMessages((prevMessages) => [
         ...prevMessages,
         {
@@ -123,6 +128,11 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           createdAt: message.createdAt,
           file: message?.file,
           type: "text",
+          replyTo: {
+            replyToId: message?.replyTo?.replyToId,
+            replyToMessage: message?.replyTo?.replyToMessage,
+            senderId: message?.replyTo?.senderId,
+          },
         },
       ]);
     });
@@ -162,6 +172,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       roomId: string;
       senderId: string;
       updatedAt: string;
+      replyTo?: string;
     }
 
     if (!messages || messages.length === 0) {
@@ -184,6 +195,11 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           createdAt: message.createdAt,
           type: "text",
           file: message?.file,
+          replyTo: {
+            replyToId: message?.replyTo?._id,
+            replyToMessage: message?.replyTo?.message,
+            senderId: message?.replyTo?.senderId,
+          },
         };
       })
     );

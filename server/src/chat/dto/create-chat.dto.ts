@@ -20,4 +20,8 @@ export class CreateChatDto {
   @IsString()
   @IsNotEmpty()
   readonly senderId: string;
+
+  @IsString()
+  @IsOptional()
+  readonly replyTo?: string;
 }

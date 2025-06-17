@@ -20,6 +20,9 @@ export class Chat {
 
   @Prop()
   file: string;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' })
+  replyTo?: ChatDocument;
 }
 
 export const ChatSchema = SchemaFactory.createForClass(Chat);
