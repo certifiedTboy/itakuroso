@@ -32,4 +32,12 @@ export class ChatHelpers {
     const randomId = Math.random().toString(36).substring(2, 15);
     return `room_${randomId}`;
   }
+
+  static getPaginationParams(page: string) {
+    const pageNumber = parseInt(page);
+
+    const skip = (pageNumber - 1) * 10;
+
+    return { limit: 20, skip };
+  }
 }

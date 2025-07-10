@@ -175,13 +175,60 @@ export class ChatService {
    * @param {string} chatRoomId - The ID of the room to find chat messages in.
    * @returns {Promise<ChatDocument[]>} - A promise that resolves to an array of chat messages.
    */
-  async findChatByRoomId(chatRoomId: string): Promise<ChatDocument[]> {
-    return this.chatModel
-      .find({ chatRoomId })
-      .populate('senderId')
-      .populate('replyTo')
-      .sort({ createdAt: -1 })
-      .exec();
+  async findChatByRoomId(
+    chatRoomId: string,
+    limit: number,
+    skip: number,
+  ): Promise<ChatDocument[]> {
+    // const data = await this.chatModel
+    //   .find({ chatRoomId })
+    //   .skip(skip)
+    //   .limit(limit)
+    //   .populate('senderId')
+    //   .populate('replyTo')
+    //   .sort({ createdAt: -1 })
+    //   .exec();
+
+    // console.log(data);
+    const result = await this.chatModel.aggregate([
+      {
+        $match: {
+          chatRoomId,
+        },
+      },
+
+      {
+        $lookup: {
+          from: 'chats',
+          localField: 'replyTo',
+          foreignField: '_id',
+          as: 'replyTo',
+        },
+      },
+
+      {
+        $unwind: {
+          path: '$replyTo',
+          preserveNullAndEmptyArrays: true,
+        },
+      },
+      {
+        $sort: {
+          createdAt: -1,
+        },
+      },
+      {
+        $facet: {
+          data: [{ $skip: skip }, { $limit: limit }],
+        },
+      },
+    ]);
+
+    if (result && result.length > 0) {
+      return result[0]?.data;
+    } else {
+      return [];
+    }
   }
 
   /**

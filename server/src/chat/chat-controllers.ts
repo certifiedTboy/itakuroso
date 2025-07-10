@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { ChatService } from './chat-services';
+import { ChatHelpers } from 'src/helpers/chat-helpers';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 import { AuthService } from 'src/auth/auth-services';
@@ -79,13 +80,25 @@ export class ChatControllers {
   @Get(':chatRoomId')
   async getRoomChats(@Req() req: Request) {
     const { chatRoomId } = req.params;
+    const { page } = req.query;
 
     if (!chatRoomId) {
       throw new BadRequestException('Room ID is required');
     }
 
+    if (!page || typeof page !== 'string') {
+      throw new BadRequestException(
+        'Page query parameter is required and must be a string',
+      );
+    }
+
     try {
-      const chats = await this.chatService.findChatByRoomId(chatRoomId);
+      const { limit, skip } = ChatHelpers.getPaginationParams(page);
+      const chats = await this.chatService.findChatByRoomId(
+        chatRoomId,
+        limit,
+        skip,
+      );
 
       return ResponseHandler.ok(200, 'Chats retrieved successfully', chats);
     } catch (error: unknown) {
