@@ -120,7 +120,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     currentSocket.on("message", (message: any) => {
       setTriggerCount((prevCount) => prevCount + 1);
       setSocketMessages((prevMessages) => [
-        ...prevMessages,
         {
           senderId: message.senderId,
           message: message.message,
@@ -134,6 +133,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
             senderId: message?.replyTo?.senderId,
           },
         },
+        ...prevMessages,
       ]);
     });
 
@@ -163,45 +163,30 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     messages: [],
     currentUser: { phoneNumber: string; email: string }
   ) => {
-    interface ChatMessage {
-      __v: number;
-      _id: string;
-      chatRoomId: string;
-      createdAt: string; // ISO date string
-      message: string;
-      roomId: string;
-      senderId: string;
-      updatedAt: string;
-      replyTo?: string;
-    }
-
     if (!messages || messages.length === 0) {
       return setSocketMessages([]);
     }
-
-    const sortedMessages = [...messages].sort(
-      (a: ChatMessage, b: ChatMessage) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-    );
-
     return setSocketMessages(
       // @ts-ignore
-      sortedMessages?.map((message: any) => {
-        return {
-          senderId: message.senderId,
-          isSender: message.senderId === currentUser?.phoneNumber,
-          message: message.message,
-          _id: message._id,
-          createdAt: message.createdAt,
-          type: "text",
-          file: message?.file,
-          replyTo: {
-            replyToId: message?.replyTo?._id,
-            replyToMessage: message?.replyTo?.message,
-            senderId: message?.replyTo?.senderId,
-          },
-        };
-      })
+      (prevMessges) => [
+        ...prevMessges,
+        ...messages?.map((message: any) => {
+          return {
+            senderId: message.senderId,
+            isSender: message.senderId === currentUser?.phoneNumber,
+            message: message.message,
+            _id: message._id,
+            createdAt: message.createdAt,
+            type: "text",
+            file: message?.file,
+            replyTo: {
+              replyToId: message?.replyTo?._id,
+              replyToMessage: message?.replyTo?.message,
+              senderId: message?.replyTo?.senderId,
+            },
+          };
+        }),
+      ]
     );
   };
 

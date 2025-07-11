@@ -38,6 +38,6 @@ export class ChatHelpers {
 
     const skip = (pageNumber - 1) * 10;
 
-    return { limit: 20, skip };
+    return { limit: 15, skip };
   }
 }
