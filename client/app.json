@@ -17,7 +17,14 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "pan"
+      "softwareKeyboardLayoutMode": "pan",
+      "permissions": [
+        "android.permission.READ_CONTACTS",
+        "android.permission.WRITE_CONTACTS",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.certifiedtboy.client"
     },
     "web": {
       "bundler": "metro",
@@ -47,26 +54,32 @@
           "microphonePermission": "Allow $(Itakuroso) to access your microphone."
         }
       ],
-
       [
         "expo-sqlite",
         {
           "enableFTS": true,
           "useSQLCipher": true,
           "android": {
-           
             "enableFTS": false,
             "useSQLCipher": false
           },
           "ios": {
-           
-            "customBuildFlags": ["-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"]
+            "customBuildFlags": [
+              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
+            ]
           }
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "e82dac55-9c6d-4ebc-ab81-61ebfec28d2e"
+      }
+    },
+    "owner": "certifiedtboy"
   }
 }

@@ -24,6 +24,13 @@ async function bootstrap() {
     type: VersioningType.URI,
   });
 
+  // Enable CORS for React Native app
+  app.enableCors({
+    origin: true,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    allowedHeaders: 'Content-Type, Accept',
+  });
+
   const configService: ConfigService = app.get(ConfigService);
   const port = configService.get<string>('PORT');
 

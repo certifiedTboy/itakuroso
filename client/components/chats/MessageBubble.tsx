@@ -134,7 +134,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
 
                 <View>
                   {message?.replyTo && message?.replyTo?.replyToMessage && (
-                    <Text style={{ color: "#888888" }}>
+                    <Text
+                      style={{ color: "#888888" }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      textBreakStrategy="balanced"
+                    >
                       {message?.replyTo?.replyToMessage}
                     </Text>
                   )}
@@ -227,7 +232,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
                 )}
 
                 {message?.replyTo && message?.replyTo?.replyToMessage && (
-                  <Text style={{ color: "#888" }}>
+                  <Text
+                    style={{ color: "#888" }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                    textBreakStrategy="balanced"
+                  >
                     {message?.replyTo?.replyToMessage}
                   </Text>
                 )}
