@@ -1,9 +1,10 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Alert,
   Image,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -12,23 +13,36 @@ import {
   View,
 } from "react-native";
 
+import LoaderSpinner from "../spinner/LoaderSpinner";
+
 import Icon from "../ui/Icon";
 
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
-import useFileUpload from "@/hooks/useFileUpload";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ChatContext } from "@/lib/context/chat-context";
+
+import ImagePreviewModal from "./ImagePreviewModal";
+
+import {
+  Waveform,
+  type IWaveformRef,
+} from "@simform_solutions/react-native-audio-waveform";
 import {
   AudioModule,
   RecordingPresets,
   useAudioPlayer,
   useAudioRecorder,
 } from "expo-audio";
+
 import * as ImagePicker from "expo-image-picker";
 import EmojiModal from "react-native-emoji-modal";
+
+import {
+  useDeleteFileMutation,
+  useUploadFileMutation,
+} from "@/lib/apis/chat-apis";
 import { useSelector } from "react-redux";
-import ImagePreviewModal from "./ImagePreviewModal";
 
 type ChatInputProps = {
   receiverId: string;
@@ -57,12 +71,17 @@ const MessageInput = ({
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
   const [imagePreviewIsVisible, setImagePreviewIsVisible] = useState(false);
-  // const ref = useRef<IWaveformRef>(null);
+  const [imageUri, setImageUri] = useState<string>("");
+  const [publicId, setPublicId] = useState<string>("");
+  const [inputHeight, setInputHeight] = useState(40);
+  const ref = useRef<IWaveformRef>(null);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
-  const { uploadFile, uploadedFile, isUploading, clearUploadedFile } =
-    useFileUpload();
+  const [uploadFile, { data, isLoading, isSuccess }] = useUploadFileMutation();
+
+  const [deleteFile, { isSuccess: fileDeletedSuccess }] =
+    useDeleteFileMutation();
 
   /**
    * chatContext
@@ -136,6 +155,18 @@ const MessageInput = ({
     })();
   }, []);
 
+  useEffect(() => {
+    if (isSuccess && data?.data?.secureUrl) {
+      setImageUri(data?.data?.secureUrl);
+      setPublicId(data?.data?.publicId);
+    }
+
+    if (fileDeletedSuccess) {
+      setImageUri("");
+      setPublicId("");
+    }
+  }, [isSuccess, fileDeletedSuccess]);
+
   /**
    * handleImagePick is used to pick an image from the device's library.
    * It uses the `expo-image-picker` library to handle image picking.
@@ -155,44 +186,58 @@ const MessageInput = ({
    * It uses the `expo-document-picker` library to handle file picking.
    */
   const handleFilePick = async () => {
-    const result = await DocumentPicker.getDocumentAsync({});
+    const result = await DocumentPicker.getDocumentAsync({
+      type: "*/*",
+      copyToCacheDirectory: true,
+    });
 
-    if (result && result?.assets && typeof uploadFile === "function") {
-      await uploadFile(result?.assets[0]?.uri);
+    if (
+      !result.canceled &&
+      result.assets?.length &&
+      typeof uploadFile === "function"
+    ) {
+      const asset = result.assets[0];
+
+      const formData = new FormData();
+      formData.append("file", {
+        uri:
+          Platform.OS === "android"
+            ? asset.uri
+            : asset.uri.replace("file://", ""),
+        name: asset.name,
+        type: asset.mimeType || "application/octet-stream",
+      } as any);
+
+      await uploadFile(formData);
     }
   };
-
-  // console.log("file upload error: ", fileUploadError);
-  // console.log("uploaded file:", uploadedFile);
 
   const handleShowEmoji = () => {
     return setShowEmoji(!showEmoji);
   };
 
   const handleSend = async () => {
-    if (message.trim().length > 0 || uploadedFile?.uri) {
-      await chatCtx.sendMessage({
+    if (message.trim().length > 0 || data?.data?.secureUrl) {
+      chatCtx.sendMessage({
         content: message,
         senderId: currentUser?.phoneNumber,
         roomId,
-        file: uploadedFile?.uri,
+        file: data?.data?.secureUrl,
         messageToReplyId: messageToRespondTo?._id,
       });
       setMessage("");
+      setImageUri("");
+      setInputHeight(40);
       setMessageToRespondTo && setMessageToRespondTo(null);
-      clearUploadedFile();
     }
   };
-
-  // console.log(uploadedFile);
-  // console.log(messageToRespondTo);
 
   return (
     <>
       <ImagePreviewModal
         isVisible={imagePreviewIsVisible}
         onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
-        imageUrl={uploadedFile.uri}
+        imageUrl={data?.data?.secureUrl}
       />
       <View style={styles.container}>
         {showEmoji && (
@@ -210,50 +255,69 @@ const MessageInput = ({
           </View>
         )}
 
-        {uploadedFile && uploadedFile.uri && (
+        {messageToRespondTo && messageToRespondTo.message && (
+          <View style={styles.responseTextContainer}>
+            <Text
+              numberOfLines={1}
+              ellipsizeMode="tail"
+              textBreakStrategy="balanced"
+              style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
+            >
+              {messageToRespondTo.message}
+            </Text>
+
+            <View style={styles.iconContainer}>
+              <Icon
+                name="close-circle-outline"
+                size={25}
+                color={placeholderTextColor}
+                onPress={() =>
+                  setMessageToRespondTo && setMessageToRespondTo(null)
+                }
+              />
+            </View>
+          </View>
+        )}
+
+        {imageUri && (
           <View style={styles.previewImageContainer}>
             <Pressable
               onPress={() => setImagePreviewIsVisible(true)}
               style={styles.imagePressable}
             >
-              <Image
-                style={styles.previewImage}
-                source={{ uri: uploadedFile?.uri }}
-              />
+              <Image style={styles.previewImage} source={{ uri: imageUri }} />
             </Pressable>
 
             <View style={styles.iconContainer}>
               <Icon
                 name="close-circle-outline"
                 size={25}
-                color="#fff"
-                onPress={() => console.log("pressed")}
+                color={placeholderTextColor}
+                onPress={() => deleteFile(publicId.split("/").pop())}
               />
             </View>
           </View>
         )}
-        {messageToRespondTo && messageToRespondTo.message && (
-          <View style={styles.responseTextContainer}>
-            <Text
-              style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
-            >
-              {messageToRespondTo.message}
-            </Text>
+
+        {isLoading && (
+          <View style={styles.loaderContainer}>
+            <LoaderSpinner />
           </View>
         )}
+
         <View style={styles.row}>
-          {/* {audioUri && (
-          <Waveform
-            mode="static"
-            ref={ref}
-            path={audioUri}
-            candleSpace={2}
-            candleWidth={4}
-            scrubColor="white"
-            onPlayerStateChange={(playerState) => console.log(playerState)}
-            onPanStateChange={(isMoving) => console.log(isMoving)}
-          />
-        )} */}
+          {audioUri && (
+            <Waveform
+              mode="static"
+              ref={ref}
+              path={audioUri}
+              candleSpace={2}
+              candleWidth={4}
+              scrubColor="white"
+              onPlayerStateChange={(playerState) => console.log(playerState)}
+              onPanStateChange={(isMoving) => console.log(isMoving)}
+            />
+          )}
 
           <TextInput
             placeholderTextColor={placeholderTextColor}
@@ -262,6 +326,7 @@ const MessageInput = ({
               {
                 backgroundColor: textInputBackgroundColor,
                 color: textInputColor,
+                height: inputHeight,
               },
             ]}
             placeholder="Type a message"
@@ -270,6 +335,10 @@ const MessageInput = ({
             onFocus={() => setShowEmoji(false)}
             editable={!isRecording}
             selectTextOnFocus={!isRecording}
+            multiline
+            onContentSizeChange={(event) =>
+              setInputHeight(event.nativeEvent.contentSize.height)
+            }
           />
 
           {!isRecording && (
@@ -292,7 +361,7 @@ const MessageInput = ({
             </View>
           )}
           <View style={{ marginLeft: 5 }}>
-            {message || uploadedFile.uri.trim().length > 0 ? (
+            {message || data?.data?.secureUrl.trim().length > 0 ? (
               <TouchableOpacity onPress={async () => await handleSend()}>
                 <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
               </TouchableOpacity>
@@ -339,6 +408,13 @@ const styles = StyleSheet.create({
     marginVertical: 23,
   },
 
+  loaderContainer: {
+    flex: 1,
+    flexDirection: "row",
+    paddingHorizontal: 10,
+    marginVertical: 23,
+  },
+
   iconContainer: {
     height: 40,
 
@@ -356,8 +432,9 @@ const styles = StyleSheet.create({
   responseTextContainer: {
     // flex: 1,
     flexDirection: "row",
-    justifyContent: "flex-start",
+    justifyContent: "space-between",
     // alignItems: "flex-start",
+    alignItems: "center",
     paddingHorizontal: 10,
     marginVertical: 10,
     // marginBottom: 40,
@@ -376,6 +453,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#ccc",
     marginHorizontal: 8,
-    height: 40,
+    textAlignVertical: "top",
   },
 });

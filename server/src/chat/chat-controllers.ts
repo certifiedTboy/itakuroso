@@ -1,9 +1,20 @@
-import { Controller, Post, Body, UseGuards, Req, Get } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Req,
+  Get,
+  Delete,
+} from '@nestjs/common';
 import { Request } from 'express';
 import {
   BadRequestException,
   InternalServerErrorException,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ChatService } from './chat-services';
 import { ChatHelpers } from 'src/helpers/chat-helpers';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -101,6 +112,53 @@ export class ChatControllers {
       );
 
       return ResponseHandler.ok(200, 'Chats retrieved successfully', chats);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
+
+  @Post('file/upload')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+    try {
+      const result = await this.chatService.uploadFileOnCloud(file);
+
+      return ResponseHandler.ok(200, 'File uploaded successfully', result);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
+
+  @Delete('file/delete/:publicId')
+  async deleteFile(@Req() req: Request) {
+    const { publicId } = req.params;
+
+    if (!publicId) {
+      throw new BadRequestException('Public ID is required');
+    }
+
+    try {
+      const result = await this.chatService.deleteUploadedFile(publicId);
+
+      if (result?.result !== 'ok') {
+        throw new InternalServerErrorException('Failed to delete file');
+      }
+
+      return ResponseHandler.ok(200, 'File deleted successfully', {
+        deleted: true,
+      });
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new BadRequestException('', {

@@ -18,13 +18,13 @@ type ChatContextType = {
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
   ) => void;
-  sendMessage: (
-    message: string,
-    otherUserId: string,
-    currentUser: { phoneNumber: string; email: string },
-    roomId?: string,
-    file?: string
-  ) => void;
+  sendMessage: (messageData: {
+    content: string;
+    senderId: string;
+    roomId?: string;
+    file?: string;
+    messageToReplyId?: string;
+  }) => void;
   updateSocketMessages: (
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
@@ -53,13 +53,13 @@ export const ChatContext = createContext<ChatContextType>({
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
   ) => {},
-  sendMessage: (
-    message: string,
-    otherUserId: string,
-    currentUser: { phoneNumber: string; email: string },
-    roomId?: string,
-    file?: string
-  ) => {},
+  sendMessage: (messageData: {
+    content: string;
+    senderId: string;
+    roomId?: string;
+    file?: string;
+    messageToReplyId?: string;
+  }) => {},
   updateSocketMessages: (
     messages: [],
     currentUser?: { phoneNumber: string; email: string }

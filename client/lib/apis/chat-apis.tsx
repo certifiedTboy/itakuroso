@@ -29,8 +29,27 @@ export const chatApis = createApi({
         method: "GET",
       }),
     }),
+
+    uploadFile: builder.mutation({
+      query: (payload) => ({
+        url: "/chats/file/upload",
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
+    deleteFile: builder.mutation({
+      query: (payload) => ({
+        url: `/chats/file/delete/${payload}`,
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
-export const { useGetExisitngRoomsMutation, useGetChatsByRoomIdMutation } =
-  chatApis;
+export const {
+  useGetExisitngRoomsMutation,
+  useGetChatsByRoomIdMutation,
+  useUploadFileMutation,
+  useDeleteFileMutation,
+} = chatApis;

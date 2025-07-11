@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import { ConfigService } from '@nestjs/config';
 import { Model } from 'mongoose';
+import { v2 as cloudinary } from 'cloudinary';
 import { Room, RoomDocument } from './schemas/room-schema';
 import { Chat, ChatDocument } from './schemas/chat-schema';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -17,6 +19,7 @@ export class ChatService {
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -254,5 +257,80 @@ export class ChatService {
       { 'lastMessage.isRead': true },
       { new: true },
     );
+  }
+
+  /**
+   * @method uploadFileOnCloud
+   * @description Uploads a file to the cloudinary storage.
+   * @param {Express.Multer.File} file - The data transfer object containing the file to be uploaded.
+   */
+  async uploadFileOnCloud(file: Express.Multer.File) {
+    const cloudinaryApiKey =
+      this.configService.get<string>('CLOUDINARY_API_KEY');
+    const cloudinaryApiSecret = this.configService.get<string>(
+      'CLOUDINARY_API_SECRET',
+    );
+    const cloudinaryCloudName = this.configService.get<string>(
+      'CLOUDINARY_CLOUD_NAME',
+    );
+
+    cloudinary.config({
+      cloud_name: cloudinaryCloudName,
+      api_key: cloudinaryApiKey,
+      api_secret: cloudinaryApiSecret,
+    });
+
+    const promise = new Promise((resolve: any, reject: any) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'chat_files' },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        },
+      );
+
+      // For buffer uploads
+      if (file.buffer) {
+        uploadStream.end(file.buffer);
+      }
+    });
+
+    const result = await promise.then(
+      (data: { secure_url: string; public_id: string }) => {
+        const { secure_url, public_id } = data;
+        return { secureUrl: secure_url, publicId: public_id };
+      },
+    );
+
+    return { secureUrl: result.secureUrl, publicId: result.publicId };
+  }
+
+  /**
+   * @method deleteUploadedFile
+   * @description Deletes a file from the cloudinary storage.
+   * @param {string} publicId - The public ID of the file to be deleted
+   */
+
+  async deleteUploadedFile(publicId: string) {
+    const cloudinaryApiKey =
+      this.configService.get<string>('CLOUDINARY_API_KEY');
+    const cloudinaryApiSecret = this.configService.get<string>(
+      'CLOUDINARY_API_SECRET',
+    );
+    const cloudinaryCloudName = this.configService.get<string>(
+      'CLOUDINARY_CLOUD_NAME',
+    );
+
+    cloudinary.config({
+      cloud_name: cloudinaryCloudName,
+      api_key: cloudinaryApiKey,
+      api_secret: cloudinaryApiSecret,
+    });
+
+    const result = (await cloudinary.uploader.destroy(
+      `chat_files/${publicId}`,
+    )) as { result: string };
+
+    return result;
   }
 }
