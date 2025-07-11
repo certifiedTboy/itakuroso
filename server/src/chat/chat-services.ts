@@ -190,6 +190,8 @@ export class ChatService {
     //   .exec();
 
     // console.log(data);
+
+    // return data;
     const result = await this.chatModel.aggregate([
       {
         $match: {

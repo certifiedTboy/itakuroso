@@ -77,6 +77,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     onLoadChatInfo();
   }, [chatCtx.triggerCount]);
 
+  // console.log(data);
+
   /**
    * useEffect hook to fetch contacts and update the chat rooms
    * This is used to get the contact names and images for each chat room

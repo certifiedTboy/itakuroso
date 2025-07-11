@@ -104,6 +104,11 @@ const AuthenticatedStack = () => {
     "background"
   );
 
+  const chatScreenTitleColor = useThemeColor(
+    { light: "#000", dark: "#fff" },
+    "text"
+  );
+
   return (
     <ChatContextProvider>
       <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor } }}>
@@ -126,7 +131,11 @@ const AuthenticatedStack = () => {
                   }}
                 >
                   <Text
-                    style={{ color: "#fff", fontWeight: "500", fontSize: 16 }}
+                    style={{
+                      color: chatScreenTitleColor,
+                      fontWeight: "500",
+                      fontSize: 16,
+                    }}
                     numberOfLines={1}
                     ellipsizeMode="tail"
                   >
