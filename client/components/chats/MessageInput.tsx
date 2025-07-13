@@ -75,6 +75,7 @@ const MessageInput = ({
   const [publicId, setPublicId] = useState<string>("");
   const [inputHeight, setInputHeight] = useState(40);
   const ref = useRef<IWaveformRef>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -156,16 +157,24 @@ const MessageInput = ({
   }, []);
 
   useEffect(() => {
+    if (messageToRespondTo?.message) {
+      inputRef.current?.focus();
+    }
+  }, [messageToRespondTo, messageToRespondTo?.message]);
+
+  useEffect(() => {
     if (isSuccess && data?.data?.secureUrl) {
       setImageUri(data?.data?.secureUrl);
       setPublicId(data?.data?.publicId);
     }
+  }, [isSuccess]);
 
+  useEffect(() => {
     if (fileDeletedSuccess) {
       setImageUri("");
       setPublicId("");
     }
-  }, [isSuccess, fileDeletedSuccess]);
+  }, [fileDeletedSuccess]);
 
   /**
    * handleImagePick is used to pick an image from the device's library.
@@ -217,12 +226,12 @@ const MessageInput = ({
   };
 
   const handleSend = async () => {
-    if (message.trim().length > 0 || data?.data?.secureUrl) {
+    if (message.trim().length > 0 || imageUri) {
       chatCtx.sendMessage({
         content: message,
         senderId: currentUser?.phoneNumber,
         roomId,
-        file: data?.data?.secureUrl,
+        file: imageUri,
         messageToReplyId: messageToRespondTo?._id,
       });
       setMessage("");
@@ -237,7 +246,7 @@ const MessageInput = ({
       <ImagePreviewModal
         isVisible={imagePreviewIsVisible}
         onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
-        imageUrl={data?.data?.secureUrl}
+        imageUrl={imageUri}
       />
       <View style={styles.container}>
         {showEmoji && (
@@ -336,6 +345,7 @@ const MessageInput = ({
             editable={!isRecording}
             selectTextOnFocus={!isRecording}
             multiline
+            ref={inputRef}
             onContentSizeChange={(event) =>
               setInputHeight(event.nativeEvent.contentSize.height)
             }

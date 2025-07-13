@@ -24,8 +24,8 @@ export const chatApis = createApi({
     }),
 
     getChatsByRoomId: builder.mutation({
-      query: ({ roomId, pageNum }) => ({
-        url: `/chats/${roomId}?page=${pageNum}`,
+      query: ({ roomId }) => ({
+        url: `/chats/${roomId}`,
         method: "GET",
       }),
     }),

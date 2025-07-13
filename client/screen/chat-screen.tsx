@@ -1,6 +1,7 @@
 import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
+import { generateRoomId } from "@/helpers/chat-helpers";
 import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 import { ChatContext } from "@/lib/context/chat-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -36,7 +37,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     _id: string;
   } | null>(null);
 
-  const [pageNum, setPageNum] = useState(1);
+  // const [pageNum, setPageNum] = useState(1);
 
   const [getChatsByRoomId, { data, isSuccess }] = useGetChatsByRoomIdMutation();
   const { currentUser } = useSelector((state: any) => state.authState);
@@ -47,27 +48,46 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
   // const flatListRef = useRef<FlatList>(null);
 
   // Join or fetch chats on mount
-  useEffect(() => {
-    if (!roomId) {
-      chatCtx.joinRoom(
-        { contactName, phoneNumber },
-        { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email }
-      );
-    } else {
-      chatCtx.joinRoom(
-        { contactName, phoneNumber },
-        { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
-        roomId
-      );
-      getChatsByRoomId({ roomId, pageNum });
-    }
-  }, [roomId, contactName, phoneNumber, currentUser]);
+  // useEffect(() => {
+  //   if (!roomId) {
+  //     chatCtx.joinRoom(
+  //       { contactName, phoneNumber },
+  //       { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email }
+  //     );
+  //   } else {
+  //     chatCtx.joinRoom(
+  //       { contactName, phoneNumber },
+  //       { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
+  //       roomId
+  //     );
+  //     getChatsByRoomId({ roomId });
+  //   }
+  // }, [roomId, contactName, phoneNumber, currentUser]);
 
-  useEffect(() => {
-    if (pageNum > 1) {
-      getChatsByRoomId({ roomId, pageNum });
-    }
-  }, [pageNum]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!roomId) {
+        chatCtx.joinRoom(
+          { contactName, phoneNumber },
+          { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
+          generateRoomId()
+        );
+      } else {
+        chatCtx.joinRoom(
+          { contactName, phoneNumber },
+          { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
+          roomId
+        );
+        getChatsByRoomId({ roomId });
+      }
+    }, [roomId, contactName, phoneNumber, currentUser])
+  );
+
+  // useEffect(() => {
+  //   if (pageNum > 1) {
+  //     getChatsByRoomId({ roomId, pageNum });
+  //   }
+  // }, [pageNum]);
 
   // Mark as read & leave room on blur
   useFocusEffect(
@@ -121,19 +141,19 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         renderItem={RenderedCard}
         keyExtractor={(item: any) => item._id}
         numColumns={1}
-        // scrollEventThrottle={16}
-        // initialNumToRender={20}
-        // maxToRenderPerBatch={10}
+        scrollEventThrottle={16}
+        initialNumToRender={20}
+        maxToRenderPerBatch={10}
         // windowSize={5}
         // removeClippedSubviews
 
         inverted={true}
         onEndReachedThreshold={0.5}
-        onEndReached={() => {
-          if (chatCtx.messages.length > 0) {
-            setPageNum(pageNum + 1);
-          }
-        }}
+        // onEndReached={() => {
+        //   if (chatCtx.messages.length > 0) {
+        //     setPageNum(pageNum + 1);
+        //   }
+        // }}
         // onStartReached={() => console.log("Start reached")}
         contentContainerStyle={styles.messageContentStyle}
       />

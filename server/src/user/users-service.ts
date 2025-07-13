@@ -126,6 +126,7 @@ export class UsersService {
       { _id: user?._id },
       {
         isVerified: true,
+        isActive: true,
         verificationCode: null,
         verificationCodeExpiresIn: null,
       },

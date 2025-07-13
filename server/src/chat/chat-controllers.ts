@@ -65,6 +65,11 @@ export class ChatControllers {
     }
   }
 
+  /**
+   * @method getCurrentUserRooms
+   * @description Retrieves all chat rooms associated with the current user.
+   * @param {Request} req - The request object containing user information.
+   */
   @Get('rooms')
   async getCurrentUserRooms(@Req() req: Request) {
     try {
@@ -88,28 +93,45 @@ export class ChatControllers {
     }
   }
 
+  /**
+   * @method getAllRooms
+   * @description Retrieves all existing chat rooms from the database.
+   */
+  @Get('all-rooms')
+  async getAllRooms() {
+    try {
+      const rooms = await this.chatService.getAllRooms();
+
+      return ResponseHandler.ok(200, 'Rooms retrieved successfully', rooms);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
+
   @Get(':chatRoomId')
   async getRoomChats(@Req() req: Request) {
     const { chatRoomId } = req.params;
-    const { page } = req.query;
+    // const { page } = req.query;
 
     if (!chatRoomId) {
       throw new BadRequestException('Room ID is required');
     }
 
-    if (!page || typeof page !== 'string') {
-      throw new BadRequestException(
-        'Page query parameter is required and must be a string',
-      );
-    }
+    // if (!page || typeof page !== 'string') {
+    //   throw new BadRequestException(
+    //     'Page query parameter is required and must be a string',
+    //   );
+    // }
 
     try {
-      const { limit, skip } = ChatHelpers.getPaginationParams(page);
-      const chats = await this.chatService.findChatByRoomId(
-        chatRoomId,
-        limit,
-        skip,
-      );
+      // const { limit, skip } = ChatHelpers.getPaginationParams(page);
+      const chats = await this.chatService.findChatByRoomId(chatRoomId);
 
       return ResponseHandler.ok(200, 'Chats retrieved successfully', chats);
     } catch (error: unknown) {

@@ -149,10 +149,28 @@ export class ChatService {
       .find({
         members: { $all: [userId] },
       })
-      .populate('members')
+      .populate({
+        path: 'members',
+        select: '-passcode -verificationCode -verificationCodeExpiresIn -__v',
+      })
       .exec();
 
     return rooms;
+  }
+
+  /**
+   * @method getAllRooms
+   * @description Retrieves all chat rooms from the database.
+   * @returns {Promise<RoomDocument[]>} - A promise that resolves to an array
+   */
+  async getAllRooms(): Promise<RoomDocument[]> {
+    return this.roomModel
+      .find()
+      .populate({
+        path: 'members',
+        select: '-passcode -verificationCode -verificationCodeExpiresIn -__v',
+      })
+      .exec();
   }
 
   /**
@@ -180,60 +198,58 @@ export class ChatService {
    */
   async findChatByRoomId(
     chatRoomId: string,
-    limit: number,
-    skip: number,
+    // limit: number,
+    // skip: number,
   ): Promise<ChatDocument[]> {
-    // const data = await this.chatModel
-    //   .find({ chatRoomId })
-    //   .skip(skip)
-    //   .limit(limit)
-    //   .populate('senderId')
-    //   .populate('replyTo')
-    //   .sort({ createdAt: -1 })
-    //   .exec();
+    const data = await this.chatModel
+      .find({ chatRoomId })
+      // .skip(skip)
+      // .limit(limit)
+      .populate('senderId')
+      .populate('replyTo')
+      .sort({ createdAt: -1 })
+      .exec();
 
-    // console.log(data);
+    return data;
+    // const result = await this.chatModel.aggregate([
+    //   {
+    //     $match: {
+    //       chatRoomId,
+    //     },
+    //   },
 
-    // return data;
-    const result = await this.chatModel.aggregate([
-      {
-        $match: {
-          chatRoomId,
-        },
-      },
+    //   {
+    //     $lookup: {
+    //       from: 'chats',
+    //       localField: 'replyTo',
+    //       foreignField: '_id',
+    //       as: 'replyTo',
+    //     },
+    //   },
 
-      {
-        $lookup: {
-          from: 'chats',
-          localField: 'replyTo',
-          foreignField: '_id',
-          as: 'replyTo',
-        },
-      },
+    //   {
+    //     $unwind: {
+    //       path: '$replyTo',
+    //       preserveNullAndEmptyArrays: true,
+    //     },
+    //   },
+    //   {
+    //     $sort: {
+    //       createdAt: -1,
+    //     },
+    //   },
+    //   {
+    //     $facet: {
+    //       data: [{ $skip: skip }, { $limit: limit }],
+    //     },
+    //   },
+    // ]);
 
-      {
-        $unwind: {
-          path: '$replyTo',
-          preserveNullAndEmptyArrays: true,
-        },
-      },
-      {
-        $sort: {
-          createdAt: -1,
-        },
-      },
-      {
-        $facet: {
-          data: [{ $skip: skip }, { $limit: limit }],
-        },
-      },
-    ]);
-
-    if (result && result.length > 0) {
-      return result[0]?.data;
-    } else {
-      return [];
-    }
+    // if (result && result.length > 0) {
+    //   return result[0]?.data;
+    // } else {
+    //   return [];
+    // }
   }
 
   /**
@@ -250,7 +266,6 @@ export class ChatService {
    * @description Updates the read status of the last message in a chat room.
    * @param {string} roomId - The ID of the room where the last message's read status needs to be updated.
    */
-
   async updateLastMessageReadStatus(roomId: string) {
     return await this.roomModel.updateOne(
       { roomId },

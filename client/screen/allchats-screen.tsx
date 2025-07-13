@@ -12,7 +12,7 @@ import { DropdownContext } from "@/lib/context/dropdown-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
-import { useCallback, useContext, useEffect, useState } from "react";
+import { useCallback, useContext, useState } from "react";
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 import { useSelector } from "react-redux";
@@ -69,15 +69,15 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
    * This is used to fetch existing chat rooms when the screen is focused
    */
 
-  useEffect(() => {
-    const onLoadChatInfo = async () => {
-      getExisitngRooms(null);
-    };
+  useFocusEffect(
+    useCallback(() => {
+      const onLoadChatInfo = async () => {
+        getExisitngRooms(null);
+      };
 
-    onLoadChatInfo();
-  }, [chatCtx.triggerCount]);
-
-  // console.log(data);
+      onLoadChatInfo();
+    }, [chatCtx.triggerCount])
+  );
 
   /**
    * useEffect hook to fetch contacts and update the chat rooms
@@ -91,9 +91,9 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         // await createChatTable();
 
         if (data?.data && contacts && contacts.length > 0) {
-          data.data.map(async (room: any) => {
-            setRooms([
-              {
+          setRooms([
+            ...data?.data.map((room: any) => {
+              return {
                 roomId: room.roomId,
                 roomName: room.roomName,
                 roomImage: room.roomImage,
@@ -121,9 +121,9 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
                   containsFile: room?.lastMessage?.containsFile,
                   senderId: room?.lastMessage?.senderId,
                 },
-              },
-            ]);
-          });
+              };
+            }),
+          ]);
         }
       };
 

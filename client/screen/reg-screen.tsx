@@ -64,7 +64,6 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
   useEffect(() => {
     // Create the contact table if it doesn't exist
     const onCreateContactTable = async () => {
-      console.log("Creating contact table...");
       await createContactTable();
     };
 

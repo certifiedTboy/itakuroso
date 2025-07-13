@@ -15,7 +15,7 @@ export class Chat {
   @Prop({ required: true })
   chatRoomId: string;
 
-  @Prop({ required: true })
+  @Prop()
   message: string;
 
   @Prop()

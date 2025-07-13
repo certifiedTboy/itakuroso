@@ -1,3 +1,4 @@
+import { formatDate } from "@/helpers/chat-helpers";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
@@ -142,6 +143,18 @@ const AuthenticatedStack = () => {
                     {route.params!.contactName ??
                       route.params!.phoneNumber ??
                       "Chat"}
+                  </Text>
+
+                  <Text
+                    style={{
+                      color: chatScreenTitleColor,
+                      fontWeight: "500",
+                      fontSize: 13,
+                      marginTop: 4,
+                      opacity: 0.8,
+                    }}
+                  >
+                    last seen {formatDate(new Date().toString())}
                   </Text>
                 </View>
               );
