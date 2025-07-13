@@ -2,12 +2,16 @@ import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
 import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
-import { insertContacts } from "@/helpers/database/contacts";
+import { loadContacts } from "@/helpers/contact-helpers";
+import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import * as Contacts from "expo-contacts";
+import { useFocusEffect } from "expo-router";
+
 import { useCallback, useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
+
+import { useSelector } from "react-redux";
 
 type ContactListsScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
@@ -17,7 +21,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   const [contacts, setContacts] = useState<
     { phoneNumber: string | ""; name: string }[]
   >([]);
+
+  const { currentUser } = useSelector((state: any) => state.authState);
+
   const [showSearch, setShowSearch] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
 
   const headerTextColor = useThemeColor(
@@ -32,41 +40,26 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   /**
    * capture users contacts
    */
-  useEffect(() => {
-    (async () => {
-      const { status } = await Contacts.requestPermissionsAsync();
-      if (status !== "granted") {
-        await Contacts.requestPermissionsAsync();
-      }
+  useFocusEffect(
+    useCallback(() => {
+      (async () => {
+        const contacts = await getContacts();
 
-      if (status === "granted") {
-        const { data } = await Contacts.getContactsAsync({});
-
-        if (data.length > 0) {
-          const contacts = data
-            .map((contact) => {
-              const number =
-                contact.phoneNumbers && contact.phoneNumbers.length > 0
-                  ? contact.phoneNumbers[0].number
-                  : "";
-
-              const name = contact.name;
-              const id = contact.id;
-
-              return {
-                phoneNumber: number ?? "",
-                name: name ?? "",
-                id: id ?? "",
-              };
-            })
-            .filter((contact) => contact.phoneNumber !== "")
-            .sort((a: any, b: any) => a.name.localeCompare(b.name));
-          setContacts(contacts);
-          await insertContacts(contacts);
+        if (!contacts || contacts.length <= 0) {
+          await loadContacts(currentUser);
+          const newContacts = await getContacts();
+          setContacts(newContacts);
+          return;
         }
-      }
-    })();
-  }, []);
+
+        setContacts(contacts);
+      })();
+    }, [])
+  );
+
+  const onLoadContacts = async () => {
+    await loadContacts(currentUser);
+  };
 
   useEffect(() => {
     navigation.setOptions({
@@ -134,12 +127,30 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   // Render the card
   // useCallback is used to prevent re-rendering of the card
   const RenderedCard = useCallback(
-    ({ item }: { item: { phoneNumber: string; name: string } }) => (
+    ({
+      item,
+    }: {
+      item: {
+        phoneNumber: string;
+        name: string;
+        _id: string;
+        members: [{ phoneNumber: string }];
+        isActive?: boolean;
+        roomId?: string;
+      };
+    }) => (
       <ContactCard
         contactName={item.name}
-        phoneNumber={item.phoneNumber}
-        isActiveUser={true}
+        phoneNumber={
+          !item?.phoneNumber
+            ? item.members.find(
+                (c: any) => c?.phoneNumber !== currentUser?.phoneNumber
+              )?.phoneNumber || ""
+            : item?.phoneNumber
+        }
+        isActiveUser={item?.isActive}
         contactImage={require("../assets/images/avatar.png")}
+        roomId={item.roomId}
       />
     ),
     []

@@ -12,6 +12,7 @@ type ChatCardProps = {
   phoneNumber: string;
   isActiveUser?: boolean;
   contactImage: any;
+  roomId?: string;
   onNavigate?: () => void;
 };
 
@@ -21,6 +22,7 @@ const ContactCard = ({
   isActiveUser,
   contactImage,
   onNavigate,
+  roomId,
 }: ChatCardProps) => {
   const navigation = useNavigation();
 
@@ -38,7 +40,7 @@ const ContactCard = ({
     <Pressable
       onPress={() =>
         //@ts-ignore
-        navigation.navigate("chat-screen", { contactName, phoneNumber })
+        navigation.navigate("chat-screen", { contactName, phoneNumber, roomId })
       }
       style={({ pressed }) => [
         pressed && { opacity: 0.8 },
@@ -62,15 +64,17 @@ const ContactCard = ({
         </View>
       </View>
 
-      <View style={styles.rightContainer}>
-        <ThemedText
-          darkColor="#969494FF"
-          lightColor={Colors.light.btnBgc}
-          style={styles.time}
-        >
-          Invite
-        </ThemedText>
-      </View>
+      {!isActiveUser && (
+        <View style={styles.rightContainer}>
+          <ThemedText
+            darkColor="#969494FF"
+            lightColor={Colors.light.btnBgc}
+            style={styles.time}
+          >
+            Invite
+          </ThemedText>
+        </View>
+      )}
     </Pressable>
   );
 };

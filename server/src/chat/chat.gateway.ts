@@ -53,20 +53,20 @@ export class ChatGateway
   ) {
     const { roomId, userId, currentUserId } = data;
 
-    let newRoomId: string;
+    // let newRoomId: string;
 
-    if (!roomId) {
-      newRoomId = ChatHelpers.generateRoomId();
-    } else {
-      newRoomId = roomId;
-    }
+    // if (!roomId) {
+    //   newRoomId = ChatHelpers.generateRoomId();
+    // } else {
+    //   newRoomId = roomId;
+    // }
 
     // /**
     //  * add current user to temporary room
     //  */
     const user = this.chatService.userJoin({
       contactName: currentUserId.email,
-      roomId: newRoomId,
+      roomId,
       phoneNumber: currentUserId.phoneNumber,
     });
 
@@ -99,7 +99,7 @@ export class ChatGateway
           ChatHelpers.messageResponse(
             `Kindly invite ${userId.contactName} to create an account with his phone number: ${userId.phoneNumber} to join the chat`,
             ' ',
-            ChatHelpers.generateChatId(),
+            roomId,
           ),
         );
     }
@@ -123,7 +123,7 @@ export class ChatGateway
        */
 
       await this.chatService.createRoom({
-        roomId: newRoomId,
+        roomId,
         currentUserId:
           currentUser && currentUser._id ? String(currentUser._id) : '',
         otherUserId:
@@ -194,7 +194,7 @@ export class ChatGateway
         ChatHelpers.messageResponse(
           data.content,
           data.senderId,
-          ChatHelpers.generateChatId(),
+          roomId,
           data.file,
           {
             replyToId: replyToMessage?._id.toString() || '',

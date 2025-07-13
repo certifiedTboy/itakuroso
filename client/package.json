@@ -20,6 +20,7 @@
     "@react-navigation/native": "^7.1.6",
     "@reduxjs/toolkit": "^2.8.2",
     "@simform_solutions/react-native-audio-waveform": "^2.1.5",
+    "axios": "^1.10.0",
     "expo": "~53.0.9",
     "expo-audio": "~0.4.5",
     "expo-blur": "~14.1.4",

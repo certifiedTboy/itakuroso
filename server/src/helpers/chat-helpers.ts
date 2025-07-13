@@ -23,10 +23,10 @@ export class ChatHelpers {
     };
   }
 
-  static generateChatId() {
-    const randomId = Math.random().toString(36).substring(2, 15);
-    return `chat_${randomId}`;
-  }
+  // static generateChatId() {
+  //   const randomId = Math.random().toString(36).substring(2, 15);
+  //   return `chat_${randomId}`;
+  // }
 
   static generateRoomId() {
     const randomId = Math.random().toString(36).substring(2, 15);
