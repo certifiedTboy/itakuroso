@@ -182,4 +182,15 @@ export class UsersService {
 
     return updatedUser;
   }
+
+  /**
+   * @method findAllUsers
+   * @description Retrieves all users from the database.
+   */
+  async findAllUsers() {
+    return this.userModel
+      .find()
+      .select('-passcode -verificationCode -verificationCodeExpiresIn -__v')
+      .exec();
+  }
 }
