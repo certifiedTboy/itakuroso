@@ -1,5 +1,6 @@
 import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
+import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
 import { loadContacts } from "@/helpers/contact-helpers";
@@ -7,9 +8,10 @@ import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
-
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
+
+import { DropdownContext } from "@/lib/context/dropdown-context";
 
 import { useSelector } from "react-redux";
 
@@ -28,6 +30,8 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  const dropdownCtx = useContext(DropdownContext);
+
   const headerTextColor = useThemeColor(
     { light: "#000", dark: "#fff" },
     "background"
@@ -45,8 +49,9 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       (async () => {
         const contacts = await getContacts();
 
+        // await loadContacts();
         if (!contacts || contacts.length <= 0) {
-          await loadContacts(currentUser);
+          await loadContacts();
           const newContacts = await getContacts();
           setContacts(newContacts);
           return;
@@ -58,7 +63,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   );
 
   const onLoadContacts = async () => {
-    await loadContacts(currentUser);
+    await loadContacts();
   };
 
   useEffect(() => {
@@ -101,7 +106,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
                   name="ellipsis-vertical"
                   size={21}
                   color={headerTextColor}
-                  onPress={() => navigation.goBack()}
+                  onPress={() => dropdownCtx.toggleDropdown()}
                 />
               </View>
             </View>
@@ -123,6 +128,24 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       headerBackVisible: showSearch ? false : true,
     });
   });
+
+  const options = [
+    {
+      label: "Settings",
+      onPress: () => navigation.navigate("Settings"),
+    },
+    {
+      label: "Help",
+      onPress: () => navigation.navigate("Help"),
+    },
+    {
+      label: "Logout",
+      onPress: () => {
+        // authCtx.logout();
+        // toggleDropdown();
+      },
+    },
+  ];
 
   // Render the card
   // useCallback is used to prevent re-rendering of the card
@@ -157,19 +180,23 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   );
 
   return (
-    <ThemedView darkColor="#000" lightColor="#fff">
-      <View>
-        <FlatList
-          data={contacts}
-          renderItem={RenderedCard}
-          keyExtractor={(item: any) => item.id}
-          numColumns={1}
-          scrollEventThrottle={16} // Improves performance
-          // onEndReached={handleEndReached} // Trigger when reaching the end
-          onEndReachedThreshold={0.5} // Adjust sensitivity
-        />
-      </View>
-    </ThemedView>
+    <>
+      <MenuDropdown options={options} />
+
+      <ThemedView darkColor="#000" lightColor="#fff">
+        <View>
+          <FlatList
+            data={contacts}
+            renderItem={RenderedCard}
+            keyExtractor={(item: any) => item.id}
+            numColumns={1}
+            scrollEventThrottle={16} // Improves performance
+            // onEndReached={handleEndReached} // Trigger when reaching the end
+            onEndReachedThreshold={0.5} // Adjust sensitivity
+          />
+        </View>
+      </ThemedView>
+    </>
   );
 };
 

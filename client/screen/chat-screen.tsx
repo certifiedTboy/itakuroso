@@ -37,32 +37,11 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     _id: string;
   } | null>(null);
 
-  // const [pageNum, setPageNum] = useState(1);
-
   const [getChatsByRoomId, { data, isSuccess }] = useGetChatsByRoomIdMutation();
   const { currentUser } = useSelector((state: any) => state.authState);
 
   const chatCtx = useContext(ChatContext);
   const { contactName, phoneNumber, roomId } = route.params;
-
-  // const flatListRef = useRef<FlatList>(null);
-
-  // Join or fetch chats on mount
-  // useEffect(() => {
-  //   if (!roomId) {
-  //     chatCtx.joinRoom(
-  //       { contactName, phoneNumber },
-  //       { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email }
-  //     );
-  //   } else {
-  //     chatCtx.joinRoom(
-  //       { contactName, phoneNumber },
-  //       { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
-  //       roomId
-  //     );
-  //     getChatsByRoomId({ roomId });
-  //   }
-  // }, [roomId, contactName, phoneNumber, currentUser]);
 
   useFocusEffect(
     useCallback(() => {
@@ -82,12 +61,6 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
       }
     }, [roomId, contactName, phoneNumber, currentUser])
   );
-
-  // useEffect(() => {
-  //   if (pageNum > 1) {
-  //     getChatsByRoomId({ roomId, pageNum });
-  //   }
-  // }, [pageNum]);
 
   // Mark as read & leave room on blur
   useFocusEffect(

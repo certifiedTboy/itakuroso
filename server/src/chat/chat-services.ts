@@ -137,7 +137,13 @@ export class ChatService {
    * @param {string} roomId - The ID of the room to find.
    */
   async findRoomById(roomId: string) {
-    return this.roomModel.findOne({ roomId }).populate('members').exec();
+    return this.roomModel
+      .findOne({ roomId })
+      .populate({
+        path: 'members',
+        select: '-passcode -verificationCode -verificationCodeExpiresIn -__v',
+      })
+      .exec();
   }
 
   /**

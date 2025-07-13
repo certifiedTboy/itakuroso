@@ -9,7 +9,7 @@ export const formatPhoneNumber = (phoneNumber: string): string => {
 
 let baseUrl = process.env.EXPO_PUBLIC_API_URL;
 
-export const loadContacts = async (currentUser: any) => {
+export const loadContacts = async () => {
   const { status } = await Contacts.requestPermissionsAsync();
   if (status !== "granted") {
     await Contacts.requestPermissionsAsync();
@@ -18,12 +18,13 @@ export const loadContacts = async (currentUser: any) => {
   if (status === "granted") {
     const { data } = await Contacts.getContactsAsync({});
     const authToken = await AsyncStorage.getItem("token");
-    const rooms = await axios.get(`${baseUrl}/chats/all-rooms`, {
+    const rooms = await axios.get(`${baseUrl}/chats/rooms`, {
       headers: {
         Authorization: `Bearer ${authToken}`,
       },
     });
 
+    // console.log("Rooms data:", rooms?.data?.data);
     if (data && rooms?.data && rooms?.data?.data.length > 0) {
       const contacts = data
         .map((contact) => {
@@ -41,8 +42,7 @@ export const loadContacts = async (currentUser: any) => {
             id: id ?? "",
           };
         })
-        .filter((contact) => contact.phoneNumber !== "")
-        .sort((a: any, b: any) => a.name.localeCompare(b.name));
+        .filter((contact) => contact.phoneNumber !== "");
 
       // Remove unwanted fields from the contact object
       const unwantedFields = [

@@ -1,4 +1,5 @@
-import { Controller, Post, Patch, Body } from '@nestjs/common';
+import { Controller, Post, Patch, Body, Get, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '../guard/auth-guard';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -21,6 +22,32 @@ import { ResponseHandler } from '../common/response-handler/response-handler';
 })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  /**
+   * @method getAllUsers
+   * @description Retrieves all users from the database.
+   */
+  @Get('')
+  // @UseGuards(AuthGuard)
+  async getAllUsers() {
+    try {
+      const result = await this.usersService.findAllUsers();
+
+      return ResponseHandler.ok(
+        200,
+        'Users retrieved successfully',
+        result || [],
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        console.log(error);
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
 
   /**
    * @method createUser
