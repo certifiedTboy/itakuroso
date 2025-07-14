@@ -99,12 +99,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   : { alignSelf: "flex-start" },
               ]}
             >
-              {!message.isSender && (
+              {/* {!message.isSender && (
                 <Image
                   source={require("../../assets/images/avatar.png")}
                   style={styles.avatar}
                 />
-              )}
+              )} */}
 
               <View
                 style={[
@@ -198,12 +198,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   : { alignSelf: "flex-start" },
               ]}
             >
-              {!message.isSender && (
+              {/* {!message.isSender && (
                 <Image
                   source={require("../../assets/images/avatar.png")}
                   style={styles.avatar}
                 />
-              )}
+              )} */}
 
               <View
                 style={[

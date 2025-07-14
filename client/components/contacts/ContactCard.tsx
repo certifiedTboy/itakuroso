@@ -49,7 +49,15 @@ const ContactCard = ({
       ]}
     >
       <View style={styles.leftContainer}>
-        <Avatar.Image size={50} source={contactImage} />
+        {contactImage ? (
+          <Avatar.Image size={50} source={contactImage} />
+        ) : (
+          <Avatar.Text
+            size={50}
+            label={contactName[0]}
+            style={{ backgroundColor: Colors.light.btnBgc }}
+          />
+        )}
         <View style={styles.textContainer}>
           <ThemedText style={styles.sender}>{contactName}</ThemedText>
           <View style={styles.messageRow}>

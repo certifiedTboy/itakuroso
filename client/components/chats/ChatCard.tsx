@@ -73,7 +73,19 @@ const ChatCard = ({
     >
       {/* Image + Sender/Message Block */}
       <View style={styles.leftContainer}>
-        <Avatar.Image size={50} source={image} />
+        {image ? (
+          <Avatar.Image size={50} source={image} />
+        ) : (
+          <Avatar.Text
+            size={50}
+            label={
+              members?.find(
+                (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+              )?.name[0]
+            }
+            style={{ backgroundColor: Colors.light.btnBgc }}
+          />
+        )}
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
           <ThemedText style={styles.sender}>
             {members?.find(
@@ -165,6 +177,26 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "space-between",
     height: 50,
+  },
+
+  profilePreviewContainer: {
+    height: 50,
+    width: 50,
+    borderRadius: 25, // Make it circular
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 2,
+  },
+
+  profilePreviewText: {
+    fontSize: 30,
+    fontWeight: "bold",
+    color: "#fff",
+    textAlign: "center",
+    // lineHeight: 50, // Center vertically
+    // width: 50,
+    // height: 50,
+    borderRadius: 25, // Make it circular
   },
   sender: {
     fontSize: 15,

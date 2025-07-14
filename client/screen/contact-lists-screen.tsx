@@ -1,17 +1,17 @@
 import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
-
-import { DropdownContext } from "@/lib/context/dropdown-context";
 
 import { useSelector } from "react-redux";
 
@@ -23,6 +23,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   const [contacts, setContacts] = useState<
     { phoneNumber: string | ""; name: string }[]
   >([]);
+
+  const [filteredContacts, setFilteredContacts] = useState<
+    { phoneNumber: string | ""; name: string }[]
+  >([]);
+
+  const [contactIsLoading, setContactIsLoading] = useState(false);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -37,12 +43,15 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     "background"
   );
 
+  /**
+   * Handles the search query input
+   */
   const onSearchQuery = (text: string) => {
     setSearchQuery(text);
   };
 
   /**
-   * capture users contacts
+   * capture users contacts from device
    */
   useFocusEffect(
     useCallback(() => {
@@ -58,14 +67,45 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
         }
 
         setContacts(contacts);
+        setFilteredContacts(contacts);
       })();
     }, [])
   );
 
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchQuery.trim().length > 0) {
+        setFilteredContacts(
+          contacts.filter((contact: any) =>
+            contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        );
+      } else {
+        setFilteredContacts(contacts);
+      }
+    }, 200);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery, contacts]);
+
+  /**
+   * A function to handle contact update
+   */
   const onLoadContacts = async () => {
-    await loadContacts();
+    setContactIsLoading(true);
+    try {
+      await loadContacts();
+      setContactIsLoading(false);
+    } catch (error) {
+      setContactIsLoading(false);
+      console.error("Error loading contacts:", error);
+    }
   };
 
+  /**
+   * useEffect to set the header title and options
+   * This is used to set the header title and options when the screen is focused
+   */
   useEffect(() => {
     navigation.setOptions({
       headerTitle: () => (
@@ -90,11 +130,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
                   Select Contacts
                 </Text>
                 <Text style={{ color: headerTextColor, fontSize: 12 }}>
-                  {contacts.length}
+                  {filteredContacts.length}
                 </Text>
               </View>
 
               <View style={{ flexDirection: "row", gap: 20 }}>
+                {contactIsLoading && <LoaderSpinner />}
                 <Icon
                   name="search"
                   size={21}
@@ -127,8 +168,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
 
       headerBackVisible: showSearch ? false : true,
     });
-  });
+  }, [setShowSearch, showSearch, onLoadContacts, contactIsLoading]);
 
+  /**
+   * Dropdown options for the contact lists screen
+   */
   const options = [
     {
       label: "Settings",
@@ -137,6 +181,13 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     {
       label: "Help",
       onPress: () => navigation.navigate("Help"),
+    },
+    {
+      label: "Refresh Contacts",
+      onPress: () => {
+        onLoadContacts();
+        dropdownCtx.toggleDropdown();
+      },
     },
     {
       label: "Logout",
@@ -172,7 +223,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             : item?.phoneNumber
         }
         isActiveUser={item?.isActive}
-        contactImage={require("../assets/images/avatar.png")}
+        contactImage=""
         roomId={item.roomId}
       />
     ),
@@ -186,7 +237,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       <ThemedView darkColor="#000" lightColor="#fff">
         <View>
           <FlatList
-            data={contacts}
+            data={filteredContacts}
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item.id}
             numColumns={1}

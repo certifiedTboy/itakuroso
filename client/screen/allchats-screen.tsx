@@ -188,7 +188,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         message={item.lastMessage?.message}
         time={item.lastMessage?.timestamp}
         isSender={item.lastMessage?.isSender}
-        image={require("../assets/images/avatar.png")}
+        image=""
         roomId={item.roomId}
         isRead={item.lastMessage?.isRead}
         containsFile={item.lastMessage?.containsFile}
@@ -210,15 +210,20 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           iconColor={textColor}
           inputStyle={{
             color: textColor,
+            marginTop: -8,
           }}
           placeholder="Search"
           placeholderTextColor={textColor}
           onChangeText={setSearchQuery}
+          onClearIconPress={() => console.log("Clear icon pressed")}
           value={searchQuery}
-          style={{
-            backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
-            margin: 10,
-          }}
+          style={[
+            {
+              backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+              margin: 10,
+            },
+            styles.searchInput,
+          ]}
         />
 
         <View>
@@ -245,5 +250,9 @@ const styles = StyleSheet.create({
   },
   chatContainer: {
     flex: 1,
+  },
+
+  searchInput: {
+    height: 40,
   },
 });
