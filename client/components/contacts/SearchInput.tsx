@@ -1,7 +1,13 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useEffect, useRef } from "react";
-import { Animated, Dimensions, StyleSheet, useColorScheme } from "react-native";
+import {
+  Animated,
+  Dimensions,
+  StyleSheet,
+  TextInput,
+  useColorScheme,
+} from "react-native";
 import { Searchbar } from "react-native-paper";
 
 const { width } = Dimensions.get("window");
@@ -21,6 +27,8 @@ const SearchInput = ({
   const opacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(-20)).current;
 
+  const searchInputRef = useRef<TextInput>(null);
+
   useEffect(() => {
     Animated.parallel([
       Animated.timing(opacity, {
@@ -34,6 +42,10 @@ const SearchInput = ({
         useNativeDriver: true,
       }),
     ]).start();
+
+    if (showSearchInput) {
+      searchInputRef.current?.focus();
+    }
   }, [showSearchInput]);
   const theme = useColorScheme();
 
@@ -55,18 +67,18 @@ const SearchInput = ({
       <Searchbar
         iconColor={textColor}
         icon="arrow-left"
-        inputStyle={{ color: textColor, marginVertical: -10 }}
+        ref={searchInputRef}
+        inputStyle={{ color: textColor, marginTop: -8 }}
         placeholder="Search name or number..."
         placeholderTextColor={textColor}
         onChangeText={(text) => onSearchQuery(text)}
         value={searchQuery}
+        onClearIconPress={() => console.log("Clear icon pressed")}
         onIconPress={() => setShowSearch()}
         style={[
           styles.searchInput,
           {
             backgroundColor: theme === "dark" ? "#333" : "#fff",
-
-            // margin: 10,
           },
         ]}
       />
@@ -79,12 +91,12 @@ export default SearchInput;
 const styles = StyleSheet.create({
   searchContainer: {
     width: width * 0.93,
-    height: 37,
+    // height: 37,
   },
   searchInput: {
-    height: "100%",
+    height: 40,
     justifyContent: "center",
     alignItems: "center",
-    width: "100%",
+    width: width * 0.93,
   },
 });
