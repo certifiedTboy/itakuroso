@@ -67,7 +67,7 @@ export class ChatControllers {
 
   /**
    * @method getCurrentUserRooms
-   * @description Retrieves all chat rooms associated with the current user.
+   * @description Retrieves all chat rooms associated with the current user
    * @param {Request} req - The request object containing user information.
    */
   @Get('rooms')
