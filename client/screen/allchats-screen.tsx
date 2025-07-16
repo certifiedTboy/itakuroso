@@ -128,10 +128,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       };
 
       onLoadContacts();
-
-      return () => {
-        // console.log("clear effect");
-      };
     }, [isSuccess, data, error])
   );
 

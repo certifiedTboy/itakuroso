@@ -1,30 +1,56 @@
 import * as SQLite from "expo-sqlite";
 import { generateChatId } from "../chat-helpers";
 
+let dbInstance: SQLite.SQLiteDatabase | null = null;
+
+const getDatabase = async () => {
+  if (!dbInstance) {
+    dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
+    await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
+  }
+  return dbInstance;
+};
+
+let dbLock = false;
+const runWithLock = async (fn: () => Promise<void>) => {
+  while (dbLock) {
+    await new Promise((res) => setTimeout(res, 50));
+  }
+  dbLock = true;
+  try {
+    await fn();
+  } finally {
+    dbLock = false;
+  }
+};
+
 /**
  * @method createChatTable
  * Creates the chats table in the SQLite database if it does not already exist.
  */
 export const createChatTable = async () => {
-  try {
-    const db = await SQLite.openDatabaseAsync("itakuroso_new");
-    if (db) {
-      await db.execAsync(`
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+
+      if (db) {
+        await db.execAsync(`
         PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS chats (
-          id VARCHAR PRIMARY KEY NOT NULL,
-          senderId VARCHAR NOT NULL,
-          currentUserId VARCHAR NOT NULL,
+          _id TEXT PRIMARY KEY NOT NULL,
+          senderId TEXT NOT NULL,
           message TEXT NOT NULL,
-          roomId VARCHAR NOT NULL,
-           file VARCHAR DEFAULT NULL,
+          roomId TEXT NOT NULL,
+          file TEXT DEFAULT NULL,
           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         );
+        CREATE INDEX IF NOT EXISTS idx_roomId ON chats(roomId);
       `);
+      }
+    } catch (error) {
+      console.log(error);
     }
-  } catch (error) {
-    console.log(error);
-  }
+  });
 };
 
 /**
@@ -36,31 +62,40 @@ export const createChatTable = async () => {
  * @param {string} chatData.message - The content of the chat message.
  * @param {string} chatData.roomId - The ID of the room where the message is sent.
  */
-export const insertChat = async (chatData: {
-  senderId: string;
-  currentUserId: string;
-  message: string;
-  roomId: string;
-}) => {
-  const chatId = generateChatId();
-  try {
-    const db = await SQLite.openDatabaseAsync("itakuroso_new");
+export const insertChat = async (
+  chatData: {
+    senderId: string;
+    message: string;
+    chatRoomId: string;
+    file?: string;
+  }[]
+) => {
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
 
-    if (db) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO chats (id, senderId, currentUserId, message, roomId) VALUES (?, ?, ?, ?, ?)`,
-        [
-          chatId,
-          chatData.senderId,
-          chatData.currentUserId,
-          chatData.message,
-          chatData.roomId,
-        ]
-      );
+      if (db) {
+        for (const chat of chatData) {
+          const chatId = generateChatId();
+          await db.runAsync(
+            `INSERT OR REPLACE INTO chats (_id, senderId, message, roomId, file) VALUES (?, ?, ?, ?, ?)`,
+            [
+              chatId,
+              chat.senderId,
+              chat.message,
+              chat.chatRoomId,
+              chat.file || null,
+            ]
+          );
+        }
+      }
+
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error inserting contacts:", error);
     }
-  } catch (error) {
-    console.log("Error inserting contacts:", error);
-  }
+  });
 };
 
 /**
@@ -70,7 +105,7 @@ export const insertChat = async (chatData: {
  */
 export const getChatsBySenderId = async (senderId: string) => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso_new");
+    const db = await getDatabase();
 
     if (db) {
       const results = await db.getAllAsync(
@@ -86,13 +121,13 @@ export const getChatsBySenderId = async (senderId: string) => {
 };
 
 /**
- * @method getChatsByRoomId
+ * @method getLocalChatsByRoomId
  * Retrieves all chat messages associated with a specific room ID from the chats table.
  * @param {string} roomId - The ID of the room for which to retrieve chat messages.
  */
-export const getChatsByRoomId = async (roomId: string) => {
+export const getLocalChatsByRoomId = async (roomId: string) => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso_new");
+    const db = await getDatabase();
 
     if (db) {
       const results = await db.getAllAsync(
@@ -115,7 +150,7 @@ export const getChatsByRoomId = async (roomId: string) => {
 
 export const getLastChatByRoomId = async (roomId: string) => {
   try {
-    const db = await SQLite.openDatabaseAsync("itakuroso_new");
+    const db = await getDatabase();
 
     if (db) {
       const results = await db.getAllAsync(

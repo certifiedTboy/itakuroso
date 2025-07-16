@@ -194,7 +194,7 @@ export class ChatGateway
         ChatHelpers.messageResponse(
           data.content,
           data.senderId,
-          roomId,
+          ChatHelpers.generateRoomId(),
           data.file,
           {
             replyToId: replyToMessage?._id.toString() || '',
