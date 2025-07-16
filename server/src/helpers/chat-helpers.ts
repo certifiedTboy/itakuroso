@@ -6,7 +6,7 @@ export class ChatHelpers {
   static messageResponse(
     message: string,
     senderId: string,
-    _id?: string,
+    _id: string,
     file?: string,
     replyTo?: {
       replyToId: string;

@@ -28,6 +28,22 @@ export const chatApis = createApi({
         url: `/chats/${roomId}`,
         method: "GET",
       }),
+
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          if (data) {
+            // console.log("chats", data?.data.map);
+            // console.log(chatData[0]);
+            // await createChatTable();
+            // await insertChat(data?.data);
+            // await insertChat(chatData);
+          }
+        } catch (error: unknown) {
+          console.log(error);
+        }
+      },
     }),
 
     uploadFile: builder.mutation({

@@ -4,13 +4,15 @@ import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { createChatTable } from "@/helpers/database/chats";
 import { createContactTable } from "@/helpers/database/contacts";
 import { validateRegform } from "@/helpers/form-validation";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useCreateNewUserMutation } from "@/lib/apis/userApis";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "expo-router";
 import { Formik } from "formik";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Image, Linking, StyleSheet, View, useColorScheme } from "react-native";
 import { TextInput } from "react-native-paper";
 
@@ -61,14 +63,17 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
     "background"
   );
 
-  useEffect(() => {
-    // Create the contact table if it doesn't exist
-    const onCreateContactTable = async () => {
-      await createContactTable();
-    };
+  useFocusEffect(
+    useCallback(() => {
+      // Create the contact table if it doesn't exist
+      const onCreateContactTable = async () => {
+        await createContactTable();
+        await createChatTable();
+      };
 
-    onCreateContactTable();
-  }, []);
+      onCreateContactTable();
+    }, [])
+  );
 
   useEffect(() => {
     if (isSuccess) {

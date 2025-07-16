@@ -2,6 +2,10 @@ import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
 import { generateRoomId } from "@/helpers/chat-helpers";
+import {
+  // getLocalChatsByRoomId,
+  insertChat,
+} from "@/helpers/database/chats";
 import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 import { ChatContext } from "@/lib/context/chat-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -58,6 +62,13 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           roomId
         );
         getChatsByRoomId({ roomId });
+        // const onGetLocalChats = async () => {
+        //   const result = await getLocalChatsByRoomId(roomId);
+
+        //   console.log("local chats", result);
+        // };
+
+        // onGetLocalChats();
       }
     }, [roomId, contactName, phoneNumber, currentUser])
   );
@@ -81,7 +92,11 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
 
   // Update context messages when fetched
   useEffect(() => {
+    const updateLocalChats = async () => {
+      await insertChat(data?.data);
+    };
     if (isSuccess && data?.data && data.data.length > 0) {
+      updateLocalChats();
       chatCtx.updateSocketMessages(data.data, currentUser);
     }
   }, [isSuccess]);
@@ -107,10 +122,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
       lightColor="#fff"
     >
       <FlatList
-        data={chatCtx.messages.filter(
-          (item, index, self) =>
-            index === self.findIndex((t) => t._id === item._id)
-        )}
+        data={chatCtx.messages}
         renderItem={RenderedCard}
         keyExtractor={(item: any) => item._id}
         numColumns={1}

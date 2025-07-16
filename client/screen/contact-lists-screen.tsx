@@ -1,3 +1,4 @@
+import Notification from "@/components/common/Notification";
 import ContactCard from "@/components/contacts/ContactCard";
 import SearchInput from "@/components/contacts/SearchInput";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
@@ -6,9 +7,11 @@ import { ThemedView } from "@/components/ThemedView";
 import Icon from "@/components/ui/Icon";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
+import { showNotification } from "@/helpers/notification";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+
 import { useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { FlatList, Text, View } from "react-native";
@@ -96,6 +99,21 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     try {
       await loadContacts();
       setContactIsLoading(false);
+      // showNotification({
+      //   type: "success",
+      //   title: "Contacts Loaded",
+      //   message: "Your contacts have been successfully loaded.",
+      // });
+
+      showNotification({
+        type: "success",
+
+        title: "Contacts Loaded",
+        message: "Your contacts have been successfully loaded.",
+
+        // onShow: () => {},
+        // onHide: () => {},
+      });
     } catch (error) {
       setContactIsLoading(false);
       console.error("Error loading contacts:", error);
@@ -191,10 +209,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     },
     {
       label: "Logout",
-      onPress: () => {
-        // authCtx.logout();
-        // toggleDropdown();
-      },
+      onPress: () =>
+        showNotification({
+          type: "success",
+          title: "Logout",
+          message: "You have been logged out.",
+        }),
     },
   ];
 
@@ -232,6 +252,9 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
 
   return (
     <>
+      <View style={{ zIndex: 1000 }}>
+        <Notification />
+      </View>
       <MenuDropdown options={options} />
 
       <ThemedView darkColor="#000" lightColor="#fff">
@@ -241,9 +264,10 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item.id}
             numColumns={1}
-            scrollEventThrottle={16} // Improves performance
+            initialNumToRender={10}
+            maxToRenderPerBatch={10}
+            scrollEventThrottle={10} // Improves performance
             // onEndReached={handleEndReached} // Trigger when reaching the end
-            onEndReachedThreshold={0.5} // Adjust sensitivity
           />
         </View>
       </ThemedView>
