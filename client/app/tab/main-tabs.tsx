@@ -76,6 +76,8 @@ const MainTabs = () => {
     }),
   };
 
+  // console.log(currentRouteName);
+
   return (
     <SafeAreaView
       style={[{ backgroundColor: safeAreaBackground }, styles.container]}
@@ -116,6 +118,7 @@ const MainTabs = () => {
         />
 
         {/* Custom Bottom Tab Bar */}
+
         <View style={[styles.tabBar, { backgroundColor }]}>
           {routes.map((route, idx) => {
             const isFocused = index === idx;
@@ -126,6 +129,7 @@ const MainTabs = () => {
                 onPress={() => setIndex(idx)}
               >
                 <Icon
+                  // @ts-ignore
                   name={
                     isFocused ? route.icon.replace("-outline", "") : route.icon
                   }

@@ -124,69 +124,71 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
    * useEffect to set the header title and options
    * This is used to set the header title and options when the screen is focused
    */
-  useEffect(() => {
-    navigation.setOptions({
-      headerTitle: () => (
-        <>
-          {!showSearch ? (
-            <View
-              style={{
-                marginLeft: -20,
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <View>
-                <Text
-                  style={{
-                    color: headerTextColor,
-                    fontSize: 14,
-                    fontWeight: "bold",
-                  }}
-                >
-                  Select Contacts
-                </Text>
-                <Text style={{ color: headerTextColor, fontSize: 12 }}>
-                  {filteredContacts.length}
-                </Text>
+  useFocusEffect(
+    useCallback(() => {
+      navigation.setOptions({
+        headerTitle: () => (
+          <>
+            {!showSearch ? (
+              <View
+                style={{
+                  marginLeft: -20,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  <Text
+                    style={{
+                      color: headerTextColor,
+                      fontSize: 14,
+                      fontWeight: "bold",
+                    }}
+                  >
+                    Select Contacts
+                  </Text>
+                  <Text style={{ color: headerTextColor, fontSize: 12 }}>
+                    {filteredContacts.length}
+                  </Text>
+                </View>
+
+                <View style={{ flexDirection: "row", gap: 20 }}>
+                  {contactIsLoading && <LoaderSpinner />}
+                  <Icon
+                    name="search"
+                    size={21}
+                    color={headerTextColor}
+                    onPress={() => setShowSearch(true)}
+                  />
+
+                  <Icon
+                    name="ellipsis-vertical"
+                    size={21}
+                    color={headerTextColor}
+                    onPress={() => dropdownCtx.toggleDropdown()}
+                  />
+                </View>
               </View>
+            ) : (
+              <SearchInput
+                setShowSearch={() => setShowSearch(false)}
+                showSearchInput={showSearch}
+                onSearchQuery={onSearchQuery}
+                searchQuery={searchQuery}
+              />
+            )}
+          </>
+        ),
+        headerTitleStyle: {
+          fontSize: 14,
+          fontWeight: "bold",
+        },
 
-              <View style={{ flexDirection: "row", gap: 20 }}>
-                {contactIsLoading && <LoaderSpinner />}
-                <Icon
-                  name="search"
-                  size={21}
-                  color={headerTextColor}
-                  onPress={() => setShowSearch(true)}
-                />
-
-                <Icon
-                  name="ellipsis-vertical"
-                  size={21}
-                  color={headerTextColor}
-                  onPress={() => dropdownCtx.toggleDropdown()}
-                />
-              </View>
-            </View>
-          ) : (
-            <SearchInput
-              setShowSearch={() => setShowSearch(false)}
-              showSearchInput={showSearch}
-              onSearchQuery={onSearchQuery}
-              searchQuery={searchQuery}
-            />
-          )}
-        </>
-      ),
-      headerTitleStyle: {
-        fontSize: 14,
-        fontWeight: "bold",
-      },
-
-      headerBackVisible: showSearch ? false : true,
-    });
-  }, [setShowSearch, showSearch, onLoadContacts, contactIsLoading]);
+        headerBackVisible: showSearch ? false : true,
+      });
+    }, [showSearch, searchQuery, contactIsLoading, filteredContacts.length])
+  );
 
   /**
    * Dropdown options for the contact lists screen
@@ -260,6 +262,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       <ThemedView darkColor="#000" lightColor="#fff">
         <View>
           <FlatList
+            // @ts-ignore
             data={filteredContacts}
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item.id}
