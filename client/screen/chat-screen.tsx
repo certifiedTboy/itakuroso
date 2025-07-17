@@ -2,22 +2,14 @@ import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
 import { generateRoomId } from "@/helpers/chat-helpers";
-import {
-  // getLocalChatsByRoomId,
-  insertChat,
-} from "@/helpers/database/chats";
-import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
+import { getLocalChatsByRoomId } from "@/helpers/database/chats";
+// import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 import { ChatContext } from "@/lib/context/chat-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useCallback, useContext, useEffect, useState } from "react";
-import {
-  Dimensions,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-} from "react-native";
+import { useCallback, useContext, useState } from "react";
+
+import { Animated, Dimensions, FlatList, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 
 const { height } = Dimensions.get("window");
@@ -35,13 +27,15 @@ type ChatScreenProps = {
   };
 };
 
+const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+
 const ChatScreen = ({ route }: ChatScreenProps) => {
   const [messageToRespondTo, setMessageToRespondTo] = useState<{
     message: string;
     _id: string;
   } | null>(null);
 
-  const [getChatsByRoomId, { data, isSuccess }] = useGetChatsByRoomIdMutation();
+  // const [getChatsByRoomId, { data, isSuccess }] = useGetChatsByRoomIdMutation();
   const { currentUser } = useSelector((state: any) => state.authState);
 
   const chatCtx = useContext(ChatContext);
@@ -61,16 +55,9 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
           roomId
         );
-        getChatsByRoomId({ roomId });
-        // const onGetLocalChats = async () => {
-        //   const result = await getLocalChatsByRoomId(roomId);
-
-        //   console.log("local chats", result);
-        // };
-
-        // onGetLocalChats();
+        // getChatsByRoomId({ roomId });
       }
-    }, [roomId, contactName, phoneNumber, currentUser])
+    }, [])
   );
 
   // Mark as read & leave room on blur
@@ -87,19 +74,24 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         chatCtx.leaveRoom({ phoneNumber: currentUser?.phoneNumber });
         chatCtx.updateSocketMessages([], currentUser);
       };
-    }, [roomId, route.params, currentUser?.phoneNumber])
+    }, [])
   );
 
   // Update context messages when fetched
-  useEffect(() => {
-    const updateLocalChats = async () => {
-      await insertChat(data?.data);
-    };
-    if (isSuccess && data?.data && data.data.length > 0) {
-      updateLocalChats();
-      chatCtx.updateSocketMessages(data.data, currentUser);
-    }
-  }, [isSuccess]);
+  useFocusEffect(
+    useCallback(() => {
+      const onGetLocalChats = async () => {
+        const result = (await getLocalChatsByRoomId(roomId)) ?? [];
+
+        if (result && result.length > 0) {
+          //@ts-ignore
+          chatCtx.updateSocketMessages(result, currentUser);
+        }
+      };
+
+      onGetLocalChats();
+    }, [])
+  );
 
   // Memoized render function
   const RenderedCard = useCallback(
@@ -112,23 +104,25 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         }}
       />
     ),
-    [currentUser?.phoneNumber]
+    []
   );
 
   return (
     <ThemedView
-      style={styles.messagesContainer}
+      style={[styles.messagesContainer]}
       darkColor="#000"
       lightColor="#fff"
     >
-      <FlatList
+      {/* {chatCtx.messages && chatCtx.messages.length > 0 && ( */}
+      <AnimatedFlatList
         data={chatCtx.messages}
         renderItem={RenderedCard}
         keyExtractor={(item: any) => item._id}
         numColumns={1}
-        scrollEventThrottle={16}
+        // scrollEventThrottle={16}
         initialNumToRender={20}
-        maxToRenderPerBatch={10}
+        // maxToRenderPerBatch={5}
+        // windowSize={11}
         // windowSize={5}
         // removeClippedSubviews
 
@@ -141,18 +135,22 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         // }}
         // onStartReached={() => console.log("Start reached")}
         contentContainerStyle={styles.messageContentStyle}
+        // style={{ height: height * 0.85 }}
+      />
+      {/* )} */}
+
+      {/* <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      > */}
+
+      <MessageInput
+        receiverId={phoneNumber}
+        roomId={roomId}
+        messageToRespondTo={messageToRespondTo}
+        setMessageToRespondTo={setMessageToRespondTo}
       />
 
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-      >
-        <MessageInput
-          receiverId={phoneNumber}
-          roomId={roomId}
-          messageToRespondTo={messageToRespondTo}
-          setMessageToRespondTo={setMessageToRespondTo}
-        />
-      </KeyboardAvoidingView>
+      {/* </KeyboardAvoidingView> */}
     </ThemedView>
   );
 };
@@ -163,12 +161,8 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flex: 1,
     paddingHorizontal: 9,
-    // alignItems: "flex-end",
-    // backgroundColor: "red",
   },
   messageContentStyle: {
-    flexGrow: 1,
-    justifyContent: "flex-start",
-    paddingBottom: 10,
+    // backgroundColor: "red",
   },
 });

@@ -1,4 +1,3 @@
-import { formatDate } from "@/helpers/chat-helpers";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
@@ -111,73 +110,74 @@ const AuthenticatedStack = () => {
   );
 
   return (
-    <ChatContextProvider>
-      <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor } }}>
-        <Stack.Screen
-          name="main-tabs"
-          options={() => ({
-            headerShown: false,
-          })}
-          component={MainTabs}
-        />
+    <Stack.Navigator screenOptions={{ headerStyle: { backgroundColor } }}>
+      <Stack.Screen
+        name="main-tabs"
+        options={() => ({
+          headerShown: false,
+        })}
+        component={MainTabs}
+      />
 
-        <Stack.Screen
-          name="chat-screen"
-          options={({ route }) => ({
-            headerTitle: () => {
-              return (
-                <View
+      <Stack.Screen
+        name="chat-screen"
+        component={ChatScreen}
+        options={({ route }) => ({
+          headerShown: true,
+          headerTitle: () => {
+            return (
+              <View
+                style={{
+                  marginLeft: -23,
+                  backgroundColor: backgroundColor,
+                }}
+              >
+                <Text
                   style={{
-                    marginLeft: -23,
+                    color: chatScreenTitleColor,
+                    fontWeight: "500",
+                    fontSize: 16,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  {route.params!.contactName ??
+                    route.params!.phoneNumber ??
+                    "Chat"}
+                </Text>
+
+                <Text
+                  style={{
+                    color: chatScreenTitleColor,
+                    fontWeight: "500",
+                    fontSize: 13,
+                    marginTop: 4,
+                    opacity: 0.8,
                   }}
                 >
-                  <Text
-                    style={{
-                      color: chatScreenTitleColor,
-                      fontWeight: "500",
-                      fontSize: 16,
-                    }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                  >
-                    {route.params!.contactName ??
-                      route.params!.phoneNumber ??
-                      "Chat"}
-                  </Text>
+                  Last Seen
+                  {/* last seen {formatDate(new Date().toString())} */}
+                </Text>
+              </View>
+            );
+          },
+          animation: "slide_from_right",
+          headerTitleStyle: {
+            fontSize: 16,
+            fontWeight: "bold",
+          },
+        })}
+        // options={{ headerShown: false }}
+      />
 
-                  <Text
-                    style={{
-                      color: chatScreenTitleColor,
-                      fontWeight: "500",
-                      fontSize: 13,
-                      marginTop: 4,
-                      opacity: 0.8,
-                    }}
-                  >
-                    last seen {formatDate(new Date().toString())}
-                  </Text>
-                </View>
-              );
-            },
-            animation: "slide_from_right",
-            headerTitleStyle: {
-              fontSize: 16,
-              fontWeight: "bold",
-            },
-          })}
-          // options={{ headerShown: false }}
-          component={ChatScreen}
-        />
-
-        <Stack.Screen
-          name="contact-lists-screen"
-          component={ContactListsScreen}
-          options={{
-            animation: "slide_from_right",
-          }}
-        />
-      </Stack.Navigator>
-    </ChatContextProvider>
+      <Stack.Screen
+        name="contact-lists-screen"
+        component={ContactListsScreen}
+        options={{
+          animation: "slide_from_right",
+        }}
+      />
+    </Stack.Navigator>
   );
 };
 
@@ -205,14 +205,20 @@ const Navigation = () => {
   }
 
   return (
-    <DropdownContextProvider>
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
-        <StatusBar style="auto" translucent={true} />
-        <SafeAreaProvider initialMetrics={initialWindowMetrics}>
-          {authCtx.isAuthenticated ? <AuthenticatedStack /> : <AuthStack />}
-        </SafeAreaProvider>
-      </ThemeProvider>
-    </DropdownContextProvider>
+    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+      <StatusBar style="auto" translucent={true} />
+      <SafeAreaProvider initialMetrics={initialWindowMetrics}>
+        {authCtx.isAuthenticated ? (
+          <ChatContextProvider>
+            <DropdownContextProvider>
+              <AuthenticatedStack />
+            </DropdownContextProvider>
+          </ChatContextProvider>
+        ) : (
+          <AuthStack />
+        )}
+      </SafeAreaProvider>
+    </ThemeProvider>
   );
 };
 

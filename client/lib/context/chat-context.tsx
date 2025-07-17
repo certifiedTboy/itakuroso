@@ -1,3 +1,4 @@
+import { insertChat } from "@/helpers/database/chats";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
 
@@ -23,7 +24,11 @@ type ChatContextType = {
     senderId: string;
     roomId?: string;
     file?: string;
-    messageToReplyId?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
   }) => void;
   updateSocketMessages: (
     messages: [],
@@ -58,7 +63,11 @@ export const ChatContext = createContext<ChatContextType>({
     senderId: string;
     roomId?: string;
     file?: string;
-    messageToReplyId?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
   }) => {},
   updateSocketMessages: (
     messages: [],
@@ -109,7 +118,11 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     senderId: string;
     roomId?: string;
     file?: string;
-    messageToReplyId?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
   }) => {
     socket.current.emit("message", messageData);
   };
@@ -130,11 +143,26 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           replyTo: {
             replyToId: message?.replyTo?.replyToId,
             replyToMessage: message?.replyTo?.replyToMessage,
-            senderId: message?.replyTo?.senderId,
+            replyToSenderId: message?.replyTo?.replyToSenderId,
           },
         },
         ...prevMessages,
       ]);
+
+      /**
+       * a self invoking function to insert the chat message into the database
+       */
+      (async () => {
+        if (message?.roomId) {
+          await insertChat({
+            senderId: message.senderId,
+            message: message.message,
+            chatRoomId: message.roomId,
+            file: message?.file,
+            replyToId: message?.replyTo?.replyToId,
+          });
+        }
+      })();
     });
 
     return () => {
@@ -166,6 +194,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     if (!messages || messages.length === 0) {
       return setSocketMessages([]);
     }
+
     return setSocketMessages(
       // @ts-ignore
       (prevMessges) => [
@@ -176,13 +205,13 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
             isSender: message.senderId === currentUser?.phoneNumber,
             message: message.message,
             _id: message._id,
-            createdAt: message.createdAt,
+            createdAt: message.timestamp,
             type: "text",
             file: message?.file,
             replyTo: {
-              replyToId: message?.replyTo?._id,
-              replyToMessage: message?.replyTo?.message,
-              senderId: message?.replyTo?.senderId,
+              replyToId: message?.repliedMessageId,
+              replyToMessage: message?.repliedMessage,
+              senderId: message?.repliedSenderId,
             },
           };
         }),
@@ -215,6 +244,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     triggerCount,
   };
 
+  // @ts-ignore
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
 

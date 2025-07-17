@@ -7,12 +7,14 @@ export class ChatHelpers {
     message: string,
     senderId: string,
     _id: string,
+    roomId?: string,
     file?: string,
     replyTo?: {
       replyToId: string;
       replyToMessage: string;
-    },
-  ): any {
+      replyToSenderId: string;
+    } | null,
+  ) {
     return {
       message,
       senderId,
@@ -20,6 +22,7 @@ export class ChatHelpers {
       file: file || null,
       createdAt: new Date(),
       replyTo: replyTo,
+      roomId,
     };
   }
 

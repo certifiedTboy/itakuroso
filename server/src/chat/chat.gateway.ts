@@ -138,56 +138,59 @@ export class ChatGateway
   }
 
   @SubscribeMessage('message')
-  async handleMessage(
+  handleMessage(
     @MessageBody()
     data: {
       roomId: string;
       senderId: string;
       content: string;
       file?: string;
-      messageToReplyId?: string;
+      replyTo?: {
+        replyToId: string;
+        replyToMessage: string;
+        replyToSenderId: string;
+      } | null;
     },
     @ConnectedSocket() client: Socket,
   ) {
     const { roomId } = data;
 
-    let replyToMessage: ChatDocument | null = null;
+    // let replyToMessage: ChatDocument | null = null;
 
     const user = this.chatService.getCurrentActiveRoom(roomId);
 
     // Check if there are morethan one active user in the room
-    const currentActiveUsers = this.chatService.getRoomUsers(roomId);
+    // ill use this to set up messsage queue
+    // const currentActiveUsers = this.chatService.getRoomUsers(roomId);
 
     if (user) {
-      const roomExist = await this.chatService.findRoomById(roomId);
+      // const roomExist = await this.chatService.findRoomById(roomId);
       /**
        * save the message to the database
        */
-      if (roomExist) {
-        await this.chatService.createChat({
-          roomId: roomExist._id.toString(),
-          senderId: data.senderId,
-          chatRoomId: roomExist.roomId,
-          message: data.content,
-          file: data?.file,
-          replyTo: data?.messageToReplyId,
-        });
-
-        roomExist.lastMessage = {
-          content: data.content,
-          senderId: data.senderId,
-          timestamp: new Date(),
-          isRead: currentActiveUsers.length === 1 ? false : true,
-          containsFile: !!data.file,
-        };
-
-        if (data.messageToReplyId) {
-          replyToMessage = await this.chatService.findChatById(
-            data.messageToReplyId,
-          );
-        }
-        await roomExist.save();
-      }
+      // if (roomExist) {
+      // await this.chatService.createChat({
+      //   roomId: roomExist._id.toString(),
+      //   senderId: data.senderId,
+      //   chatRoomId: roomExist.roomId,
+      //   message: data.content,
+      //   file: data?.file,
+      //   replyTo: data?.messageToReplyId,
+      // });
+      // roomExist.lastMessage = {
+      //   content: data.content,
+      //   senderId: data.senderId,
+      //   timestamp: new Date(),
+      //   isRead: currentActiveUsers.length === 1 ? false : true,
+      //   containsFile: !!data.file,
+      // };
+      // if (data.messageToReplyId) {
+      //   replyToMessage = await this.chatService.findChatById(
+      //     data.messageToReplyId,
+      //   );
+      // }
+      // await roomExist.save();
+      // }
 
       return this.server.to(user?.roomId).emit(
         'message',
@@ -195,11 +198,15 @@ export class ChatGateway
           data.content,
           data.senderId,
           ChatHelpers.generateRoomId(),
+          user?.roomId,
           data.file,
-          {
-            replyToId: replyToMessage?._id.toString() || '',
-            replyToMessage: replyToMessage?.message || '',
-          },
+          data.replyTo && data?.replyTo?.replyToMessage
+            ? {
+                replyToId: data.replyTo.replyToId,
+                replyToMessage: data.replyTo.replyToMessage,
+                replyToSenderId: data.replyTo.replyToSenderId,
+              }
+            : undefined,
         ),
       );
     }

@@ -7,6 +7,7 @@ const getDatabase = async () => {
   if (!dbInstance) {
     dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
     await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
+    await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
   }
   return dbInstance;
 };
@@ -29,28 +30,28 @@ const runWithLock = async (fn: () => Promise<void>) => {
  * Creates the chats table in the SQLite database if it does not already exist.
  */
 export const createChatTable = async () => {
-  await runWithLock(async () => {
-    try {
-      const db = await getDatabase();
+  try {
+    const db = await getDatabase();
 
-      if (db) {
-        await db.execAsync(`
+    if (db) {
+      await db.execAsync(`
         PRAGMA journal_mode = WAL;
-        CREATE TABLE IF NOT EXISTS chats (
+        CREATE TABLE IF NOT EXISTS chatss (
           _id TEXT PRIMARY KEY NOT NULL,
           senderId TEXT NOT NULL,
           message TEXT NOT NULL,
           roomId TEXT NOT NULL,
           file TEXT DEFAULT NULL,
-          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+          replyToId TEXT DEFAULT NULL,
+          FOREIGN KEY (replyToId) REFERENCES chatss(_id)
         );
-        CREATE INDEX IF NOT EXISTS idx_roomId ON chats(roomId);
+        CREATE INDEX IF NOT EXISTS idx_roomId ON chatss(roomId);
       `);
-      }
-    } catch (error) {
-      console.log(error);
     }
-  });
+  } catch (error) {
+    console.log(error);
+  }
 };
 
 /**
@@ -62,33 +63,31 @@ export const createChatTable = async () => {
  * @param {string} chatData.message - The content of the chat message.
  * @param {string} chatData.roomId - The ID of the room where the message is sent.
  */
-export const insertChat = async (
-  chatData: {
-    senderId: string;
-    message: string;
-    chatRoomId: string;
-    file?: string;
-  }[]
-) => {
+export const insertChat = async (chatData: {
+  senderId: string;
+  message: string;
+  chatRoomId: string;
+  file?: string;
+  replyToId?: string;
+}) => {
   await runWithLock(async () => {
     try {
       const db = await getDatabase();
       await db.runAsync("BEGIN TRANSACTION");
 
       if (db) {
-        for (const chat of chatData) {
-          const chatId = generateChatId();
-          await db.runAsync(
-            `INSERT OR REPLACE INTO chats (_id, senderId, message, roomId, file) VALUES (?, ?, ?, ?, ?)`,
-            [
-              chatId,
-              chat.senderId,
-              chat.message,
-              chat.chatRoomId,
-              chat.file || null,
-            ]
-          );
-        }
+        const chatId = generateChatId();
+        await db.runAsync(
+          `INSERT OR REPLACE INTO chatss (_id, senderId, message, roomId, file, replyToId) VALUES (?, ?, ?, ?, ?, ?)`,
+          [
+            chatId,
+            chatData.senderId,
+            chatData.message,
+            chatData.chatRoomId,
+            chatData.file || null,
+            chatData.replyToId || null,
+          ]
+        );
       }
 
       await db.runAsync("COMMIT");
@@ -109,7 +108,7 @@ export const getChatsBySenderId = async (senderId: string) => {
 
     if (db) {
       const results = await db.getAllAsync(
-        `SELECT * FROM chats WHERE senderId = ?`,
+        `SELECT * FROM chatss WHERE senderId = ?`,
         [senderId]
       );
 
@@ -131,7 +130,26 @@ export const getLocalChatsByRoomId = async (roomId: string) => {
 
     if (db) {
       const results = await db.getAllAsync(
-        `SELECT * FROM chats WHERE roomId = ?`,
+        `
+      SELECT 
+        c._id,
+        c.senderId,
+        c.message,
+        c.roomId,
+        c.timestamp,
+        c.replyToId,
+
+        -- Replied message fields (from self-join)
+        r._id AS repliedMessageId,
+        r.senderId AS repliedSenderId,
+        r.message AS repliedMessage,
+        r.timestamp AS repliedTimestamp
+
+      FROM chatss c
+      LEFT JOIN chatss r ON c.replyToId = r._id
+      WHERE c.roomId = ?
+      ORDER BY c.timestamp DESC
+  `,
         [roomId]
       );
 
@@ -154,7 +172,7 @@ export const getLastChatByRoomId = async (roomId: string) => {
 
     if (db) {
       const results = await db.getAllAsync(
-        `SELECT * FROM chats WHERE roomId = ? ORDER BY timestamp DESC LIMIT 1`,
+        `SELECT * FROM chatss WHERE roomId = ? ORDER BY timestamp DESC LIMIT 1`,
         [roomId]
       );
 

@@ -39,6 +39,7 @@ export const chatApis = createApi({
             // await createChatTable();
             // await insertChat(data?.data);
             // await insertChat(chatData);
+            // await insertChat(data?.data);
           }
         } catch (error: unknown) {
           console.log(error);

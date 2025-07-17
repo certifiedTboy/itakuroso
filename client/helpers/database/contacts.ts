@@ -4,9 +4,22 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 const getDatabase = async () => {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
+    dbInstance = await SQLite.openDatabaseAsync("contact_itakuroso_new");
   }
   return dbInstance;
+};
+
+let dbLock = false;
+const runWithLock = async (fn: () => Promise<void>) => {
+  while (dbLock) {
+    await new Promise((res) => setTimeout(res, 50));
+  }
+  dbLock = true;
+  try {
+    await fn();
+  } finally {
+    dbLock = false;
+  }
 };
 
 /**
@@ -45,19 +58,26 @@ export const insertContacts = async (
     isActive?: boolean;
   }[]
 ) => {
-  try {
-    const db = await getDatabase();
-    await db.runAsync("BEGIN TRANSACTION");
-    for (const contact of contacts) {
-      await db.runAsync(
-        `INSERT OR REPLACE INTO contact (id, name, phoneNumber, roomId) VALUES (?, ?, ?, ?)`,
-        [contact.id, contact.name, contact.phoneNumber, contact.roomId || null]
-      );
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
+      for (const contact of contacts) {
+        await db.runAsync(
+          `INSERT OR REPLACE INTO contact (id, name, phoneNumber, roomId) VALUES (?, ?, ?, ?)`,
+          [
+            contact.id,
+            contact.name,
+            contact.phoneNumber,
+            contact.roomId || null,
+          ]
+        );
+      }
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error inserting contacts:", error);
     }
-    await db.runAsync("COMMIT");
-  } catch (error) {
-    console.log("Error inserting contacts:", error);
-  }
+  });
 };
 
 /**

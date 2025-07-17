@@ -1,6 +1,12 @@
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   Image,
@@ -35,6 +41,8 @@ import {
   useAudioRecorder,
 } from "expo-audio";
 
+import { useFocusEffect } from "expo-router";
+
 import * as ImagePicker from "expo-image-picker";
 import EmojiModal from "react-native-emoji-modal";
 
@@ -50,6 +58,7 @@ type ChatInputProps = {
   messageToRespondTo?: {
     message: string;
     _id: string;
+    file?: string;
   } | null;
   setMessageToRespondTo?: ({
     message,
@@ -76,6 +85,7 @@ const MessageInput = ({
   const [inputHeight, setInputHeight] = useState(40);
   const ref = useRef<IWaveformRef>(null);
   const inputRef = useRef<TextInput>(null);
+  const heightRef = useRef<number>(85);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -143,6 +153,12 @@ const MessageInput = ({
     }
   }, [audioUri]);
 
+  useFocusEffect(
+    useCallback(() => {
+      heightRef.current = 50;
+    }, [])
+  );
+
   /**
    * requestPermissions is used to request microphone permissions.
    * It uses the `expo-audio` library to handle permissions.
@@ -156,12 +172,18 @@ const MessageInput = ({
     })();
   }, []);
 
+  /**
+   * control the height of the message input field
+   */
   useEffect(() => {
     if (messageToRespondTo?.message) {
       inputRef.current?.focus();
     }
   }, [messageToRespondTo, messageToRespondTo?.message]);
 
+  /**
+   * update file url and public id after pre-uploading a file
+   */
   useEffect(() => {
     if (isSuccess && data?.data?.secureUrl) {
       setImageUri(data?.data?.secureUrl);
@@ -232,23 +254,96 @@ const MessageInput = ({
         senderId: currentUser?.phoneNumber,
         roomId,
         file: imageUri,
-        messageToReplyId: messageToRespondTo?._id,
+        replyTo: {
+          replyToId: messageToRespondTo?._id!,
+          replyToMessage: messageToRespondTo?.message!,
+          replyToSenderId: currentUser?.phoneNumber,
+        },
       });
+
       setMessage("");
       setImageUri("");
       setInputHeight(40);
+      // @ts-ignore
       setMessageToRespondTo && setMessageToRespondTo(null);
     }
   };
 
   return (
     <>
-      <ImagePreviewModal
-        isVisible={imagePreviewIsVisible}
-        onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
-        imageUrl={imageUri}
-      />
-      <View style={styles.container}>
+      {imageUri && (
+        <ImagePreviewModal
+          isVisible={imagePreviewIsVisible}
+          onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
+          imageUrl={imageUri}
+        />
+      )}
+
+      {audioUri && (
+        <Waveform
+          mode="static"
+          ref={ref}
+          path={audioUri}
+          candleSpace={2}
+          candleWidth={4}
+          scrubColor="white"
+          onPlayerStateChange={(playerState) => console.log(playerState)}
+          onPanStateChange={(isMoving) => console.log(isMoving)}
+        />
+      )}
+
+      {isLoading && (
+        <View style={styles.loaderContainer}>
+          <LoaderSpinner />
+        </View>
+      )}
+
+      {messageToRespondTo && messageToRespondTo.message && (
+        <View style={styles.responseTextContainer}>
+          <Text
+            numberOfLines={1}
+            ellipsizeMode="tail"
+            textBreakStrategy="balanced"
+            style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
+          >
+            {messageToRespondTo.message}
+          </Text>
+
+          <View style={styles.iconContainer}>
+            <Icon
+              name="close-circle-outline"
+              size={25}
+              color={placeholderTextColor}
+              onPress={() =>
+                // @ts-ignore
+                setMessageToRespondTo && setMessageToRespondTo(null)
+              }
+            />
+          </View>
+        </View>
+      )}
+
+      {imageUri && (
+        <View style={styles.previewImageContainer}>
+          <Pressable
+            onPress={() => setImagePreviewIsVisible(true)}
+            style={styles.imagePressable}
+          >
+            <Image style={styles.previewImage} source={{ uri: imageUri }} />
+          </Pressable>
+
+          <View style={styles.iconContainer}>
+            <Icon
+              name="close-circle-outline"
+              size={25}
+              color={placeholderTextColor}
+              onPress={() => deleteFile(publicId.split("/").pop())}
+            />
+          </View>
+        </View>
+      )}
+
+      <View style={[styles.container, { height: heightRef.current }]}>
         {showEmoji && (
           <View style={styles.emojiContainer}>
             <EmojiModal
@@ -264,70 +359,7 @@ const MessageInput = ({
           </View>
         )}
 
-        {messageToRespondTo && messageToRespondTo.message && (
-          <View style={styles.responseTextContainer}>
-            <Text
-              numberOfLines={1}
-              ellipsizeMode="tail"
-              textBreakStrategy="balanced"
-              style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
-            >
-              {messageToRespondTo.message}
-            </Text>
-
-            <View style={styles.iconContainer}>
-              <Icon
-                name="close-circle-outline"
-                size={25}
-                color={placeholderTextColor}
-                onPress={() =>
-                  setMessageToRespondTo && setMessageToRespondTo(null)
-                }
-              />
-            </View>
-          </View>
-        )}
-
-        {imageUri && (
-          <View style={styles.previewImageContainer}>
-            <Pressable
-              onPress={() => setImagePreviewIsVisible(true)}
-              style={styles.imagePressable}
-            >
-              <Image style={styles.previewImage} source={{ uri: imageUri }} />
-            </Pressable>
-
-            <View style={styles.iconContainer}>
-              <Icon
-                name="close-circle-outline"
-                size={25}
-                color={placeholderTextColor}
-                onPress={() => deleteFile(publicId.split("/").pop())}
-              />
-            </View>
-          </View>
-        )}
-
-        {isLoading && (
-          <View style={styles.loaderContainer}>
-            <LoaderSpinner />
-          </View>
-        )}
-
         <View style={styles.row}>
-          {audioUri && (
-            <Waveform
-              mode="static"
-              ref={ref}
-              path={audioUri}
-              candleSpace={2}
-              candleWidth={4}
-              scrubColor="white"
-              onPlayerStateChange={(playerState) => console.log(playerState)}
-              onPanStateChange={(isMoving) => console.log(isMoving)}
-            />
-          )}
-
           <TextInput
             placeholderTextColor={placeholderTextColor}
             style={[
@@ -400,6 +432,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
+
+    // bottom: 25,
   },
   row: {
     flexDirection: "row",
@@ -446,7 +480,7 @@ const styles = StyleSheet.create({
     // alignItems: "flex-start",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginVertical: 10,
+    // marginVertical: 10,
     // marginBottom: 40,
   },
   recordingContainer: {

@@ -24,5 +24,5 @@ export const generateChatId = () => {
  * @param {string} date - The date to format.
  */
 export const formatDate = (date: string) => {
-  return moment(date).fromNow();
+  return moment(date, "YYYY-MM-DD HH:mm:ss").fromNow();
 };
