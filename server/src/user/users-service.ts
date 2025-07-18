@@ -193,4 +193,32 @@ export class UsersService {
       .select('-passcode -verificationCode -verificationCodeExpiresIn -__v')
       .exec();
   }
+
+  /**
+   * @method updateUserOnlineStatus
+   * @description Updates the online status of a user.
+   * @param {string} userId - The ID of the user to update.
+   * @returns {Promise<UserDocument>} - The updated user object or null if not found.
+   */
+  async updateUserOnlineStatus(userId: string): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { isOnline: true },
+      { new: true },
+    );
+  }
+
+  /**
+   * @method updateUserOfflineStatus
+   * @description Updates the offline status of a user.
+   * @param {string} userId - The ID of the user to update.
+   * @returns {Promise<UserDocument>} - The updated user object or null if not found.
+   */
+  async updateUserOfflineStatus(userId: string): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { isOnline: false, lastSeen: new Date() },
+      { new: true },
+    );
+  }
 }

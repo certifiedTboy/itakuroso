@@ -1,5 +1,5 @@
-import { Controller, Post, Patch, Body, Get, UseGuards } from '@nestjs/common';
-import { AuthGuard } from '../guard/auth-guard';
+import { Controller, Post, Patch, Body, Get } from '@nestjs/common';
+// import { AuthGuard } from '../guard/auth-guard';
 import {
   BadRequestException,
   InternalServerErrorException,
@@ -40,7 +40,6 @@ export class UsersController {
       );
     } catch (error) {
       if (error instanceof Error) {
-        console.log(error);
         throw new BadRequestException('', {
           cause: error.cause,
           description: error.message,

@@ -1,7 +1,8 @@
 import { insertChat } from "@/helpers/database/chats";
+import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
+import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
-
 const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
 type ChatContextType = {
@@ -81,6 +82,9 @@ export const ChatContext = createContext<ChatContextType>({
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
+  /**
+   * chat message state data
+   */
   const [socketMessages, setSocketMessages] = useState<
     {
       senderId: string;
@@ -92,11 +96,49 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     }[]
   >([]);
 
-  const [triggerCount, setTriggerCount] = useState(0);
+  /**
+   * network info state data
+   */
+  const [networkInfo, setNetworkInfo] = useState<{
+    type: string;
+    isConnected: boolean;
+  }>({ type: "", isConnected: false });
 
   const socket = useRef(io(API_URL));
 
-  // join room function
+  const { currentUser } = useSelector((state: any) => state.authState);
+
+  // console.log(currentUser);
+
+  /**
+   * network status state subscriber
+   * it update if a user is connected or not
+   * and also checks their method if internet connect
+   * e.g wifi cellular
+   */
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener((state) => {
+      setNetworkInfo({
+        type: state.type,
+        isConnected: state.isConnected! && state.isInternetReachable!,
+      });
+
+      NetInfo.fetch().then((state) => {
+        setNetworkInfo({
+          type: state.type,
+          isConnected: state.isConnected! && state.isInternetReachable!,
+        });
+      });
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const [triggerCount, setTriggerCount] = useState(0);
+
+  /**
+   * join room function
+   */
   const joinRoom = (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
@@ -112,7 +154,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
-  // send message function
+  /**
+   * send message function
+   */
   const sendMessage = async (messageData: {
     content: string;
     senderId: string;
@@ -127,6 +171,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     socket.current.emit("message", messageData);
   };
 
+  /**
+   * listens to incoming messages from the socket server
+   */
   useEffect(() => {
     const currentSocket = socket.current;
 
@@ -170,10 +217,34 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket]);
 
+  /**
+   * network status effect
+   * helps update current user status if online or offline
+   */
+  useEffect(() => {
+    const currentSocket = socket?.current;
+    if (networkInfo && networkInfo.isConnected) {
+      currentSocket.emit("userOnline", currentUser);
+    } else {
+      currentSocket.emit("userOffline", currentUser);
+    }
+
+    return () => {
+      currentSocket.off("userOnline");
+      currentSocket.off("userOffline");
+    };
+  }, [networkInfo.isConnected, networkInfo.type]);
+
+  /**
+   * an helpers function to help mark message as read
+   */
   const trigerRoomRefetch = () => {
     return true;
   };
 
+  /**
+   * marks messages as read
+   */
   useEffect(() => {
     const currentSocket = socket.current;
 
