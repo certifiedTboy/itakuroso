@@ -11,7 +11,8 @@ import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
 import { ChatHelpers } from '../helpers/chat-helpers';
-import { ChatDocument } from './schemas/chat-schema';
+import { MessageStatus } from './chat-type';
+// import { ChatDocument } from './schemas/chat-schema';
 
 @WebSocketGateway({
   cors: {
@@ -52,15 +53,6 @@ export class ChatGateway
     @ConnectedSocket() client: Socket,
   ) {
     const { roomId, userId, currentUserId } = data;
-
-    // let newRoomId: string;
-
-    // if (!roomId) {
-    //   newRoomId = ChatHelpers.generateRoomId();
-    // } else {
-    //   newRoomId = roomId;
-    // }
-
     // /**
     //  * add current user to temporary room
     //  */
@@ -92,16 +84,16 @@ export class ChatGateway
       /**
        * for now, the active user will get a message to inform the other user to create an account
        */
-      return this.server
-        .to(user.roomId)
-        .emit(
-          'message',
-          ChatHelpers.messageResponse(
-            `Kindly invite ${userId.contactName} to create an account with his phone number: ${userId.phoneNumber} to join the chat`,
-            ' ',
-            roomId,
-          ),
-        );
+      return this.server.to(user.roomId).emit(
+        'message',
+        ChatHelpers.messageResponse(
+          `Kindly invite ${userId.contactName} to create an account with his phone number: ${userId.phoneNumber} to join the chat`,
+          ' ',
+
+          roomId,
+          MessageStatus.READ,
+        ),
+      );
     }
 
     // check if room already exist on database
@@ -137,6 +129,56 @@ export class ChatGateway
     }
   }
 
+  /**
+   * @method handleUserOnline
+   * @description Handles listening event when a user comes online.
+   * @param {Object} currentUserData - The data of the current user.
+   * @param {Socket} client - The connected socket of the user.
+   */
+  @SubscribeMessage('userOnline')
+  async handleUserOnline(
+    @MessageBody()
+    currentUserData: { _id: string; phoneNumber: string; email: string },
+    // @ConnectedSocket() client: Socket,
+  ) {
+    /**
+     * add current user to active user pool
+     */
+    this.chatService.addUserToActivePool({
+      contactName: currentUserData.email,
+      phoneNumber: currentUserData.phoneNumber,
+    });
+
+    /**
+     * update the user online status
+     */
+
+    await this.usersService.updateUserOnlineStatus(currentUserData._id);
+  }
+
+  /**
+   * @method handleUserOffline
+   * @description Handles listening event when a user goes offline.
+   * @param {Object} currentUserData - The data of the current user.
+   * @param {Socket} client - The connected socket of the user.
+   */
+  @SubscribeMessage('userOffline')
+  async handleUserOffline(
+    @MessageBody()
+    currentUserData: { _id: string; phoneNumber: string; email: string },
+    // @ConnectedSocket() client: Socket,
+  ) {
+    /**
+     * remove current user from active user pool
+     */
+    this.chatService.removeUserFromActivePool(currentUserData.phoneNumber);
+
+    /**
+     * update the user offline status on database
+     */
+    await this.usersService.updateUserOfflineStatus(currentUserData._id);
+  }
+
   @SubscribeMessage('message')
   handleMessage(
     @MessageBody()
@@ -151,7 +193,7 @@ export class ChatGateway
         replyToSenderId: string;
       } | null;
     },
-    @ConnectedSocket() client: Socket,
+    // @ConnectedSocket() client: Socket,
   ) {
     const { roomId } = data;
 
@@ -192,12 +234,38 @@ export class ChatGateway
       // await roomExist.save();
       // }
 
+      const userIsOnlineAndActive = this.chatService.checkUserExistInActivePool(
+        user?.phoneNumber,
+      );
+
+      if (userIsOnlineAndActive) {
+        return this.server.to(user?.roomId).emit(
+          'message',
+          ChatHelpers.messageResponse(
+            data.content,
+            data.senderId,
+            ChatHelpers.generateRoomId(),
+            MessageStatus.DELIVERED,
+            user?.roomId,
+            data.file,
+            data.replyTo && data?.replyTo?.replyToMessage
+              ? {
+                  replyToId: data.replyTo.replyToId,
+                  replyToMessage: data.replyTo.replyToMessage,
+                  replyToSenderId: data.replyTo.replyToSenderId,
+                }
+              : undefined,
+          ),
+        );
+      }
+
       return this.server.to(user?.roomId).emit(
         'message',
         ChatHelpers.messageResponse(
           data.content,
           data.senderId,
           ChatHelpers.generateRoomId(),
+          MessageStatus.SENT,
           user?.roomId,
           data.file,
           data.replyTo && data?.replyTo?.replyToMessage
@@ -215,7 +283,7 @@ export class ChatGateway
   @SubscribeMessage('markMessageAsRead')
   async handleMarkMessageAsRead(
     @MessageBody() data: { roomId: string },
-    @ConnectedSocket() client: Socket,
+    // @ConnectedSocket() client: Socket,
   ) {
     const { roomId } = data;
     await this.chatService.updateLastMessageReadStatus(roomId);
@@ -230,7 +298,7 @@ export class ChatGateway
       // roomId: string;
       currentUserId: { phoneNumber: string };
     },
-    @ConnectedSocket() client: Socket,
+    // @ConnectedSocket() client: Socket,
   ) {
     const { currentUserId } = data;
 

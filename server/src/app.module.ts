@@ -16,7 +16,7 @@ import { ChatModule } from './chat/chat-module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI'),
+        uri: configService.get<string>('MONGO_URI_2'),
       }),
 
       inject: [ConfigService],
@@ -27,7 +27,7 @@ import { ChatModule } from './chat/chat-module';
     }),
 
     /**
-     * global configuration for rating limiting on all endpoints
+     * global configuration for rate limiting on all endpoints
      * @params {string} ttl: time to live in seconds
      * @params {} limit: number of requests allowed in the ttl period
      */

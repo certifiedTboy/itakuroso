@@ -1,3 +1,4 @@
+import { MessageStatus } from '../chat/chat-type';
 export class ChatHelpers {
   static formatPhoneNumber(phoneNumber: string): string {
     return phoneNumber.replace(/\D/g, '');
@@ -7,6 +8,7 @@ export class ChatHelpers {
     message: string,
     senderId: string,
     _id: string,
+    messageStatus: MessageStatus,
     roomId?: string,
     file?: string,
     replyTo?: {

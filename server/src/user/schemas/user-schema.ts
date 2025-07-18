@@ -21,6 +21,15 @@ export class User {
   verificationCodeExpiresIn: Date;
 
   @Prop({ default: false })
+  isOnline: boolean;
+
+  @Prop({ default: Date.now() })
+  lastSeen: Date;
+
+  @Prop({ default: null })
+  profilePicture: string;
+
+  @Prop({ default: false })
   isVerified: boolean;
 
   @Prop({ default: false })

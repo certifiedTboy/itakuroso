@@ -15,7 +15,15 @@ import { CreateChatDto } from './dto/create-chat.dto';
  */
 @Injectable()
 export class ChatService {
-  users: { contactName: string; roomId: string; phoneNumber: string }[] = [];
+  private users: {
+    contactName: string;
+    roomId: string;
+    phoneNumber: string;
+  }[] = [];
+  private activeUserPools: {
+    contactName: string;
+    phoneNumber: string;
+  }[] = [];
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
@@ -113,6 +121,50 @@ export class ChatService {
     if (index !== -1) {
       return this.users.splice(index, 1)[0];
     }
+  }
+
+  /**
+   * @method addUserToActivePool
+   * @description Adds a user to the active user pool or updates their information if they already
+   * @param {Object} user - The user object containing contact name and phone number.
+   */
+  addUserToActivePool(user: { contactName: string; phoneNumber: string }) {
+    const existingUserIndex = this.activeUserPools.findIndex(
+      (activeUser) => activeUser.phoneNumber === user.phoneNumber,
+    );
+
+    if (existingUserIndex >= 0) {
+      this.activeUserPools[existingUserIndex] = user;
+      return this.activeUserPools[existingUserIndex];
+    }
+
+    this.activeUserPools.push(user);
+  }
+
+  /**
+   * @method removeUserFromActivePool
+   * @description Removes a user from the active user pool based on their phone number.
+   * @param {string} phoneNumber - The phone number of the user to be removed
+   */
+  removeUserFromActivePool(phoneNumber: string) {
+    const index = this.activeUserPools.findIndex(
+      (activeUser) => activeUser.phoneNumber === phoneNumber,
+    );
+
+    if (index !== -1) {
+      return this.activeUserPools.splice(index, 1)[0];
+    }
+  }
+
+  /**
+   * @method checkUserExistInActivePool
+   * @description Checks if a user exists in the active user pool based on their phone number.
+   * @param {string} phoneNumber - The phone number of the user to check.
+   */
+  checkUserExistInActivePool(phoneNumber: string) {
+    return this.activeUserPools.find(
+      (activeUser) => activeUser.phoneNumber === phoneNumber,
+    );
   }
 
   /**
