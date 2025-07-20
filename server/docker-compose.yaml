@@ -12,8 +12,10 @@ services:
 
     environment:
       - MONGO_URI=mongodb://mongo:27017/mydb
+      - RABBITMQ_HOST=rabbitmq
     depends_on:
       - mongo
+      - rabbitmq
   mongo:
     image: mongo:6
     container_name: mongo-db
@@ -22,6 +24,17 @@ services:
       - '27017:27017'
     volumes:
       - mongo_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    ports:
+      - '5672:5672' # RabbitMQ main port (AMQP)
+      - '15672:15672' # RabbitMQ Management UI
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
 
 volumes:
   mongo_data:

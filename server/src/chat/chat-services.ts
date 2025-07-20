@@ -7,6 +7,8 @@ import { Room, RoomDocument } from './schemas/room-schema';
 import { Chat, ChatDocument } from './schemas/chat-schema';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { CreateChatDto } from './dto/create-chat.dto';
+import { MessageQueue } from './schemas/message-queue';
+import { QueueNodeType } from './schemas/message-queue';
 
 /**
  * @class UsersService
@@ -24,6 +26,7 @@ export class ChatService {
     contactName: string;
     phoneNumber: string;
   }[] = [];
+  messageQueue: MessageQueue[] = [];
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
@@ -97,17 +100,6 @@ export class ChatService {
   }
 
   /**
-   * @method getCurrentActiveRoom
-   * @description Retrieves the current active room based on the provided room ID.
-   * @param {string} roomId - The ID of the room to find.
-   */
-  getCurrentActiveRoom(roomId: string) {
-    return this.users.find(
-      (activeUser: { roomId: string }) => activeUser.roomId === roomId,
-    );
-  }
-
-  /**
    * @method userLeave
    * @description Removes a user from the active users list based on their phone number.
    * @param {string} phoneNumber - The phone number of the user to be removed.
@@ -165,6 +157,32 @@ export class ChatService {
     return this.activeUserPools.find(
       (activeUser) => activeUser.phoneNumber === phoneNumber,
     );
+  }
+
+  /**
+   * @method addChatToUserMessageQueue
+   * @description Adds a chat message to the user's message queue.
+   * @param {string} phoneNumber - The phone number of the user whose message queue
+   * @param {QueueNodeType} messageData - The chat message data to be added
+   */
+  addChatToUserMessageQueue(phoneNumber: string, messageData: QueueNodeType) {
+    const userMessageQueue = this.getUserMessageQueue(phoneNumber);
+    if (userMessageQueue) {
+      userMessageQueue.enqueue(messageData);
+    } else {
+      const newMessageQueue = new MessageQueue(phoneNumber);
+      newMessageQueue.enqueue(messageData);
+      this.messageQueue.push(newMessageQueue);
+    }
+  }
+
+  /**
+   * @method getUserMessageQueue
+   * @description Retrieves the message queue for a specific user based on their phone number.
+   * @param {string} phoneNumber - The phone number of the user whose message queue
+   */
+  getUserMessageQueue(phoneNumber: string) {
+    return this.messageQueue.find((queue) => queue.owner === phoneNumber);
   }
 
   /**

@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { UsersModule } from './user/users-module';
 import { AuthModule } from './auth/auth-module';
 import { MongooseModule } from '@nestjs/mongoose';
+import { BullModule } from '@nestjs/bullmq';
 // import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat-module';
 
@@ -16,10 +17,16 @@ import { ChatModule } from './chat/chat-module';
     MongooseModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('MONGO_URI_2'),
+        uri: configService.get<string>('MONGO_URI'),
       }),
 
       inject: [ConfigService],
+    }),
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
     }),
     ConfigModule.forRoot({
       isGlobal: true, // makes the config accessible globally

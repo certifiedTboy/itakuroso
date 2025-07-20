@@ -252,6 +252,7 @@ const MessageInput = ({
       chatCtx.sendMessage({
         content: message,
         senderId: currentUser?.phoneNumber,
+        receiverId,
         roomId,
         file: imageUri,
         replyTo: {

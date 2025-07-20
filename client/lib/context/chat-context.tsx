@@ -23,6 +23,7 @@ type ChatContextType = {
   sendMessage: (messageData: {
     content: string;
     senderId: string;
+    receiverId: string;
     roomId?: string;
     file?: string;
     replyTo?: {
@@ -62,6 +63,7 @@ export const ChatContext = createContext<ChatContextType>({
   sendMessage: (messageData: {
     content: string;
     senderId: string;
+    receiverId: string;
     roomId?: string;
     file?: string;
     replyTo?: {
@@ -108,7 +110,18 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
-  // console.log(currentUser);
+  useEffect(() => {
+    const currentSocket = socket.current;
+    currentSocket.on("connected", () => {
+      if (currentUser) {
+        currentSocket.emit("userOnline", currentUser);
+      }
+    });
+
+    return () => {
+      currentSocket.off("connected");
+    };
+  }, [socket, currentUser]);
 
   /**
    * network status state subscriber
@@ -160,6 +173,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   const sendMessage = async (messageData: {
     content: string;
     senderId: string;
+    receiverId: string;
     roomId?: string;
     file?: string;
     replyTo?: {
@@ -224,16 +238,20 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const currentSocket = socket?.current;
     if (networkInfo && networkInfo.isConnected) {
-      currentSocket.emit("userOnline", currentUser);
+      if (currentUser) {
+        currentSocket.emit("userOnline", currentUser);
+      }
     } else {
-      currentSocket.emit("userOffline", currentUser);
+      if (currentUser) {
+        currentSocket.emit("userOffline", currentUser);
+      }
     }
 
     return () => {
       currentSocket.off("userOnline");
       currentSocket.off("userOffline");
     };
-  }, [networkInfo.isConnected, networkInfo.type]);
+  }, [networkInfo.isConnected, networkInfo.type, currentUser, socket]);
 
   /**
    * an helpers function to help mark message as read
