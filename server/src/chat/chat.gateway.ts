@@ -12,6 +12,7 @@ import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
 import { ChatHelpers } from '../helpers/chat-helpers';
 import { MessageStatus } from './chat-type';
+
 // import { ChatDocument } from './schemas/chat-schema';
 
 @WebSocketGateway({
@@ -35,7 +36,7 @@ export class ChatGateway
   }
 
   handleConnection(client: Socket) {
-    console.log(`Client connected: ${client.id}`);
+    this.server.to(client.id).emit('connected');
   }
 
   handleDisconnect(client: Socket) {
@@ -133,7 +134,6 @@ export class ChatGateway
    * @method handleUserOnline
    * @description Handles listening event when a user comes online.
    * @param {Object} currentUserData - The data of the current user.
-   * @param {Socket} client - The connected socket of the user.
    */
   @SubscribeMessage('userOnline')
   async handleUserOnline(
@@ -141,26 +141,59 @@ export class ChatGateway
     currentUserData: { _id: string; phoneNumber: string; email: string },
     // @ConnectedSocket() client: Socket,
   ) {
-    /**
-     * add current user to active user pool
-     */
-    this.chatService.addUserToActivePool({
-      contactName: currentUserData.email,
-      phoneNumber: currentUserData.phoneNumber,
-    });
+    if (currentUserData.phoneNumber && currentUserData.email) {
+      /**
+       * add current user to active user pool
+       */
+      this.chatService.addUserToActivePool({
+        contactName: currentUserData.email,
+        phoneNumber: currentUserData.phoneNumber,
+      });
 
-    /**
-     * update the user online status
-     */
+      /**
+       * update the user online status
+       */
+      await this.usersService.updateUserOnlineStatus(currentUserData._id);
 
-    await this.usersService.updateUserOnlineStatus(currentUserData._id);
+      const userMessageQueue = this.chatService.getUserMessageQueue(
+        currentUserData.phoneNumber,
+      );
+
+      if (userMessageQueue && userMessageQueue.size > 0) {
+        /**
+         * send the user the messages in the queue
+         */
+        while (userMessageQueue.size > 0) {
+          const message = userMessageQueue.dequeue();
+          if (message) {
+            this.server.to(message.roomId).emit(
+              'message',
+              ChatHelpers.messageResponse(
+                message.content,
+                message.senderId,
+                ChatHelpers.generateRoomId(),
+                MessageStatus.SENT,
+                message.roomId,
+                message.file,
+                message.replyTo && message?.replyTo?.replyToMessage
+                  ? {
+                      replyToId: message.replyTo.replyToId,
+                      replyToMessage: message.replyTo.replyToMessage,
+                      replyToSenderId: message.replyTo.replyToSenderId,
+                    }
+                  : undefined,
+              ),
+            );
+          }
+        }
+      }
+    }
   }
 
   /**
    * @method handleUserOffline
    * @description Handles listening event when a user goes offline.
    * @param {Object} currentUserData - The data of the current user.
-   * @param {Socket} client - The connected socket of the user.
    */
   @SubscribeMessage('userOffline')
   async handleUserOffline(
@@ -185,6 +218,7 @@ export class ChatGateway
     data: {
       roomId: string;
       senderId: string;
+      receiverId: string;
       content: string;
       file?: string;
       replyTo?: {
@@ -195,17 +229,91 @@ export class ChatGateway
     },
     // @ConnectedSocket() client: Socket,
   ) {
-    const { roomId } = data;
+    const { roomId, receiverId } = data;
 
     // let replyToMessage: ChatDocument | null = null;
 
-    const user = this.chatService.getCurrentActiveRoom(roomId);
+    const activeRoomUsers = this.chatService.getRoomUsers(roomId);
 
     // Check if there are morethan one active user in the room
     // ill use this to set up messsage queue
     // const currentActiveUsers = this.chatService.getRoomUsers(roomId);
 
-    if (user) {
+    if (activeRoomUsers && activeRoomUsers.length > 0) {
+      /**
+       * check if the receiver is in the active room users
+       * if not, then send the message as a sent message
+       * if yes, then send the message as a delivered message
+       * and update the last message read status
+       * a notification will be sent to the receiver if online
+       */
+      const otherUserIsActiveInRoom = activeRoomUsers.find(
+        (user: { phoneNumber: string }) => user.phoneNumber === receiverId,
+      );
+
+      if (!otherUserIsActiveInRoom) {
+        const userIsOnline =
+          this.chatService.checkUserExistInActivePool(receiverId);
+
+        if (!userIsOnline) {
+          /**
+           * add the message to the user's message queue
+           */
+          return this.chatService.addChatToUserMessageQueue(receiverId, {
+            roomId: data.roomId,
+            senderId: data.senderId,
+            content: data.content,
+            file: data.file,
+            replyTo: data.replyTo,
+            createdAt: new Date().toISOString(),
+          });
+        } else {
+          /**
+           * trigger push notification to the user
+           * and send the message as a delivered message
+           */
+          return this.server.to(roomId).emit(
+            'message',
+            ChatHelpers.messageResponse(
+              data.content,
+              data.senderId,
+              ChatHelpers.generateRoomId(),
+              MessageStatus.DELIVERED,
+              roomId,
+              data.file,
+              data.replyTo && data?.replyTo?.replyToMessage
+                ? {
+                    replyToId: data.replyTo.replyToId,
+                    replyToMessage: data.replyTo.replyToMessage,
+                    replyToSenderId: data.replyTo.replyToSenderId,
+                  }
+                : undefined,
+            ),
+          );
+        }
+      } else {
+        return this.server.to(roomId).emit(
+          'message',
+          ChatHelpers.messageResponse(
+            data.content,
+            data.senderId,
+            ChatHelpers.generateRoomId(),
+            MessageStatus.DELIVERED,
+            roomId,
+            data.file,
+            data.replyTo && data?.replyTo?.replyToMessage
+              ? {
+                  replyToId: data.replyTo.replyToId,
+                  replyToMessage: data.replyTo.replyToMessage,
+                  replyToSenderId: data.replyTo.replyToSenderId,
+                }
+              : undefined,
+          ),
+        );
+      }
+
+      // console.log(checkOtherUserIsActive);
+      // console.log(activeRoomUsers);
       // const roomExist = await this.chatService.findRoomById(roomId);
       /**
        * save the message to the database
@@ -233,50 +341,6 @@ export class ChatGateway
       // }
       // await roomExist.save();
       // }
-
-      const userIsOnlineAndActive = this.chatService.checkUserExistInActivePool(
-        user?.phoneNumber,
-      );
-
-      if (userIsOnlineAndActive) {
-        return this.server.to(user?.roomId).emit(
-          'message',
-          ChatHelpers.messageResponse(
-            data.content,
-            data.senderId,
-            ChatHelpers.generateRoomId(),
-            MessageStatus.DELIVERED,
-            user?.roomId,
-            data.file,
-            data.replyTo && data?.replyTo?.replyToMessage
-              ? {
-                  replyToId: data.replyTo.replyToId,
-                  replyToMessage: data.replyTo.replyToMessage,
-                  replyToSenderId: data.replyTo.replyToSenderId,
-                }
-              : undefined,
-          ),
-        );
-      }
-
-      return this.server.to(user?.roomId).emit(
-        'message',
-        ChatHelpers.messageResponse(
-          data.content,
-          data.senderId,
-          ChatHelpers.generateRoomId(),
-          MessageStatus.SENT,
-          user?.roomId,
-          data.file,
-          data.replyTo && data?.replyTo?.replyToMessage
-            ? {
-                replyToId: data.replyTo.replyToId,
-                replyToMessage: data.replyTo.replyToMessage,
-                replyToSenderId: data.replyTo.replyToSenderId,
-              }
-            : undefined,
-        ),
-      );
     }
   }
 

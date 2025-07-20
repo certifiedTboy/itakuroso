@@ -1,7 +1,7 @@
 /**
  * type definition for a message queue nodde
  */
-type QueueNodeType = {
+export type QueueNodeType = {
   roomId: string;
   senderId: string;
   content: string;

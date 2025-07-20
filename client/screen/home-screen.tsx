@@ -2,8 +2,12 @@ import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { createChatTable } from "@/helpers/database/chats";
+import { createContactTable } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 import { Dimensions, Image, Linking, StyleSheet, View } from "react-native";
 
 type HomeScreenInterface = {
@@ -18,14 +22,31 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
     "text"
   );
 
+  /**
+   * useFocusEffect hook to create the contact and chat tables
+   * when the HomeScreen is focused.
+   */
+  useFocusEffect(
+    useCallback(() => {
+      // Create the contact table if it doesn't exist
+      const onCreateContactTable = async () => {
+        await createContactTable();
+        await createChatTable();
+      };
+
+      onCreateContactTable();
+    }, [])
+  );
+
   const openWebsite = async () => {
+    console.log("Opening website...");
     const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
     const supported = await Linking.canOpenURL(url);
 
     if (supported) {
       await Linking.openURL(url);
     } else {
-      // console.log(`Don't know how to open this URL: ${url}`);
+      console.log(`Don't know how to open this URL: ${url}`);
     }
   };
 
