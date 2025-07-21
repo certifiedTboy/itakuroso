@@ -8,7 +8,7 @@ import { ThemedText } from "../ThemedText";
 const { width } = Dimensions.get("window");
 
 type ChatCardProps = {
-  contactName?: string;
+  contactName: string;
   phoneNumber: string;
   isActiveUser?: boolean;
   contactImage: any;

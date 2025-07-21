@@ -1,7 +1,13 @@
+import SearchInput from "@/components/contacts/SearchInput";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
+import Icon from "@/components/ui/Icon";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
 import ChatContextProvider from "@/lib/context/chat-context";
+import ContactScreenDropdownProvider, {
+  ContactScreenDropdownContext,
+} from "@/lib/context/contactscreen-dropdown-context";
 import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
 import ChatScreen from "@/screen/chat-screen";
@@ -99,6 +105,16 @@ const AuthStack = () => {
  * it is the main stack tab navigator for the app which contains screens such as chat, status AI and calls screens
  */
 const AuthenticatedStack = () => {
+  const {
+    toggleDropdown,
+    toggleSearchBar,
+    showSearchBar,
+    totalContacts,
+    onSearchQuery,
+    contactSearchQuery,
+    contactIsLoading,
+  } = useContext(ContactScreenDropdownContext);
+
   const backgroundColor = useThemeColor(
     { light: "#fff", dark: "#000" },
     "background"
@@ -107,6 +123,11 @@ const AuthenticatedStack = () => {
   const chatScreenTitleColor = useThemeColor(
     { light: "#000", dark: "#fff" },
     "text"
+  );
+
+  const headerTextColor = useThemeColor(
+    { light: "#000", dark: "#fff" },
+    "background"
   );
 
   return (
@@ -173,9 +194,70 @@ const AuthenticatedStack = () => {
       <Stack.Screen
         name="contact-lists-screen"
         component={ContactListsScreen}
-        options={{
+        options={({ route }) => ({
           animation: "slide_from_right",
-        }}
+          headerShown: true,
+          headerTitle: () => (
+            <>
+              {!showSearchBar ? (
+                <View
+                  style={{
+                    marginLeft: -25,
+                    // marginRight: 15,
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <View>
+                    <Text
+                      style={{
+                        color: headerTextColor,
+                        fontSize: 14,
+                        fontWeight: "bold",
+                      }}
+                    >
+                      Select Contacts
+                    </Text>
+                    <Text style={{ color: headerTextColor, fontSize: 12 }}>
+                      {totalContacts}
+                    </Text>
+                  </View>
+
+                  <View style={{ flexDirection: "row", gap: 20 }}>
+                    {contactIsLoading && <LoaderSpinner />}
+                    <Icon
+                      name="search"
+                      size={21}
+                      color={headerTextColor}
+                      onPress={() => toggleSearchBar()}
+                    />
+
+                    <Icon
+                      name="ellipsis-vertical"
+                      size={21}
+                      color={headerTextColor}
+                      onPress={() => toggleDropdown()}
+                    />
+                  </View>
+                </View>
+              ) : (
+                <SearchInput
+                  setShowSearch={() => toggleSearchBar()}
+                  showSearchInput={showSearchBar}
+                  onSearchQuery={(text) => onSearchQuery(text)}
+                  searchQuery={contactSearchQuery}
+                />
+              )}
+            </>
+          ),
+          headerTitleStyle: {
+            fontSize: 14,
+            fontWeight: "bold",
+          },
+
+          headerBackVisible: !showSearchBar,
+        })}
       />
     </Stack.Navigator>
   );
@@ -210,9 +292,11 @@ const Navigation = () => {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         {authCtx.isAuthenticated ? (
           <ChatContextProvider>
-            <DropdownContextProvider>
-              <AuthenticatedStack />
-            </DropdownContextProvider>
+            <ContactScreenDropdownProvider>
+              <DropdownContextProvider>
+                <AuthenticatedStack />
+              </DropdownContextProvider>
+            </ContactScreenDropdownProvider>
           </ChatContextProvider>
         ) : (
           <AuthStack />

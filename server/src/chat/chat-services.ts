@@ -369,6 +369,7 @@ export class ChatService {
    */
 
   async deleteChatFile(publicId: string) {
-    await this.imageUploadQueue.addJob('file-delete', { publicId }, 1000);
+    return await this.fileUploadService.deleteUploadedFile(publicId);
+    // await this.imageUploadQueue.addJob('file-delete', { publicId }, 1000);
   }
 }
