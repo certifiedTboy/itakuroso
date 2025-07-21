@@ -9,6 +9,7 @@ import { UsersModule } from './user/users-module';
 import { AuthModule } from './auth/auth-module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bullmq';
+import { QueueModule } from './queue/queue-module';
 // import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat-module';
 
@@ -22,12 +23,32 @@ import { ChatModule } from './chat/chat-module';
 
       inject: [ConfigService],
     }),
-    BullModule.forRoot({
-      connection: {
-        host: 'localhost',
-        port: 6379,
-      },
+    // BullModule.forRoot({
+    //   connection: {
+    //     host: 'localhost',
+    //     port: 6379,
+    //   },
+    //   defaultJobOptions: {
+    //     removeOnComplete: true,
+    //     removeOnFail: true,
+    //   },
+    // }),
+
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => ({
+        connection: {
+          host: configService.get<string>('REDIS_HOST'),
+          port: configService.get<number>('REDIS_PORT'),
+        },
+        defaultJobOptions: {
+          removeOnComplete: true,
+          removeOnFail: true,
+        },
+      }),
+      inject: [ConfigService],
     }),
+
     ConfigModule.forRoot({
       isGlobal: true, // makes the config accessible globally
       cache: true, // caches the config for performance
@@ -50,6 +71,7 @@ import { ChatModule } from './chat/chat-module';
     /**
      * global configuration of other modules
      */
+    QueueModule,
     AuthModule,
     UsersModule,
     ChatModule,

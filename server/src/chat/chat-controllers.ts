@@ -149,7 +149,7 @@ export class ChatControllers {
   @UseInterceptors(FileInterceptor('file'))
   async uploadImage(@UploadedFile() file: Express.Multer.File) {
     try {
-      const result = await this.chatService.uploadFileOnCloud(file);
+      const result = await this.chatService.uploadChatFile(file);
 
       return ResponseHandler.ok(200, 'File uploaded successfully', result);
     } catch (error: unknown) {
@@ -172,11 +172,11 @@ export class ChatControllers {
     }
 
     try {
-      const result = await this.chatService.deleteUploadedFile(publicId);
+      const result = await this.chatService.deleteChatFile(publicId);
 
-      if (result?.result !== 'ok') {
-        throw new InternalServerErrorException('Failed to delete file');
-      }
+      // if (result?.result !== 'ok') {
+      //   throw new InternalServerErrorException('Failed to delete file');
+      // }
 
       return ResponseHandler.ok(200, 'File deleted successfully', {
         deleted: true,

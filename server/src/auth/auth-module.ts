@@ -18,6 +18,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
           expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
         },
       }),
+
       inject: [ConfigService],
     }),
 
@@ -29,6 +30,6 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
   ],
   providers: [AuthService],
   controllers: [AuthControllers],
-  exports: [JwtModule, AuthService],
+  exports: [AuthService],
 })
 export class AuthModule {}

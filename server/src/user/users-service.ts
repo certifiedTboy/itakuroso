@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { MailerService } from '../common/mailer/mailer.service';
+import { QueueService } from '../queue/queue-service';
 import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { User } from './schemas/user-schema';
 import { UserDocument } from './schemas/user-schema';
@@ -19,7 +19,7 @@ import { Time } from '../helpers/time';
 export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
-    private readonly mailerService: MailerService,
+    private readonly queueService: QueueService,
   ) {}
 
   /**
@@ -59,11 +59,16 @@ export class UsersService {
         });
       }
 
-      // await this.mailerService.sendMail(
-      //   updatedUser.email,
-      //   'Verification Token',
-      //   updatedUser.verificationCode,
-      // );
+      await this.queueService.addJob(
+        'email',
+        {
+          email: updatedUser.email,
+          verificationCode: updatedUser.verificationCode,
+          type: 'Verification Token',
+        },
+        10000,
+      );
+
       return updatedUser;
     }
 
@@ -75,11 +80,15 @@ export class UsersService {
       verificationCodeExpiresIn,
     });
     const user = await createdUser.save();
-    // await this.mailerService.sendMail(
-    //   user.email,
-    //   'Verification Token',
-    //   user.verificationCode,
-    // );
+    await this.queueService.addJob(
+      'email',
+      {
+        email: user?.email,
+        verificationCode: user?.verificationCode,
+        subject: 'Verification Token',
+      },
+      10000,
+    );
     return user;
   }
 

@@ -8,13 +8,14 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { Injectable } from '@nestjs/common';
 import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
 import { ChatHelpers } from '../helpers/chat-helpers';
 import { MessageStatus } from './chat-type';
 
 // import { ChatDocument } from './schemas/chat-schema';
-
+@Injectable()
 @WebSocketGateway({
   cors: {
     origin: '*', // or your frontend URL
@@ -259,7 +260,7 @@ export class ChatGateway
           /**
            * add the message to the user's message queue
            */
-          return this.chatService.addChatToUserMessageQueue(receiverId, {
+          this.chatService.addChatToUserMessageQueue(receiverId, {
             roomId: data.roomId,
             senderId: data.senderId,
             content: data.content,
@@ -267,6 +268,25 @@ export class ChatGateway
             replyTo: data.replyTo,
             createdAt: new Date().toISOString(),
           });
+
+          return this.server.to(roomId).emit(
+            'message',
+            ChatHelpers.messageResponse(
+              data.content,
+              data.senderId,
+              ChatHelpers.generateRoomId(),
+              MessageStatus.SENT,
+              roomId,
+              data.file,
+              data.replyTo && data?.replyTo?.replyToMessage
+                ? {
+                    replyToId: data.replyTo.replyToId,
+                    replyToMessage: data.replyTo.replyToMessage,
+                    replyToSenderId: data.replyTo.replyToSenderId,
+                  }
+                : undefined,
+            ),
+          );
         } else {
           /**
            * trigger push notification to the user

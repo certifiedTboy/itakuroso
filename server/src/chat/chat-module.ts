@@ -8,7 +8,8 @@ import { ChatGateway } from './chat.gateway';
 import { ChatControllers } from './chat-controllers';
 import { AuthModule } from 'src/auth/auth-module';
 import { Chat, ChatSchema } from './schemas/chat-schema';
-import { BullModule } from '@nestjs/bullmq';
+import { QueueModule } from '../queue/queue-module';
+import { FileUploadModule } from '../common/file-upload/file-upload-module';
 
 @Module({
   imports: [
@@ -19,14 +20,10 @@ import { BullModule } from '@nestjs/bullmq';
       },
       { name: Chat.name, schema: ChatSchema },
     ]),
-    BullModule.registerQueue({
-      name: 'chatQueue', // Name of the queue
-      connection: {
-        port: 6379,
-      },
-    }),
     UsersModule,
     AuthModule,
+    QueueModule,
+    FileUploadModule,
   ],
   providers: [ChatGateway, ChatService],
   controllers: [ChatControllers],
