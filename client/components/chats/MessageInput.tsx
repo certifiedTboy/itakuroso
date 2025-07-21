@@ -236,7 +236,7 @@ const MessageInput = ({
             ? asset.uri
             : asset.uri.replace("file://", ""),
         name: asset.name,
-        type: asset.mimeType || "application/octet-stream",
+        type: asset.mimeType,
       } as any);
 
       await uploadFile(formData);
@@ -404,7 +404,7 @@ const MessageInput = ({
             </View>
           )}
           <View style={{ marginLeft: 5 }}>
-            {message || data?.data?.secureUrl.trim().length > 0 ? (
+            {message || data?.data?.secureUrl?.trim().length > 0 ? (
               <TouchableOpacity onPress={async () => await handleSend()}>
                 <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
               </TouchableOpacity>

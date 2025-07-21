@@ -43,6 +43,17 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     useGetExisitngRoomsMutation();
 
   /**
+   * useColorScheme hook to get the current color scheme of the device
+   * This is used to set the background color of the search bar
+   */
+  const theme = useColorScheme();
+
+  const textColor = useThemeColor(
+    { light: Colors.light.text, dark: Colors.dark.text },
+    "background"
+  );
+
+  /**
    * useSelector hook to get the current user from the Redux store
    * This is used to identify the current user in the chat room
    */
@@ -53,12 +64,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
    * This is used to navigate to the contact list screen when the floating button is pressed
    */
   const navigate = useNavigation();
-
-  /**
-   * useColorScheme hook to get the current color scheme of the device
-   * This is used to set the background color of the search bar
-   */
-  const theme = useColorScheme();
 
   const { toggleDropdown } = useContext(DropdownContext);
   const authCtx = useContext(AuthContext);
@@ -129,11 +134,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
       onLoadContacts();
     }, [isSuccess, data, error])
-  );
-
-  const textColor = useThemeColor(
-    { light: Colors.light.text, dark: Colors.dark.text },
-    "background"
   );
 
   /**

@@ -1,20 +1,15 @@
 import Notification from "@/components/common/Notification";
 import ContactCard from "@/components/contacts/ContactCard";
-import SearchInput from "@/components/contacts/SearchInput";
-import MenuDropdown from "@/components/dropdown/MenuDropdown";
-import LoaderSpinner from "@/components/spinner/LoaderSpinner";
+import ContactScreenDropdown from "@/components/dropdown/ContactScreenDropdown";
 import { ThemedView } from "@/components/ThemedView";
-import Icon from "@/components/ui/Icon";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { showNotification } from "@/helpers/notification";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { DropdownContext } from "@/lib/context/dropdown-context";
+import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
 import { useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FlatList, Text, View } from "react-native";
+import { FlatList, View } from "react-native";
 
 import { useSelector } from "react-redux";
 
@@ -31,27 +26,14 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     { phoneNumber: string | ""; name: string }[]
   >([]);
 
-  const [contactIsLoading, setContactIsLoading] = useState(false);
+  const {
+    updateTotalContacts,
+    contactSearchQuery,
+    toggleDropdown,
+    onContactLoading,
+  } = useContext(ContactScreenDropdownContext);
 
   const { currentUser } = useSelector((state: any) => state.authState);
-
-  const [showSearch, setShowSearch] = useState(false);
-
-  const [searchQuery, setSearchQuery] = useState("");
-
-  const dropdownCtx = useContext(DropdownContext);
-
-  const headerTextColor = useThemeColor(
-    { light: "#000", dark: "#fff" },
-    "background"
-  );
-
-  /**
-   * Handles the search query input
-   */
-  const onSearchQuery = (text: string) => {
-    setSearchQuery(text);
-  };
 
   /**
    * capture users contacts from device
@@ -77,10 +59,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      if (searchQuery.trim().length > 0) {
+      if (contactSearchQuery.trim().length > 0) {
         setFilteredContacts(
           contacts.filter((contact: any) =>
-            contact.name.toLowerCase().includes(searchQuery.toLowerCase())
+            contact.name
+              .toLowerCase()
+              .includes(contactSearchQuery.toLowerCase())
           )
         );
       } else {
@@ -89,16 +73,16 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     }, 200);
 
     return () => clearTimeout(timer);
-  }, [searchQuery, contacts]);
+  }, [contactSearchQuery, contacts]);
 
   /**
    * A function to handle contact update
    */
   const onLoadContacts = async () => {
-    setContactIsLoading(true);
+    onContactLoading(true);
     try {
       await loadContacts();
-      setContactIsLoading(false);
+      onContactLoading(false);
       // showNotification({
       //   type: "success",
       //   title: "Contacts Loaded",
@@ -115,7 +99,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
         // onHide: () => {},
       });
     } catch (error) {
-      setContactIsLoading(false);
+      onContactLoading(false);
       console.error("Error loading contacts:", error);
     }
   };
@@ -126,68 +110,8 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
    */
   useFocusEffect(
     useCallback(() => {
-      navigation.setOptions({
-        headerTitle: () => (
-          <>
-            {!showSearch ? (
-              <View
-                style={{
-                  marginLeft: -20,
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <View>
-                  <Text
-                    style={{
-                      color: headerTextColor,
-                      fontSize: 14,
-                      fontWeight: "bold",
-                    }}
-                  >
-                    Select Contacts
-                  </Text>
-                  <Text style={{ color: headerTextColor, fontSize: 12 }}>
-                    {filteredContacts.length}
-                  </Text>
-                </View>
-
-                <View style={{ flexDirection: "row", gap: 20 }}>
-                  {contactIsLoading && <LoaderSpinner />}
-                  <Icon
-                    name="search"
-                    size={21}
-                    color={headerTextColor}
-                    onPress={() => setShowSearch(true)}
-                  />
-
-                  <Icon
-                    name="ellipsis-vertical"
-                    size={21}
-                    color={headerTextColor}
-                    onPress={() => dropdownCtx.toggleDropdown()}
-                  />
-                </View>
-              </View>
-            ) : (
-              <SearchInput
-                setShowSearch={() => setShowSearch(false)}
-                showSearchInput={showSearch}
-                onSearchQuery={onSearchQuery}
-                searchQuery={searchQuery}
-              />
-            )}
-          </>
-        ),
-        headerTitleStyle: {
-          fontSize: 14,
-          fontWeight: "bold",
-        },
-
-        headerBackVisible: showSearch ? false : true,
-      });
-    }, [showSearch, searchQuery, contactIsLoading, filteredContacts.length])
+      updateTotalContacts(filteredContacts.length);
+    }, [contactSearchQuery, filteredContacts.length])
   );
 
   /**
@@ -206,7 +130,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       label: "Refresh Contacts",
       onPress: () => {
         onLoadContacts();
-        dropdownCtx.toggleDropdown();
+        toggleDropdown();
       },
     },
     {
@@ -244,26 +168,39 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
               )?.phoneNumber || ""
             : item?.phoneNumber
         }
-        isActiveUser={item?.isActive}
+        isActiveUser={!!item?.roomId}
         contactImage=""
-        roomId={item.roomId}
+        roomId={item?.roomId}
       />
     ),
     []
   );
+
+  function moveToTop(
+    arr: { phoneNumber: string }[],
+    criteria: (item: any) => boolean
+  ) {
+    return [
+      ...arr.filter(
+        (item) =>
+          criteria(item) && item?.phoneNumber !== currentUser?.phoneNumber
+      ),
+      ...arr.filter((item) => !criteria(item)),
+    ];
+  }
 
   return (
     <>
       <View style={{ zIndex: 1000 }}>
         <Notification />
       </View>
-      <MenuDropdown options={options} />
+      <ContactScreenDropdown options={options} />
 
       <ThemedView darkColor="#000" lightColor="#fff">
         <View>
           <FlatList
             // @ts-ignore
-            data={filteredContacts}
+            data={moveToTop(filteredContacts, (item: any) => item.roomId)}
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item.id}
             numColumns={1}

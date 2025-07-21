@@ -204,7 +204,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           replyTo: {
             replyToId: message?.replyTo?.replyToId,
             replyToMessage: message?.replyTo?.replyToMessage,
-            replyToSenderId: message?.replyTo?.replyToSenderId,
+            replyToSenderId: message?.replyTo?.replyToId
+              ? message?.replyTo?.replyToSenderId
+              : undefined,
           },
         },
         ...prevMessages,
