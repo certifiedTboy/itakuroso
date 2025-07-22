@@ -48,7 +48,6 @@ export class MailerService {
         subject,
         html: `<h1> ${message} </h1>`,
       });
-      console.log(`Email sent`);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log(error);
