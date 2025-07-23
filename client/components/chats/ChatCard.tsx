@@ -1,5 +1,4 @@
 import { Colors } from "@/constants/Colors";
-import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useNavigation } from "@react-navigation/native";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
@@ -9,7 +8,8 @@ import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
 type ChatCardProps = {
-  members: { name: string; profileImage?: string; phoneNumber: string }[];
+  contactName: string;
+  phoneNumber: string;
   message?: string;
   time: string;
   image?: any;
@@ -17,12 +17,14 @@ type ChatCardProps = {
   containsFile?: boolean;
   roomId: string;
   isSender?: boolean;
+
   senderId: string;
   onNavigate?: () => void;
 };
 
 const ChatCard = ({
-  members,
+  contactName,
+  phoneNumber,
   message,
   time,
   image,
@@ -54,12 +56,8 @@ const ChatCard = ({
       onPress={() => {
         // @ts-ignore
         navigation.navigate("chat-screen", {
-          contactName: members?.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.name,
-          phoneNumber: members?.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.phoneNumber,
+          contactName,
+          phoneNumber,
           roomId,
           senderId,
           isRead,
@@ -78,22 +76,13 @@ const ChatCard = ({
         ) : (
           <Avatar.Text
             size={50}
-            label={
-              members?.find(
-                (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-              )?.name[0]
-            }
+            label={contactName![0]}
             style={{ backgroundColor: Colors.light.btnBgc }}
           />
         )}
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
           <ThemedText style={styles.sender}>
-            {members?.find(
-              (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-            )?.name ||
-              members?.find(
-                (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-              )?.phoneNumber}
+            {contactName || phoneNumber}
           </ThemedText>
           <View style={styles.messageRow}>
             {/* <Icon name="checkmark-done-outline" size={14} color="#969494FF" /> */}
@@ -115,7 +104,7 @@ const ChatCard = ({
           lightColor={Colors.light.btnBgc}
           style={styles.time}
         >
-          {formatDate(time)}
+          {/* {formatDate(time)} */}
         </ThemedText>
 
         <View style={styles.counterContainer}>

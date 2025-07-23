@@ -35,7 +35,6 @@ export const createChatTable = async () => {
 
     if (db) {
       await db.execAsync(`
-        PRAGMA journal_mode = WAL;
         CREATE TABLE IF NOT EXISTS chatss (
           _id TEXT PRIMARY KEY NOT NULL,
           senderId TEXT NOT NULL,

@@ -60,6 +60,22 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     }, [])
   );
 
+  // Update context messages when fetched
+  useFocusEffect(
+    useCallback(() => {
+      const onGetLocalChats = async () => {
+        const result = (await getLocalChatsByRoomId(roomId)) ?? [];
+
+        if (result && result.length > 0) {
+          //@ts-ignore
+          chatCtx.updateSocketMessages(result, currentUser);
+        }
+      };
+
+      onGetLocalChats();
+    }, [])
+  );
+
   // Mark as read & leave room on blur
   useFocusEffect(
     useCallback(() => {
@@ -74,22 +90,6 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         chatCtx.leaveRoom({ phoneNumber: currentUser?.phoneNumber });
         chatCtx.updateSocketMessages([], currentUser);
       };
-    }, [])
-  );
-
-  // Update context messages when fetched
-  useFocusEffect(
-    useCallback(() => {
-      const onGetLocalChats = async () => {
-        const result = (await getLocalChatsByRoomId(roomId)) ?? [];
-
-        if (result && result.length > 0) {
-          //@ts-ignore
-          chatCtx.updateSocketMessages(result, currentUser);
-        }
-      };
-
-      onGetLocalChats();
     }, [])
   );
 
@@ -119,23 +119,18 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
         renderItem={RenderedCard}
         keyExtractor={(item: any) => item._id}
         numColumns={1}
-        // scrollEventThrottle={16}
-        initialNumToRender={20}
-        // maxToRenderPerBatch={5}
-        // windowSize={11}
-        // windowSize={5}
-        // removeClippedSubviews
-
+        initialNumToRender={10}
+        getItemLayout={(data, index) => ({
+          length: 60,
+          offset: 60 * index,
+          index,
+        })}
         inverted={true}
-        onEndReachedThreshold={0.5}
-        // onEndReached={() => {
-        //   if (chatCtx.messages.length > 0) {
-        //     setPageNum(pageNum + 1);
-        //   }
-        // }}
-        // onStartReached={() => console.log("Start reached")}
+        maxToRenderPerBatch={10}
+        scrollEventThrottle={10} // Improves performance
+        windowSize={10} // Adjust based on your needs
+        onEndReachedThreshold={0.5} // Adjust sensitivity
         contentContainerStyle={styles.messageContentStyle}
-        // style={{ height: height * 0.85 }}
       />
       {/* )} */}
 

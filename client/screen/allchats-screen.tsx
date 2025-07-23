@@ -12,7 +12,7 @@ import { DropdownContext } from "@/lib/context/dropdown-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useNavigation } from "expo-router";
-import { useCallback, useContext, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
 import { useSelector } from "react-redux";
@@ -38,6 +38,9 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         senderId: string;
       };
     }[]
+  >([]);
+  const [updatedContacts, setUpdatedContacts] = useState<
+    { id: string; phoneNumber: string; name: string; roomId?: string }[]
   >([]);
   const [getExisitngRooms, { data, error, isSuccess }] =
     useGetExisitngRoomsMutation();
@@ -78,6 +81,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     useCallback(() => {
       const onLoadChatInfo = async () => {
         getExisitngRooms(null);
+        const contacts = await getContacts();
+        setUpdatedContacts(contacts);
       };
 
       onLoadChatInfo();
@@ -85,56 +90,38 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   );
 
   /**
-   * useEffect hook to fetch contacts and update the chat rooms
+   * useEffect to update the chat rooms
    * This is used to get the contact names and images for each chat room
    */
-  useFocusEffect(
-    useCallback(() => {
-      const onLoadContacts = async () => {
-        const contacts = await getContacts();
+  useEffect(() => {
+    if (data && data?.data && updatedContacts && updatedContacts.length > 0) {
+      setRooms([
+        ...data?.data.map((room: any) => {
+          return {
+            roomId: room.roomId,
+            roomName: room.roomName,
+            roomImage: room.roomImage,
 
-        // await createChatTable();
-
-        if (data?.data && contacts && contacts.length > 0) {
-          setRooms([
-            ...data?.data.map((room: any) => {
-              return {
-                roomId: room.roomId,
-                roomName: room.roomName,
-                roomImage: room.roomImage,
-                members: room.members.map((member: any) => {
-                  const contact = contacts.find(
-                    (contact: any) =>
-                      formatPhoneNumber(contact.phoneNumber) ===
-                      formatPhoneNumber(member.phoneNumber)
-                  );
-
-                  return {
-                    // @ts-ignore
-                    name: contact && contact.name,
-                    profileImage: member.profileImage,
-                    phoneNumber: member.phoneNumber,
-                  };
-                }),
-
-                lastMessage: {
-                  isSender:
-                    room?.lastMessage?.senderId === currentUser.phoneNumber,
-                  message: room?.lastMessage?.content,
-                  timestamp: room?.lastMessage?.timestamp,
-                  isRead: room?.lastMessage?.isRead,
-                  containsFile: room?.lastMessage?.containsFile,
-                  senderId: room?.lastMessage?.senderId,
-                },
-              };
+            members: room.members.map((member: any) => {
+              return updatedContacts.find(
+                (contact: any) =>
+                  formatPhoneNumber(contact.phoneNumber) ===
+                  formatPhoneNumber(member.phoneNumber)
+              );
             }),
-          ]);
-        }
-      };
-
-      onLoadContacts();
-    }, [isSuccess, data, error])
-  );
+            lastMessage: {
+              isSender: room?.lastMessage?.senderId === currentUser.phoneNumber,
+              message: room?.lastMessage?.content,
+              timestamp: room?.lastMessage?.timestamp,
+              isRead: room?.lastMessage?.isRead,
+              containsFile: room?.lastMessage?.containsFile,
+              senderId: room?.lastMessage?.senderId,
+            },
+          };
+        }),
+      ]);
+    }
+  }, [updatedContacts, data, isSuccess]);
 
   /**
    * Options for the dropdown menu
@@ -168,6 +155,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         roomId: string;
         roomName: string;
         roomImage: string;
+        phoneNumber: string;
+        name: string;
         members: { name: string; profileImage?: string; phoneNumber: string }[];
         lastMessage: {
           isSender: boolean;
@@ -180,7 +169,16 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       };
     }) => (
       <ChatCard
-        members={item.members}
+        contactName={
+          item.members.find(
+            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+          )?.name || ""
+        }
+        phoneNumber={
+          item.members.find(
+            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
+          )?.phoneNumber || ""
+        }
         message={item.lastMessage?.message}
         time={item.lastMessage?.timestamp}
         isSender={item.lastMessage?.isSender}
@@ -224,6 +222,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
         <View>
           <FlatList
+            // @ts-ignore
             data={rooms}
             renderItem={RenderedCard}
             keyExtractor={(item) => item.roomId}

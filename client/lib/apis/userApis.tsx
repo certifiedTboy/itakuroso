@@ -69,7 +69,7 @@ export const userApis = createApi({
 
           dispatch(setCurrentUser({ currentUser: data.data }));
         } catch (error: unknown) {
-          if (error.error.data.message === "jwt expired") {
+          if (error?.error?.data.message === "jwt expired") {
             dispatch(userApis.endpoints.getNewToken.initiate({}));
           }
         }
