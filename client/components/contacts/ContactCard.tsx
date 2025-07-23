@@ -72,7 +72,7 @@ const ContactCard = ({
         </View>
       </View>
 
-      {!isActiveUser && (
+      {!isActiveUser ? (
         <View style={styles.rightContainer}>
           <ThemedText
             darkColor="#969494FF"
@@ -80,6 +80,16 @@ const ContactCard = ({
             style={styles.time}
           >
             Invite
+          </ThemedText>
+        </View>
+      ) : (
+        <View style={styles.rightContainer}>
+          <ThemedText
+            darkColor="#969494FF"
+            lightColor={Colors.light.btnBgc}
+            style={styles.time}
+          >
+            Message
           </ThemedText>
         </View>
       )}

@@ -47,6 +47,8 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
   const [createNewUser, { data, isSuccess, error, isError, isLoading }] =
     useCreateNewUserMutation();
 
+  // console.log("error", error);
+
   /**
    * useColorScheme hook to get the current color scheme of the device
    */

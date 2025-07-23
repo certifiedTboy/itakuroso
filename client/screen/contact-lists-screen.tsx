@@ -22,6 +22,8 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     { phoneNumber: string | ""; name: string }[]
   >([]);
 
+  const [pageNum, setPageNum] = useState(20);
+
   const [filteredContacts, setFilteredContacts] = useState<
     { phoneNumber: string | ""; name: string }[]
   >([]);
@@ -207,7 +209,13 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             initialNumToRender={10}
             maxToRenderPerBatch={10}
             scrollEventThrottle={10} // Improves performance
-            // onEndReached={handleEndReached} // Trigger when reaching the end
+            windowSize={10} // Adjust based on your needs
+            onEndReachedThreshold={0.5} // Adjust sensitivity
+            getItemLayout={(data, index) => ({
+              length: 60,
+              offset: 60 * index,
+              index,
+            })}
           />
         </View>
       </ThemedView>

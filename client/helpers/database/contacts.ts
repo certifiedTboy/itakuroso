@@ -4,7 +4,9 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 const getDatabase = async () => {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("contact_itakuroso_new");
+    dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
+    await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
+    await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
   }
   return dbInstance;
 };
@@ -29,14 +31,15 @@ const runWithLock = async (fn: () => Promise<void>) => {
 export const createContactTable = async () => {
   try {
     const db = await getDatabase();
-    await db.execAsync(`PRAGMA journal_mode = WAL`);
     await db.execAsync(`
       CREATE TABLE IF NOT EXISTS contact (
         id TEXT PRIMARY KEY NOT NULL,
         name TEXT NOT NULL,
         phoneNumber TEXT NOT NULL,
         roomId TEXT DEFAULT NULL,
-        isActive BOOLEAN DEFAULT 0
+        isActive BOOLEAN DEFAULT 0,
+        lastMessageId TEXT,
+        FOREIGN KEY (lastMessageId) REFERENCES chatss(_id)
       );
     `);
   } catch (error) {
@@ -80,17 +83,68 @@ export const insertContacts = async (
   });
 };
 
+interface IContact {
+  id: string;
+  name: string;
+  phoneNumber: string;
+  roomId?: string;
+}
+
 /**
  * Retrieves all contacts from the contact table.
  * @returns {Promise<Array>} - Returns a promise that resolves to an array of contact objects.
  */
-export const getContacts = async (): Promise<
-  { id: string; name: string; phoneNumber: string }[]
-> => {
+export const getContacts = async (): Promise<IContact[]> => {
   try {
     const db = await getDatabase();
-    const results = await db.getAllAsync(`SELECT * FROM contact`);
-    return results as { id: string; name: string; phoneNumber: string }[];
+    const results = await db.getAllAsync(`
+      SELECT 
+        c.id,
+        c.name,
+        c.phoneNumber, 
+        c.isActive, 
+        c.roomId, 
+        c.lastMessageId,
+        r._id as chatMessageId,
+        r.senderId as lastMessageSenderId,
+        r.message as lastMessageContent,
+        r.timestamp as lastMessageTimestamp,
+        r.file as lastMessageFile,
+        r.replyToId as lastMessageReplyToId
+      FROM contact c
+      LEFT JOIN chatss r ON c.lastMessageId = r._id
+    `);
+
+    return results as IContact[];
+  } catch (error) {
+    console.error("Error getting contacts:", error);
+    throw error; // Re-throw or return [] based on your error handling strategy
+  }
+};
+
+/**
+ * Retrieves all contacts from the contact table.
+ * @returns {Promise<Array>} - Returns a promise that resolves to an array of contact objects.
+ */
+export const getContactsWithRoomIds = async (
+  page: number = 1,
+  pageSize: number = 10
+): Promise<IContact[]> => {
+  try {
+    const db = await getDatabase();
+
+    // Calculate offset based on page number and page size
+    const offset = (page - 1) * pageSize;
+
+    // Add LIMIT and OFFSET to the query
+    const results = await db.getAllAsync(
+      `SELECT * FROM contact LIMIT ? OFFSET ?`,
+      [pageSize, offset]
+    );
+
+    return results.filter(
+      (contact: any) => contact.roomId !== null
+    ) as IContact[];
   } catch (error) {
     console.log("Error getting contacts:", error);
     return [];
