@@ -1,11 +1,11 @@
 import * as SQLite from "expo-sqlite";
-import { generateChatId } from "../chat-helpers";
+import { generateDbId } from "../chat-helpers";
 
 let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 const getDatabase = async () => {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
+    dbInstance = await SQLite.openDatabaseAsync("itakuroso_db");
     await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
     await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
   }
@@ -41,6 +41,7 @@ export const createChatTable = async () => {
           message TEXT NOT NULL,
           roomId TEXT NOT NULL,
           file TEXT DEFAULT NULL,
+          messageStatus TEXT DEFAULT 'sent',
           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
           replyToId TEXT DEFAULT NULL,
           FOREIGN KEY (replyToId) REFERENCES chatss(_id)
@@ -49,7 +50,7 @@ export const createChatTable = async () => {
       `);
     }
   } catch (error) {
-    console.log(error);
+    console.log("error creating table", error);
   }
 };
 
@@ -75,7 +76,7 @@ export const insertChat = async (chatData: {
       await db.runAsync("BEGIN TRANSACTION");
 
       if (db) {
-        const chatId = generateChatId();
+        const chatId = generateDbId();
         await db.runAsync(
           `INSERT OR REPLACE INTO chatss (_id, senderId, message, roomId, file, replyToId) VALUES (?, ?, ?, ?, ?, ?)`,
           [
@@ -134,6 +135,7 @@ export const getLocalChatsByRoomId = async (roomId: string) => {
         c._id,
         c.senderId,
         c.message,
+        c.file,
         c.roomId,
         c.timestamp,
         c.replyToId,
@@ -142,6 +144,7 @@ export const getLocalChatsByRoomId = async (roomId: string) => {
         r._id AS repliedMessageId,
         r.senderId AS repliedSenderId,
         r.message AS repliedMessage,
+        r.file AS repliedFile,
         r.timestamp AS repliedTimestamp
 
       FROM chatss c

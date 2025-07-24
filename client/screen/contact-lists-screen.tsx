@@ -22,8 +22,6 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     { phoneNumber: string | ""; name: string }[]
   >([]);
 
-  const [pageNum, setPageNum] = useState(20);
-
   const [filteredContacts, setFilteredContacts] = useState<
     { phoneNumber: string | ""; name: string }[]
   >([]);
@@ -63,10 +61,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     const timer = setTimeout(() => {
       if (contactSearchQuery.trim().length > 0) {
         setFilteredContacts(
-          contacts.filter((contact: any) =>
-            contact.name
-              .toLowerCase()
-              .includes(contactSearchQuery.toLowerCase())
+          contacts.filter(
+            (contact: any) =>
+              contact.name
+                .toLowerCase()
+                .includes(contactSearchQuery.toLowerCase()) ||
+              contact.phoneNumber.includes(contactSearchQuery)
           )
         );
       } else {
