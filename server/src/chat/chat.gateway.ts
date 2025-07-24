@@ -55,6 +55,7 @@ export class ChatGateway
     @ConnectedSocket() client: Socket,
   ) {
     const { roomId, userId, currentUserId } = data;
+
     // /**
     //  * add current user to temporary room
     //  */
