@@ -3,7 +3,6 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { useNavigation } from "@react-navigation/native";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
-import { useSelector } from "react-redux";
 import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
@@ -36,8 +35,6 @@ const ChatCard = ({
   senderId,
 }: ChatCardProps) => {
   const navigation = useNavigation();
-
-  const { currentUser } = useSelector((state: any) => state.authState);
 
   const { width } = Dimensions.get("window");
 
@@ -76,13 +73,14 @@ const ChatCard = ({
         ) : (
           <Avatar.Text
             size={50}
-            label={contactName![0]}
+            label={contactName![0].charAt(0).toUpperCase()}
             style={{ backgroundColor: Colors.light.btnBgc }}
           />
         )}
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
           <ThemedText style={styles.sender}>
-            {contactName || phoneNumber}
+            {contactName.charAt(0).toUpperCase() + contactName.slice(1) ||
+              phoneNumber}
           </ThemedText>
           <View style={styles.messageRow}>
             {/* <Icon name="checkmark-done-outline" size={14} color="#969494FF" /> */}

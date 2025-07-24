@@ -24,8 +24,7 @@ export const loadContacts = async () => {
       },
     });
 
-    // console.log("Rooms data:", rooms?.data?.data);
-    if (data && rooms?.data && rooms?.data?.data.length > 0) {
+    if (data && rooms?.data?.data && rooms?.data?.statusCode === 200) {
       const contacts = data
         .map((contact) => {
           const number =

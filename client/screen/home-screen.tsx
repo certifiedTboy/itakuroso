@@ -4,6 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { createChatTable } from "@/helpers/database/chats";
 import { createContactTable } from "@/helpers/database/contacts";
+import { createRoomIdTable } from "@/helpers/database/room";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
@@ -32,6 +33,7 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
       const onCreateContactTable = async () => {
         await createContactTable();
         await createChatTable();
+        await createRoomIdTable();
       };
 
       onCreateContactTable();

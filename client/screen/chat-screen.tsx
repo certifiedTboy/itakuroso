@@ -41,38 +41,50 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
   const chatCtx = useContext(ChatContext);
   const { contactName, phoneNumber, roomId } = route.params;
 
+  /**
+   * useFocusEffect hook to join the chat room when the screen is focused
+   * This ensures that the user is connected to the chat room when they open the chat screen
+   */
   useFocusEffect(
     useCallback(() => {
-      if (!roomId) {
-        chatCtx.joinRoom(
-          { contactName, phoneNumber },
-          { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
-          generateRoomId()
-        );
-      } else {
-        chatCtx.joinRoom(
-          { contactName, phoneNumber },
-          { phoneNumber: currentUser?.phoneNumber, email: currentUser?.email },
-          roomId
-        );
-        // getChatsByRoomId({ roomId });
-      }
+      (async () => {
+        if (!roomId) {
+          chatCtx.joinRoom(
+            { contactName, phoneNumber },
+            {
+              phoneNumber: currentUser?.phoneNumber,
+              email: currentUser?.email,
+            },
+            await generateRoomId(phoneNumber)
+          );
+        } else {
+          chatCtx.joinRoom(
+            { contactName, phoneNumber },
+            {
+              phoneNumber: currentUser?.phoneNumber,
+              email: currentUser?.email,
+            },
+            roomId
+          );
+        }
+      })();
     }, [])
   );
 
   // Update context messages when fetched
   useFocusEffect(
     useCallback(() => {
-      const onGetLocalChats = async () => {
-        const result = (await getLocalChatsByRoomId(roomId)) ?? [];
+      (async () => {
+        const result =
+          (await getLocalChatsByRoomId(
+            roomId ? roomId : await generateRoomId(phoneNumber)
+          )) ?? [];
 
         if (result && result.length > 0) {
           //@ts-ignore
           chatCtx.updateSocketMessages(result, currentUser);
         }
-      };
-
-      onGetLocalChats();
+      })();
     }, [])
   );
 

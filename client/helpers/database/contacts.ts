@@ -4,7 +4,7 @@ let dbInstance: SQLite.SQLiteDatabase | null = null;
 
 const getDatabase = async () => {
   if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("itakuroso_new");
+    dbInstance = await SQLite.openDatabaseAsync("itakuroso_db");
     await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
     await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
   }
@@ -38,7 +38,7 @@ export const createContactTable = async () => {
         phoneNumber TEXT NOT NULL,
         roomId TEXT DEFAULT NULL,
         isActive BOOLEAN DEFAULT 0,
-        lastMessageId TEXT,
+        lastMessageId TEXT DEFAULT NULL,
         FOREIGN KEY (lastMessageId) REFERENCES chatss(_id)
       );
     `);
