@@ -41,7 +41,12 @@ export const loadContacts = async () => {
             id: id ?? "",
           };
         })
-        .filter((contact) => contact.phoneNumber !== "");
+        .filter(
+          (contact) =>
+            contact.phoneNumber !== "" ||
+            contact?.phoneNumber.length < 11 ||
+            contact?.phoneNumber.startsWith("*")
+        );
 
       // Remove unwanted fields from the contact object
       const unwantedFields = [

@@ -2,20 +2,20 @@ import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
+// import useGetActiveRooms from "@/hooks/useGetActiveRooms";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetExisitngRoomsMutation } from "@/lib/apis/chat-apis";
 import { AuthContext } from "@/lib/context/auth-context";
 import { ChatContext } from "@/lib/context/chat-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
-import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { useNavigation } from "expo-router";
+import { useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+
 import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
 import { Searchbar } from "react-native-paper";
-import { useSelector } from "react-redux";
 
 type AllChatsScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
@@ -23,12 +23,18 @@ type AllChatsScreenInterface = {
 
 const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const [searchQuery, setSearchQuery] = useState("");
+  // const [rooms, getExistingRoomsData] = useGetActiveRooms();
+  const [savedContacts, setSavedContacts] = useState<
+    { id: string; phoneNumber: string; name: string; roomId?: string }[]
+  >([]);
+
   const [rooms, setRooms] = useState<
     {
       roomId: string;
-      roomName: string;
+      roomName?: string;
+      contactName?: string;
+      contactPhoneNumber?: string;
       roomImage: string;
-      members: { name: string; profileImage?: string; phoneNumber: string }[];
       lastMessage: {
         isSender: boolean;
         message: string;
@@ -39,11 +45,18 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       };
     }[]
   >([]);
-  const [updatedContacts, setUpdatedContacts] = useState<
-    { id: string; phoneNumber: string; name: string; roomId?: string }[]
-  >([]);
-  const [getExisitngRooms, { data, error, isSuccess }] =
-    useGetExisitngRoomsMutation();
+
+  /**
+   * useNavigation hook to navigate between screens
+   * This is used to navigate to the contact list screen when the floating button is pressed
+   */
+  const navigate = useNavigation();
+
+  const { currentUser } = useSelector((state: any) => state.authState);
+
+  const { toggleDropdown } = useContext(DropdownContext);
+  const authCtx = useContext(AuthContext);
+  const chatCtx = useContext(ChatContext);
 
   /**
    * useColorScheme hook to get the current color scheme of the device
@@ -56,72 +69,52 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     "background"
   );
 
-  /**
-   * useSelector hook to get the current user from the Redux store
-   * This is used to identify the current user in the chat room
-   */
-  const { currentUser } = useSelector((state: any) => state.authState);
-
-  /**
-   * useNavigation hook to navigate between screens
-   * This is used to navigate to the contact list screen when the floating button is pressed
-   */
-  const navigate = useNavigation();
-
-  const { toggleDropdown } = useContext(DropdownContext);
-  const authCtx = useContext(AuthContext);
-  const chatCtx = useContext(ChatContext);
-
-  /**
-   * useFocusEffect hook to perform actions when the screen is focused
-   * This is used to fetch existing chat rooms when the screen is focused
-   */
-
   useFocusEffect(
     useCallback(() => {
-      const onLoadChatInfo = async () => {
-        getExisitngRooms(null);
+      (async () => {
+        // getExisitngRooms(null);
         const contacts = await getContacts();
-        setUpdatedContacts(contacts);
-      };
 
-      onLoadChatInfo();
-    }, [chatCtx.triggerCount])
+        if (contacts && contacts.length > 0) {
+          setSavedContacts(
+            contacts.filter(
+              (contact: any) =>
+                contact?.roomId !== null &&
+                formatPhoneNumber(contact?.phoneNumber) !==
+                  formatPhoneNumber(currentUser?.phoneNumber)
+            )
+          );
+        }
+      })();
+    }, [currentUser])
   );
 
-  /**
-   * useEffect to update the chat rooms
-   * This is used to get the contact names and images for each chat room
-   */
   useEffect(() => {
-    if (data && data?.data && updatedContacts && updatedContacts.length > 0) {
-      setRooms([
-        ...data?.data.map((room: any) => {
+    if (savedContacts && savedContacts.length > 0) {
+      // console.log("data fetched", data?.data);
+      setRooms(
+        savedContacts.map((contact: any) => {
           return {
-            roomId: room.roomId,
-            roomName: room.roomName,
-            roomImage: room.roomImage,
-
-            members: room.members.map((member: any) => {
-              return updatedContacts.find(
-                (contact: any) =>
-                  formatPhoneNumber(contact.phoneNumber) ===
-                  formatPhoneNumber(member.phoneNumber)
-              );
-            }),
+            ...contact,
+            roomId: contact.roomId,
+            contactPhoneNumber: contact.phoneNumber,
+            contactName: contact.name,
+            roomName: contact?.roomName || "", // this applies for group chats
+            roomImage: contact?.roomImage || "",
             lastMessage: {
-              isSender: room?.lastMessage?.senderId === currentUser.phoneNumber,
-              message: room?.lastMessage?.content,
-              timestamp: room?.lastMessage?.timestamp,
-              isRead: room?.lastMessage?.isRead,
-              containsFile: room?.lastMessage?.containsFile,
-              senderId: room?.lastMessage?.senderId,
+              messageId: contact?.lastMessageId || "",
+              isSender: contact?.lastMessageSenderId !== contact?.phoneNumber,
+              message: contact?.lastMessageContent || "",
+              timestamp: contact?.lastMessageTimestamp || "",
+              isRead: contact?.lastMessageIsRead || false,
+              containsFile: !!contact?.lastMessageFile,
+              senderId: contact?.lastMessageSenderId || "",
             },
           };
-        }),
-      ]);
+        })
+      );
     }
-  }, [updatedContacts, data, isSuccess]);
+  }, [savedContacts]);
 
   /**
    * Options for the dropdown menu
@@ -154,6 +147,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       item: {
         roomId: string;
         roomName: string;
+        contactName: string;
         roomImage: string;
         phoneNumber: string;
         name: string;
@@ -169,24 +163,16 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       };
     }) => (
       <ChatCard
-        contactName={
-          item.members.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.name || ""
-        }
-        phoneNumber={
-          item.members.find(
-            (member: any) => member.phoneNumber !== currentUser?.phoneNumber
-          )?.phoneNumber || ""
-        }
-        message={item.lastMessage?.message}
-        time={item.lastMessage?.timestamp}
-        isSender={item.lastMessage?.isSender}
+        contactName={item?.contactName}
+        phoneNumber={item?.phoneNumber}
+        message={item?.lastMessage?.message}
+        time={item?.lastMessage?.timestamp}
+        isSender={item?.lastMessage?.isSender}
         image=""
-        roomId={item.roomId}
-        isRead={item.lastMessage?.isRead}
-        containsFile={item.lastMessage?.containsFile}
-        senderId={item.lastMessage?.senderId}
+        roomId={item?.roomId}
+        isRead={item?.lastMessage?.isRead}
+        containsFile={item?.lastMessage?.containsFile}
+        senderId={item?.lastMessage?.senderId}
       />
     ),
     []

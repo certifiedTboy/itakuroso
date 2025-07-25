@@ -1,28 +1,4 @@
-import * as SQLite from "expo-sqlite";
-
-let dbInstance: SQLite.SQLiteDatabase | null = null;
-
-const getDatabase = async () => {
-  if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("itakuroso_db");
-    await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
-    await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
-  }
-  return dbInstance;
-};
-
-let dbLock = false;
-const runWithLock = async (fn: () => Promise<void>) => {
-  while (dbLock) {
-    await new Promise((res) => setTimeout(res, 50));
-  }
-  dbLock = true;
-  try {
-    await fn();
-  } finally {
-    dbLock = false;
-  }
-};
+import { getDatabase, runWithLock } from "./database";
 
 /**
  * Creates the contact table if it doesn't exist.
@@ -105,7 +81,7 @@ export const getContacts = async (): Promise<IContact[]> => {
         c.isActive, 
         c.roomId, 
         c.lastMessageId,
-        r._id as chatMessageId,
+        r._id as lastMessageId,
         r.senderId as lastMessageSenderId,
         r.message as lastMessageContent,
         r.timestamp as lastMessageTimestamp,
@@ -123,24 +99,51 @@ export const getContacts = async (): Promise<IContact[]> => {
 };
 
 /**
+ * @function updateRoomLastMessageId
+ * @param {string} lastMessageId - Id of the last message to update
+ * @param {string} roomId - The ID of the room to associate with the last message.
+ * @returns {Promise<void>}
+ */
+export const updateRoomLastMessageId = async (
+  lastMessageId: string,
+  roomId: string
+): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    await db.runAsync(`UPDATE contact SET lastMessageId = ? WHERE roomId = ?`, [
+      lastMessageId,
+      roomId,
+    ]);
+  } catch (error) {
+    console.error("Error updating room last message ID:", error);
+  }
+};
+
+/**
  * Retrieves all contacts from the contact table.
  * @returns {Promise<Array>} - Returns a promise that resolves to an array of contact objects.
  */
-export const getContactsWithRoomIds = async (
-  page: number = 1,
-  pageSize: number = 10
-): Promise<IContact[]> => {
+export const getContactsWithRoomIds = async (): Promise<IContact[]> => {
   try {
     const db = await getDatabase();
 
-    // Calculate offset based on page number and page size
-    const offset = (page - 1) * pageSize;
-
-    // Add LIMIT and OFFSET to the query
-    const results = await db.getAllAsync(
-      `SELECT * FROM contact LIMIT ? OFFSET ?`,
-      [pageSize, offset]
-    );
+    const results = await db.getAllAsync(`
+      SELECT 
+        c.id,
+        c.name,
+        c.phoneNumber, 
+        c.isActive, 
+        c.roomId, 
+        c.lastMessageId,
+        r._id as lastMessageId,
+        r.senderId as lastMessageSenderId,
+        r.message as lastMessageContent,
+        r.timestamp as lastMessageTimestamp,
+        r.file as lastMessageFile,
+        r.replyToId as lastMessageReplyToId
+      FROM contact c
+      LEFT JOIN chatss r ON c.lastMessageId = r._id
+    `);
 
     return results.filter(
       (contact: any) => contact.roomId !== null

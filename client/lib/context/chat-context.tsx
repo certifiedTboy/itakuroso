@@ -1,4 +1,5 @@
 import { insertChat } from "@/helpers/database/chats";
+import { updateRoomLastMessageId } from "@/helpers/database/contacts";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -21,6 +22,7 @@ type ChatContextType = {
     roomId?: string
   ) => void;
   sendMessage: (messageData: {
+    chatId: string;
     content: string;
     senderId: string;
     receiverId: string;
@@ -61,6 +63,7 @@ export const ChatContext = createContext<ChatContextType>({
     roomId?: string
   ) => {},
   sendMessage: (messageData: {
+    chatId: string;
     content: string;
     senderId: string;
     receiverId: string;
@@ -171,6 +174,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
    * send message function
    */
   const sendMessage = async (messageData: {
+    chatId: string;
     content: string;
     senderId: string;
     receiverId: string;
@@ -218,12 +222,15 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       (async () => {
         if (message?.roomId) {
           await insertChat({
+            chatId: message.chatId,
             senderId: message.senderId,
             message: message.message,
             chatRoomId: message.roomId,
             file: message?.file,
             replyToId: message?.replyTo?.replyToId,
           });
+
+          await updateRoomLastMessageId(message.chatId, message?.roomId);
         }
       })();
     });

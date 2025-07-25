@@ -1,3 +1,4 @@
+import { generateDbId } from "@/helpers/chat-helpers";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import * as DocumentPicker from "expo-document-picker";
 import React, {
@@ -250,6 +251,7 @@ const MessageInput = ({
   const handleSend = async () => {
     if (message.trim().length > 0 || imageUri) {
       chatCtx.sendMessage({
+        chatId: generateDbId(),
         content: message,
         senderId: currentUser?.phoneNumber,
         receiverId,

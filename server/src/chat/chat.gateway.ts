@@ -173,7 +173,7 @@ export class ChatGateway
               ChatHelpers.messageResponse(
                 message.content,
                 message.senderId,
-                ChatHelpers.generateRoomId(),
+                message.chatId,
                 MessageStatus.SENT,
                 message.roomId,
                 message.file,
@@ -218,6 +218,7 @@ export class ChatGateway
   handleMessage(
     @MessageBody()
     data: {
+      chatId: string;
       roomId: string;
       senderId: string;
       receiverId: string;
@@ -231,7 +232,7 @@ export class ChatGateway
     },
     // @ConnectedSocket() client: Socket,
   ) {
-    const { roomId, receiverId } = data;
+    const { roomId, receiverId, chatId } = data;
 
     // let replyToMessage: ChatDocument | null = null;
 
@@ -262,6 +263,7 @@ export class ChatGateway
            * add the message to the user's message queue
            */
           this.chatService.addChatToUserMessageQueue(receiverId, {
+            chatId,
             roomId: data.roomId,
             senderId: data.senderId,
             content: data.content,
@@ -275,7 +277,7 @@ export class ChatGateway
             ChatHelpers.messageResponse(
               data.content,
               data.senderId,
-              ChatHelpers.generateRoomId(),
+              chatId,
               MessageStatus.SENT,
               roomId,
               data.file,
@@ -298,7 +300,7 @@ export class ChatGateway
             ChatHelpers.messageResponse(
               data.content,
               data.senderId,
-              ChatHelpers.generateRoomId(),
+              chatId,
               MessageStatus.DELIVERED,
               roomId,
               data.file,
@@ -318,7 +320,7 @@ export class ChatGateway
           ChatHelpers.messageResponse(
             data.content,
             data.senderId,
-            ChatHelpers.generateRoomId(),
+            chatId,
             MessageStatus.DELIVERED,
             roomId,
             data.file,
