@@ -45,10 +45,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
 
         // await loadContacts();
         if (!contacts || contacts.length <= 0) {
+          onContactLoading(true);
           await loadContacts();
           const newContacts = await getContacts();
           setContacts(newContacts);
-          return;
+          return onContactLoading(false);
         }
 
         setContacts(contacts);
@@ -163,13 +164,7 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     }) => (
       <ContactCard
         contactName={item.name}
-        phoneNumber={
-          !item?.phoneNumber
-            ? item.members.find(
-                (c: any) => c?.phoneNumber !== currentUser?.phoneNumber
-              )?.phoneNumber || ""
-            : item?.phoneNumber
-        }
+        phoneNumber={item?.phoneNumber}
         isActiveUser={!!item?.roomId}
         contactImage=""
         roomId={item?.roomId}

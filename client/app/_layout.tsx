@@ -142,9 +142,11 @@ const AuthenticatedStack = () => {
 
       <Stack.Screen
         name="chat-screen"
+        // @ts-ignore
         component={ChatScreen}
         options={({ route }) => ({
           headerShown: true,
+
           headerTitle: () => {
             return (
               <View
@@ -162,7 +164,8 @@ const AuthenticatedStack = () => {
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {route.params!.contactName ??
+                  {route.params!.contactName[0].toUpperCase() +
+                    route.params!.contactName.slice(1) ??
                     route.params!.phoneNumber ??
                     "Chat"}
                 </Text>

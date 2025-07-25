@@ -2,6 +2,7 @@
  * type definition for a message queue nodde
  */
 export type QueueNodeType = {
+  chatId: string;
   roomId: string;
   senderId: string;
   content: string;

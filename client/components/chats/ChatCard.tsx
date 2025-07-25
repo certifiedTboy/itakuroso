@@ -73,14 +73,15 @@ const ChatCard = ({
         ) : (
           <Avatar.Text
             size={50}
-            label={contactName![0].charAt(0).toUpperCase()}
+            label={contactName && contactName![0].charAt(0).toUpperCase()}
             style={{ backgroundColor: Colors.light.btnBgc }}
           />
         )}
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
           <ThemedText style={styles.sender}>
-            {contactName.charAt(0).toUpperCase() + contactName.slice(1) ||
-              phoneNumber}
+            {(contactName &&
+              contactName.charAt(0).toUpperCase() + contactName.slice(1)) ||
+              (phoneNumber && phoneNumber)}
           </ThemedText>
           <View style={styles.messageRow}>
             {/* <Icon name="checkmark-done-outline" size={14} color="#969494FF" /> */}

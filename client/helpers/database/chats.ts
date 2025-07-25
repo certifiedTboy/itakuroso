@@ -1,29 +1,4 @@
-import * as SQLite from "expo-sqlite";
-import { generateDbId } from "../chat-helpers";
-
-let dbInstance: SQLite.SQLiteDatabase | null = null;
-
-const getDatabase = async () => {
-  if (!dbInstance) {
-    dbInstance = await SQLite.openDatabaseAsync("itakuroso_db");
-    await dbInstance.execAsync(`PRAGMA journal_mode = WAL`);
-    await dbInstance.execAsync(`PRAGMA foreign_keys = ON`);
-  }
-  return dbInstance;
-};
-
-let dbLock = false;
-const runWithLock = async (fn: () => Promise<void>) => {
-  while (dbLock) {
-    await new Promise((res) => setTimeout(res, 50));
-  }
-  dbLock = true;
-  try {
-    await fn();
-  } finally {
-    dbLock = false;
-  }
-};
+import { getDatabase, runWithLock } from "./database";
 
 /**
  * @method createChatTable
@@ -64,6 +39,7 @@ export const createChatTable = async () => {
  * @param {string} chatData.roomId - The ID of the room where the message is sent.
  */
 export const insertChat = async (chatData: {
+  chatId: string;
   senderId: string;
   message: string;
   chatRoomId: string;
@@ -76,11 +52,10 @@ export const insertChat = async (chatData: {
       await db.runAsync("BEGIN TRANSACTION");
 
       if (db) {
-        const chatId = generateDbId();
         await db.runAsync(
           `INSERT OR REPLACE INTO chatss (_id, senderId, message, roomId, file, replyToId) VALUES (?, ?, ?, ?, ?, ?)`,
           [
-            chatId,
+            chatData.chatId,
             chatData.senderId,
             chatData.message,
             chatData.chatRoomId,

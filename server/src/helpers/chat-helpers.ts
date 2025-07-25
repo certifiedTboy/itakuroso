@@ -7,7 +7,7 @@ export class ChatHelpers {
   static messageResponse(
     message: string,
     senderId: string,
-    _id: string,
+    chatId: string,
     messageStatus: MessageStatus,
     roomId?: string,
     file?: string,
@@ -20,7 +20,7 @@ export class ChatHelpers {
     return {
       message,
       senderId,
-      _id,
+      chatId,
       file: file || null,
       createdAt: new Date(),
       replyTo: replyTo,
