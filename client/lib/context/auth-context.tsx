@@ -1,4 +1,3 @@
-import { dropDatabase } from "@/helpers/database/drop-database";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { createContext, useState } from "react";
 import { useGetCurrentUserMutation } from "../apis/userApis";
@@ -27,7 +26,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const logout = async () => {
-    await dropDatabase();
+    // await dropDatabase();
     await AsyncStorage.removeItem("token");
     setIsAuthenticated(false);
   };

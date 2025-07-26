@@ -201,7 +201,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
         {
           senderId: message.senderId,
           message: message.message,
-          _id: message._id,
+          _id: message.chatId,
           createdAt: message.createdAt,
           file: message?.file,
           type: "text",
