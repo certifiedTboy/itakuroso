@@ -119,6 +119,8 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     []
   );
 
+  // console.log(chatCtx.messages);
+
   return (
     <ThemedView
       style={[styles.messagesContainer]}
@@ -129,7 +131,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
       <AnimatedFlatList
         data={chatCtx.messages}
         renderItem={RenderedCard}
-        keyExtractor={(item: any) => item._id}
+        keyExtractor={(item: any) => item._id || item.chatId}
         numColumns={1}
         initialNumToRender={10}
         getItemLayout={(data, index) => ({
