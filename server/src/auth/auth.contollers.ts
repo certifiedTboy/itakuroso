@@ -13,6 +13,7 @@ import { AuthService } from './auth-services';
 import { AuthDto } from './dto/auth.dto';
 import { AuthGuard } from '../guard/auth-guard';
 import { ResponseHandler } from '../common/response-handler/response-handler';
+import { UsersService } from '../user/users-service';
 
 /**
  * @class AuthControllers
@@ -26,7 +27,10 @@ import { ResponseHandler } from '../common/response-handler/response-handler';
   version: '1',
 })
 export class AuthControllers {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly usersService: UsersService,
+  ) {}
 
   /**
    * @method login
@@ -59,15 +63,22 @@ export class AuthControllers {
    */
   @Get('current-user')
   @UseGuards(AuthGuard)
-  getCurrentUser(@Req() req: Request) {
+  async getCurrentUser(@Req() req: Request) {
     try {
       const currentUser = req.user;
 
-      return ResponseHandler.ok(
-        200,
-        'User retrieved successfully',
-        currentUser,
-      );
+      if (!currentUser) {
+        throw new BadRequestException('', {
+          cause: 'Unauthorized access',
+          description: 'User not authenticated',
+        });
+      }
+
+      const user = await this.usersService.checkUserExistById(currentUser?._id);
+
+      if (user) {
+        return ResponseHandler.ok(200, 'User retrieved successfully', user);
+      }
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {

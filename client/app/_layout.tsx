@@ -15,6 +15,7 @@ import ContactListsScreen from "@/screen/contact-lists-screen";
 import HomeScreen from "@/screen/home-screen";
 import PasscodeScreen from "@/screen/passcode-screen";
 import RegScreen from "@/screen/reg-screen";
+import UserProfileScreen from "@/screen/user-profile-screen";
 import VerificationScreen from "@/screen/verification-screen";
 import {
   DarkTheme,
@@ -199,7 +200,7 @@ const AuthenticatedStack = () => {
         component={ContactListsScreen}
         options={({ route }) => ({
           animation: "slide_from_right",
-          headerShown: true,
+          // headerShown: true,
           headerTitle: () => (
             <>
               {!showSearchBar ? (
@@ -261,6 +262,18 @@ const AuthenticatedStack = () => {
 
           headerBackVisible: !showSearchBar,
         })}
+      />
+
+      <Stack.Screen
+        name="user-profile-screen"
+        component={UserProfileScreen}
+        options={{
+          headerTitle: "Profile",
+          animation: "slide_from_right",
+          headerStyle: {
+            backgroundColor,
+          },
+        }}
       />
     </Stack.Navigator>
   );

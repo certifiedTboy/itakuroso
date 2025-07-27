@@ -155,6 +155,18 @@ export class UsersService {
   }
 
   /**
+   * @method checkUserExistById
+   * @description Checks if a user exists in the database by their ID.
+   * @param {string} userId - The ID of the user to check.
+   * @returns {Promise<UserDocument | null>} - The user object or null if not
+   */
+  async checkUserExistById(userId: string): Promise<UserDocument | null> {
+    return this.userModel
+      .findById(userId)
+      .select('-passcode -verificationCode -verificationCodeExpiresIn -__v');
+  }
+
+  /**
    * @method findUserByVerificationCode
    * @description Finds a user by their verification code.
    * @param {string} verificationCode - The verification code to search for.

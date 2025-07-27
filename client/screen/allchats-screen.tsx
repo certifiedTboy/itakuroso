@@ -123,11 +123,19 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const options = [
     {
       label: "Settings",
-      onPress: () => navigation.navigate("Settings"),
+      onPress: () => {
+        // @ts-ignore
+        navigate.navigate("Settings");
+        toggleDropdown();
+      },
     },
     {
-      label: "Help",
-      onPress: () => navigation.navigate("Help"),
+      label: "Profile",
+      onPress: () => {
+        // @ts-ignore
+        navigate.navigate("user-profile-screen");
+        toggleDropdown();
+      },
     },
     {
       label: "Logout",
