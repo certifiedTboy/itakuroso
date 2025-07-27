@@ -90,6 +90,38 @@ export class AuthControllers {
   }
 
   /**
+   * @method getCurrentUser
+   * @description Handles requests to get the current user's information.
+   */
+  @Get('user/:phoneNumber/profile')
+  @UseGuards(AuthGuard)
+  async getUserProfile(@Req() req: Request) {
+    try {
+      const phoneNumber = req.params.phoneNumber;
+
+      if (!phoneNumber) {
+        throw new BadRequestException('', {
+          cause: 'Unauthorized access',
+          description: 'User not authenticated',
+        });
+      }
+
+      const user = await this.usersService.checkIfUserExist({ phoneNumber });
+
+      if (user) {
+        return ResponseHandler.ok(200, 'User retrieved successfully', user);
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
    * @method getNewToken
    * @description Handles requests to generate a new token for the user.
    * Validates the input data and checks if the user exists.
