@@ -20,17 +20,29 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   const [getCurrentUser] = useGetCurrentUserMutation();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
 
+  /**
+   * Function to authenticate the user and set the authentication state
+   * @param token - The authentication token to be stored
+   */
   const authenticate = async (token: string) => {
     await AsyncStorage.setItem("token", token);
     setIsAuthenticated(true);
   };
 
+  /**
+   * Function to log out the user and clear the authentication state
+   * It also clears the token from AsyncStorage
+   */
   const logout = async () => {
     // await dropDatabase();
     await AsyncStorage.removeItem("token");
     setIsAuthenticated(false);
   };
 
+  /**
+   * Function to check if the user is authenticated
+   * It retrieves the token from AsyncStorage and updates the authentication state accordingly
+   */
   const checkUserIsAuthenticated = async () => {
     const token = await AsyncStorage.getItem("token");
 

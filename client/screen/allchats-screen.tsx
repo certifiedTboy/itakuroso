@@ -6,6 +6,7 @@ import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
 import { AuthContext } from "@/lib/context/auth-context";
 import { ChatContext } from "@/lib/context/chat-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
@@ -14,7 +15,14 @@ import { useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 
-import { FlatList, StyleSheet, useColorScheme, View } from "react-native";
+import {
+  FlatList,
+  Image,
+  Pressable,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from "react-native";
 import { Searchbar } from "react-native-paper";
 
 type AllChatsScreenInterface = {
@@ -27,6 +35,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const [savedContacts, setSavedContacts] = useState<
     { id: string; phoneNumber: string; name: string; roomId?: string }[]
   >([]);
+
+  const [getCurrentUser] = useGetCurrentUserMutation();
 
   const [rooms, setRooms] = useState<
     {
@@ -69,10 +79,15 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     "background"
   );
 
+  useEffect(() => {
+    getCurrentUser(null);
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       (async () => {
         // getExisitngRooms(null);
+
         const contacts = await getContacts();
 
         if (contacts && contacts.length > 0) {
@@ -188,9 +203,28 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   return (
     <>
+      <Pressable
+        // @ts-ignore
+        onPress={() => navigate.navigate("ai-screen")}
+        style={styles.aiIconContainer}
+      >
+        <Image
+          style={styles.aiIcon}
+          source={require("@/assets/images/ai.gif")}
+        />
+      </Pressable>
+
       <FloatingBtn
         // @ts-ignore
         onNavigate={() => navigate.navigate("contact-lists-screen")}
+        iconName="account-multiple-plus-outline"
+        style={{
+          position: "absolute",
+          margin: 16,
+          right: 0,
+          bottom: 0,
+          zIndex: 100,
+        }}
       />
       <MenuDropdown options={options} />
       <View style={styles.contianer}>
@@ -214,18 +248,16 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           ]}
         />
 
-        <View>
-          <FlatList
-            // @ts-ignore
-            data={rooms}
-            renderItem={RenderedCard}
-            keyExtractor={(item) => item.roomId}
-            numColumns={1}
-            scrollEventThrottle={16} // Improves performance
-            // onEndReached={handleEndReached} // Trigger when reaching the end
-            onEndReachedThreshold={0.5} // Adjust sensitivity
-          />
-        </View>
+        <FlatList
+          // @ts-ignore
+          data={rooms}
+          renderItem={RenderedCard}
+          keyExtractor={(item) => item.roomId}
+          numColumns={1}
+          scrollEventThrottle={16} // Improves performance
+          // onEndReached={handleEndReached} // Trigger when reaching the end
+          onEndReachedThreshold={0.5} // Adjust sensitivity
+        />
       </View>
     </>
   );
@@ -243,5 +275,21 @@ const styles = StyleSheet.create({
 
   searchInput: {
     height: 40,
+  },
+
+  aiIconContainer: {
+    flex: 1,
+    position: "absolute",
+    // margin: 16,
+    marginRight: 20,
+    marginBottom: 10,
+    right: 0,
+    bottom: 70,
+    zIndex: 100,
+  },
+
+  aiIcon: {
+    width: 50,
+    height: 50,
   },
 });

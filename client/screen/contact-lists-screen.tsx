@@ -5,11 +5,13 @@ import { ThemedView } from "@/components/ThemedView";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { showNotification } from "@/helpers/notification";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FlatList, View } from "react-native";
+import { FlatList, StyleSheet, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSelector } from "react-redux";
 
@@ -34,6 +36,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   } = useContext(ContactScreenDropdownContext);
 
   const { currentUser } = useSelector((state: any) => state.authState);
+
+  const safeAreaBackground = useThemeColor(
+    { light: "#fff", dark: "#000" },
+    "background"
+  );
 
   /**
    * capture users contacts from device
@@ -187,35 +194,42 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   }
 
   return (
-    <>
+    <SafeAreaView
+      style={[{ backgroundColor: safeAreaBackground }, styles.container]}
+      edges={["bottom", "left", "right"]}
+    >
       <View style={{ zIndex: 1000 }}>
         <Notification />
       </View>
       <ContactScreenDropdown options={options} />
 
       <ThemedView darkColor="#000" lightColor="#fff">
-        <View>
-          <FlatList
-            // @ts-ignore
-            data={moveToTop(filteredContacts, (item: any) => item.roomId)}
-            renderItem={RenderedCard}
-            keyExtractor={(item: any) => item.id}
-            numColumns={1}
-            initialNumToRender={10}
-            maxToRenderPerBatch={10}
-            scrollEventThrottle={10} // Improves performance
-            windowSize={10} // Adjust based on your needs
-            onEndReachedThreshold={0.5} // Adjust sensitivity
-            getItemLayout={(data, index) => ({
-              length: 60,
-              offset: 60 * index,
-              index,
-            })}
-          />
-        </View>
+        <FlatList
+          // @ts-ignore
+          data={moveToTop(filteredContacts, (item: any) => item.roomId)}
+          renderItem={RenderedCard}
+          keyExtractor={(item: any) => item.id}
+          numColumns={1}
+          initialNumToRender={10}
+          maxToRenderPerBatch={10}
+          scrollEventThrottle={10} // Improves performance
+          windowSize={10} // Adjust based on your needs
+          onEndReachedThreshold={0.5} // Adjust sensitivity
+          getItemLayout={(data, index) => ({
+            length: 60,
+            offset: 60 * index,
+            index,
+          })}
+        />
       </ThemedView>
-    </>
+    </SafeAreaView>
   );
 };
 
 export default ContactListsScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

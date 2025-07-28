@@ -20,6 +20,7 @@ import {
   View,
 } from "react-native";
 
+import Reanimated from "react-native-reanimated";
 import LoaderSpinner from "../spinner/LoaderSpinner";
 
 import Icon from "../ui/Icon";
@@ -69,6 +70,8 @@ type ChatInputProps = {
     _id: string;
   }) => void;
 };
+
+const AnimatedTextInput = Reanimated.createAnimatedComponent(TextInput);
 
 const MessageInput = ({
   receiverId,
@@ -154,6 +157,9 @@ const MessageInput = ({
     }
   }, [audioUri]);
 
+  /**
+   * control the height of the message input field
+   */
   useFocusEffect(
     useCallback(() => {
       heightRef.current = 50;
@@ -192,6 +198,10 @@ const MessageInput = ({
     }
   }, [isSuccess]);
 
+  /**
+   * reset imageUri and publicId after file deletion is successful
+   * this is to ensure that the image preview is removed from the UI
+   */
   useEffect(() => {
     if (fileDeletedSuccess) {
       setImageUri("");
@@ -244,10 +254,20 @@ const MessageInput = ({
     }
   };
 
+  /**
+   * handleShowEmoji is used to toggle the visibility of the emoji picker.
+   * It sets the `showEmoji` state to true or false.
+   */
   const handleShowEmoji = () => {
     return setShowEmoji(!showEmoji);
   };
 
+  /**
+   * handleSend is used to send a message.
+   * It checks if the message is not empty or if an image is selected.
+   * If so, it calls the `sendMessage` method from the chat context.
+   * It also resets the message input and image preview after sending.
+   */
   const handleSend = async () => {
     if (message.trim().length > 0 || imageUri) {
       chatCtx.sendMessage({
@@ -363,7 +383,7 @@ const MessageInput = ({
         )}
 
         <View style={styles.row}>
-          <TextInput
+          <AnimatedTextInput
             placeholderTextColor={placeholderTextColor}
             style={[
               styles.input,

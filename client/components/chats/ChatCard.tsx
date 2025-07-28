@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useGetUserProfileMutation } from "@/lib/apis/userApis";
 import { useNavigation } from "@react-navigation/native";
+import { useEffect } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 import { ThemedText } from "../ThemedText";
@@ -36,6 +38,8 @@ const ChatCard = ({
 }: ChatCardProps) => {
   const navigation = useNavigation();
 
+  const [getUserProfile, { data, error }] = useGetUserProfileMutation();
+
   const { width } = Dimensions.get("window");
 
   const cardBg = useThemeColor(
@@ -48,6 +52,12 @@ const ChatCard = ({
     "text"
   );
 
+  useEffect(() => {
+    if (phoneNumber) {
+      getUserProfile(phoneNumber);
+    }
+  }, [phoneNumber]);
+
   return (
     <Pressable
       onPress={() => {
@@ -58,6 +68,9 @@ const ChatCard = ({
           roomId,
           senderId,
           isRead,
+          lastSeen: data?.data?.lastSeen,
+          profileImage: data?.data?.profileImage,
+          isOnline: data?.data?.isOnline,
         });
       }}
       style={({ pressed }) => [
