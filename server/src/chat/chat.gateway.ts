@@ -13,6 +13,7 @@ import { ChatService } from './chat-services';
 import { UsersService } from 'src/user/users-service';
 import { ChatHelpers } from '../helpers/chat-helpers';
 import { MessageStatus } from './chat-type';
+import { AiServices } from './ai-services';
 
 // import { ChatDocument } from './schemas/chat-schema';
 @Injectable()
@@ -27,6 +28,7 @@ export class ChatGateway
   constructor(
     private readonly chatService: ChatService,
     private readonly usersService: UsersService,
+    private readonly aiService: AiServices,
   ) {}
 
   private server: Server;
@@ -141,23 +143,23 @@ export class ChatGateway
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId } = data;
+    const { roomId, currentUserData } = data;
 
     await client.join(roomId);
 
-    // return this.server
-    //   .to(roomId)
-    //   .emit(
-    //     'ai-message',
-    //     ChatHelpers.messageResponse(
-    //       `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
-    //       'AI',
-    //       ChatHelpers.generateRoomId(),
-    //       MessageStatus.READ,
-    //       roomId,
-    //       MessageStatus.READ,
-    //     ),
-    //   );
+    return this.server
+      .to(roomId)
+      .emit(
+        'ai-message',
+        ChatHelpers.messageResponse(
+          `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
+          'AI',
+          ChatHelpers.generateRoomId(),
+          MessageStatus.READ,
+          roomId,
+          MessageStatus.READ,
+        ),
+      );
   }
 
   /**
@@ -362,36 +364,65 @@ export class ChatGateway
           ),
         );
       }
+    }
+  }
 
-      // console.log(checkOtherUserIsActive);
-      // console.log(activeRoomUsers);
-      // const roomExist = await this.chatService.findRoomById(roomId);
-      /**
-       * save the message to the database
-       */
-      // if (roomExist) {
-      // await this.chatService.createChat({
-      //   roomId: roomExist._id.toString(),
-      //   senderId: data.senderId,
-      //   chatRoomId: roomExist.roomId,
-      //   message: data.content,
-      //   file: data?.file,
-      //   replyTo: data?.messageToReplyId,
-      // });
-      // roomExist.lastMessage = {
-      //   content: data.content,
-      //   senderId: data.senderId,
-      //   timestamp: new Date(),
-      //   isRead: currentActiveUsers.length === 1 ? false : true,
-      //   containsFile: !!data.file,
-      // };
-      // if (data.messageToReplyId) {
-      //   replyToMessage = await this.chatService.findChatById(
-      //     data.messageToReplyId,
-      //   );
-      // }
-      // await roomExist.save();
-      // }
+  @SubscribeMessage('ai-message')
+  async handleAiMessage(
+    @MessageBody()
+    data: {
+      chatId: string;
+      roomId: string;
+      senderId: string;
+      content: string;
+    },
+    // @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, chatId, content } = data;
+
+    this.server
+      .to(roomId)
+      .emit(
+        'ai-message',
+        ChatHelpers.messageResponse(
+          content,
+          roomId,
+          chatId,
+          MessageStatus.READ,
+          roomId,
+        ),
+      );
+
+    const response = await this.aiService.runConveration(content);
+
+    if (response.error) {
+      return this.server
+        .to(roomId)
+        .emit(
+          'ai-message',
+          ChatHelpers.messageResponse(
+            'Something went wrong while processing your request.',
+            'AI',
+            ChatHelpers.generateRoomId(),
+            MessageStatus.READ,
+            roomId,
+          ),
+        );
+    }
+
+    if (response?.result) {
+      this.server
+        .to(roomId)
+        .emit(
+          'ai-message',
+          ChatHelpers.messageResponse(
+            response.result,
+            'AI',
+            ChatHelpers.generateRoomId(),
+            MessageStatus.READ,
+            roomId,
+          ),
+        );
     }
   }
 

@@ -44,6 +44,12 @@ type ChatContextType = {
       replyToSenderId: string;
     };
   }) => void;
+  sendAiMessage: (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
+    roomId?: string;
+  }) => void;
   updateSocketMessages: (
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
@@ -96,6 +102,12 @@ export const ChatContext = createContext<ChatContextType>({
       replyToMessage: string;
       replyToSenderId: string;
     };
+  }) => {},
+  sendAiMessage: (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
+    roomId?: string;
   }) => {},
   updateSocketMessages: (
     messages: [],
@@ -213,6 +225,18 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }) => {
     socket.current.emit("message", messageData);
+  };
+
+  /**
+   * send message function
+   */
+  const sendAiMessage = async (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
+    roomId?: string;
+  }) => {
+    socket.current.emit("ai-message", messageData);
   };
 
   /**
@@ -409,6 +433,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     triggerCount,
     aiMessages,
     joinAiRoom,
+    sendAiMessage,
   };
 
   // @ts-ignore
