@@ -10,6 +10,7 @@ import { AuthModule } from 'src/auth/auth-module';
 import { Chat, ChatSchema } from './schemas/chat-schema';
 import { QueueModule } from '../queue/queue-module';
 import { FileUploadModule } from '../common/file-upload/file-upload-module';
+import { AiServices } from './ai-services';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { FileUploadModule } from '../common/file-upload/file-upload-module';
     QueueModule,
     FileUploadModule,
   ],
-  providers: [ChatGateway, ChatService],
+  providers: [ChatGateway, ChatService, AiServices],
   controllers: [ChatControllers],
   exports: [ChatService], // Export ChatService to use in other modules
 })

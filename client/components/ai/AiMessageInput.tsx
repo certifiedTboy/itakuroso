@@ -27,12 +27,7 @@ import {
 } from "react-native";
 import { useSelector } from "react-redux";
 
-type ChatInputProps = {
-  receiverId?: string;
-  roomId?: string;
-};
-
-const AiMessageInput = ({ receiverId, roomId }: ChatInputProps) => {
+const AiMessageInput = () => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
@@ -45,7 +40,7 @@ const AiMessageInput = ({ receiverId, roomId }: ChatInputProps) => {
   /**
    * chatContext
    */
-  const chatCtx = useContext(ChatContext);
+  const { sendAiMessage } = useContext(ChatContext);
 
   const placeholderTextColor = useThemeColor(
     { light: "#333", dark: "#fff" },
@@ -122,12 +117,11 @@ const AiMessageInput = ({ receiverId, roomId }: ChatInputProps) => {
 
   const handleSend = async () => {
     if (message.trim().length > 0) {
-      chatCtx.sendMessage({
+      sendAiMessage({
         chatId: generateDbId(),
         content: message,
         senderId: currentUser?.phoneNumber,
-        receiverId: currentUser?.phoneNumber,
-        roomId,
+        roomId: currentUser?.phoneNumber,
       });
 
       setMessage("");

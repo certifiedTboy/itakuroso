@@ -4,6 +4,7 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import { memo, useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import AnimatedTyping from "./AnimatedTyping";
 
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
@@ -100,13 +101,6 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   : { alignSelf: "flex-start" },
               ]}
             >
-              {/* {!message.isSender && (
-                <Image
-                  source={require("../../assets/images/avatar.png")}
-                  style={styles.avatar}
-                />
-              )} */}
-
               <View
                 style={[
                   styles.container,
@@ -117,13 +111,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   },
                 ]}
               >
-                <Text
-                  style={[
-                    message.isSender ? styles.senderText : styles.receiverText,
-                  ]}
-                >
-                  {message.message}
-                </Text>
+                <AnimatedTyping text={[message.message]} />
 
                 <Text style={styles.messageTime}>
                   {formatDate(message.createdAt)}

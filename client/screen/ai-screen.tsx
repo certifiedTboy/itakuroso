@@ -45,8 +45,6 @@ const AIScreen = () => {
     []
   );
 
-  console.log("AI Messages:", aiMessages[0]);
-
   return (
     <SafeAreaView
       style={[{ backgroundColor: safeAreaBackground }, styles.container]}
@@ -63,7 +61,7 @@ const AIScreen = () => {
           lightColor="#fff"
         >
           <AnimatedFlatList
-            data={aiMessages}
+            data={aiMessages.slice(0, -1)}
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item._id || item.chatId}
             numColumns={1}
