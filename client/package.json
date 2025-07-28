@@ -49,6 +49,7 @@
     "react-native": "0.79.2",
     "react-native-emoji-modal": "^0.2.4",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-keyboard-controller": "^1.18.1",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-otp-entry": "^1.8.4",
     "react-native-pager-view": "6.7.1",

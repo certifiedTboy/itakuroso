@@ -76,6 +76,13 @@ export const userApis = createApi({
       },
     }),
 
+    getUserProfile: builder.mutation({
+      query: (payload) => ({
+        url: `/auth/user/${payload}/profile`,
+        method: "GET",
+      }),
+    }),
+
     getNewToken: builder.mutation({
       query: () => ({
         url: `/auth/new-token`,
@@ -106,4 +113,5 @@ export const {
   useVerifyUserAccountMutation,
   useUpdatePasscodeMutation,
   useGetCurrentUserMutation,
+  useGetUserProfileMutation,
 } = userApis;

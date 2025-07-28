@@ -132,6 +132,34 @@ export class ChatGateway
     }
   }
 
+  @SubscribeMessage('joinAiRoom')
+  async handleJoinAiRoom(
+    @MessageBody()
+    data: {
+      roomId: string;
+      currentUserData: { phoneNumber: string; email: string };
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+
+    await client.join(roomId);
+
+    // return this.server
+    //   .to(roomId)
+    //   .emit(
+    //     'ai-message',
+    //     ChatHelpers.messageResponse(
+    //       `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
+    //       'AI',
+    //       ChatHelpers.generateRoomId(),
+    //       MessageStatus.READ,
+    //       roomId,
+    //       MessageStatus.READ,
+    //     ),
+    //   );
+  }
+
   /**
    * @method handleUserOnline
    * @description Handles listening event when a user comes online.

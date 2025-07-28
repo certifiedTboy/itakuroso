@@ -1,6 +1,8 @@
 import SearchInput from "@/components/contacts/SearchInput";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import Icon from "@/components/ui/Icon";
+import { Colors } from "@/constants/Colors";
+import { formatDate } from "@/helpers/chat-helpers";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
@@ -10,6 +12,7 @@ import ContactScreenDropdownProvider, {
 } from "@/lib/context/contactscreen-dropdown-context";
 import DropdownContextProvider from "@/lib/context/dropdown-context";
 import { store } from "@/lib/redux-store/store";
+import AIScreen from "@/screen/ai-screen";
 import ChatScreen from "@/screen/chat-screen";
 import ContactListsScreen from "@/screen/contact-lists-screen";
 import HomeScreen from "@/screen/home-screen";
@@ -28,6 +31,7 @@ import { useFonts } from "expo-font";
 import { StatusBar } from "expo-status-bar";
 import { useContext, useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { KeyboardProvider } from "react-native-keyboard-controller";
 import "react-native-reanimated";
 import {
   SafeAreaProvider,
@@ -142,6 +146,46 @@ const AuthenticatedStack = () => {
       />
 
       <Stack.Screen
+        name="ai-screen"
+        component={AIScreen}
+        options={() => ({
+          headerShown: true,
+          headerTitle: () => {
+            return (
+              <View
+                style={{
+                  marginLeft: -20,
+                  backgroundColor: backgroundColor,
+                  height: 50,
+                  justifyContent: "center",
+                }}
+              >
+                <Text
+                  style={{
+                    color: chatScreenTitleColor,
+                    fontWeight: "500",
+                    fontSize: 24,
+                  }}
+                  numberOfLines={1}
+                  ellipsizeMode="tail"
+                >
+                  Itakurọsọ AI
+                </Text>
+              </View>
+            );
+          },
+          headerTitleStyle: {
+            fontSize: 24,
+            fontWeight: "bold",
+            color: chatScreenTitleColor,
+          },
+          headerStyle: {
+            backgroundColor,
+          },
+          animation: "slide_from_right",
+        })}
+      />
+      <Stack.Screen
         name="chat-screen"
         // @ts-ignore
         component={ChatScreen}
@@ -152,7 +196,7 @@ const AuthenticatedStack = () => {
             return (
               <View
                 style={{
-                  marginLeft: -23,
+                  marginLeft: -20,
                   backgroundColor: backgroundColor,
                 }}
               >
@@ -171,18 +215,52 @@ const AuthenticatedStack = () => {
                     "Chat"}
                 </Text>
 
-                <Text
-                  style={{
-                    color: chatScreenTitleColor,
-                    fontWeight: "500",
-                    fontSize: 13,
-                    marginTop: 4,
-                    opacity: 0.8,
-                  }}
-                >
-                  Last Seen
-                  {/* last seen {formatDate(new Date().toString())} */}
-                </Text>
+                {!route?.params?.isOnline ? (
+                  <Text
+                    style={{
+                      color: chatScreenTitleColor,
+                      fontWeight: "500",
+                      fontSize: 13,
+                      marginTop: 4,
+                      opacity: 0.8,
+                    }}
+                  >
+                    Last Seen
+                    {route.params?.lastSeen &&
+                      ` ${new Date(route.params.lastSeen).toLocaleTimeString(
+                        "en-US",
+                        {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        }
+                      )}`}
+                    {" - "}
+                    {formatDate(route.params?.lastSeen)}
+                  </Text>
+                ) : (
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      // marginLeft: 20,
+                      alignItems: "center",
+                      gap: 5,
+                      marginTop: 5,
+                    }}
+                  >
+                    <Text
+                      style={{
+                        color: chatScreenTitleColor,
+                        fontWeight: "500",
+                        fontSize: 12,
+                        opacity: 0.8,
+                        marginBottom: 3,
+                      }}
+                    >
+                      Online
+                    </Text>
+                    <Icon name="ellipse" color={Colors.dark.btnBgc} size={12} />
+                  </View>
+                )}
               </View>
             );
           },
@@ -192,7 +270,6 @@ const AuthenticatedStack = () => {
             fontWeight: "bold",
           },
         })}
-        // options={{ headerShown: false }}
       />
 
       <Stack.Screen
@@ -206,7 +283,7 @@ const AuthenticatedStack = () => {
               {!showSearchBar ? (
                 <View
                   style={{
-                    marginLeft: -25,
+                    marginLeft: -20,
                     // marginRight: 15,
                     flexDirection: "row",
                     justifyContent: "space-between",
@@ -325,9 +402,11 @@ const Navigation = () => {
 export default function RootLayout() {
   return (
     <Provider store={store}>
-      <AuthContextProvider>
-        <Navigation />
-      </AuthContextProvider>
+      <KeyboardProvider>
+        <AuthContextProvider>
+          <Navigation />
+        </AuthContextProvider>
+      </KeyboardProvider>
     </Provider>
   );
 }

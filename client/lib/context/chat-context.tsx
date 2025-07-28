@@ -16,10 +16,20 @@ type ChatContextType = {
     file?: string;
     replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
   }[];
+  aiMessages: {
+    senderId: string;
+    message: string;
+    _id: string;
+    createdAt: string;
+  }[];
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
+  ) => void;
+  joinAiRoom: (
+    roomId: string,
+    currentUserData: { phoneNumber: string; email: string }
   ) => void;
   sendMessage: (messageData: {
     chatId: string;
@@ -57,10 +67,22 @@ export const ChatContext = createContext<ChatContextType>({
       replyTo: { replyToId: "", replyToMessage: "", senderId: "" },
     },
   ],
+  aiMessages: [
+    {
+      senderId: "",
+      message: "",
+      _id: "",
+      createdAt: "",
+    },
+  ],
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
+  ) => {},
+  joinAiRoom: (
+    roomId: string,
+    currentUserData: { phoneNumber: string; email: string }
   ) => {},
   sendMessage: (messageData: {
     chatId: string;
@@ -101,6 +123,10 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     }[]
   >([]);
 
+  const [aiMessages, setAiMessages] = useState<
+    { senderId: string; message: string; _id: string; createdAt: string }[]
+  >([]);
+
   /**
    * network info state data
    */
@@ -108,6 +134,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     type: string;
     isConnected: boolean;
   }>({ type: "", isConnected: false });
+
+  const [triggerCount, setTriggerCount] = useState(0);
 
   const socket = useRef(io(API_URL));
 
@@ -149,8 +177,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
 
     return () => unsubscribe();
   }, []);
-
-  const [triggerCount, setTriggerCount] = useState(0);
 
   /**
    * join room function
@@ -237,6 +263,47 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
 
     return () => {
       currentSocket.off("message");
+    };
+  }, [socket]);
+
+  /**
+   * join AI room function
+   */
+  const joinAiRoom = (
+    roomId: string,
+    currentUserData: { phoneNumber: string; email: string }
+  ) => {
+    socket?.current.emit("joinAiRoom", {
+      roomId: roomId,
+      currentUserData: {
+        phoneNumber: currentUserData?.phoneNumber,
+        email: currentUserData?.email,
+      },
+    });
+  };
+
+  /**
+   * listens to AI messages from the socket server
+   * it updates the AI messages state with the new message
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("ai-message", (message: any) => {
+      setTriggerCount((prevCount) => prevCount + 1);
+      setAiMessages((prevMessages) => [
+        {
+          senderId: message.senderId,
+          message: message.message,
+          _id: message.chatId,
+          createdAt: message.createdAt,
+        },
+        ...prevMessages,
+      ]);
+    });
+
+    return () => {
+      currentSocket.off("ai-message");
     };
   }, [socket]);
 
@@ -340,6 +407,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     trigerRoomRefetch,
     leaveRoom,
     triggerCount,
+    aiMessages,
+    joinAiRoom,
   };
 
   // @ts-ignore

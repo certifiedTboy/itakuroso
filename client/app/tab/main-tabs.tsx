@@ -2,9 +2,9 @@ import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { DropdownContext } from "@/lib/context/dropdown-context";
-import AIScreen from "@/screen/ai-screen";
 import AllChatsScreen from "@/screen/allchats-screen";
 import CallsScreen from "@/screen/calls-screen";
+import GroupScreen from "@/screen/group-screen";
 import StatusScreen from "@/screen/status-screen";
 import React, { useContext, useState } from "react";
 import {
@@ -24,14 +24,14 @@ const MainTabs = () => {
   const renderScene = SceneMap({
     chats: AllChatsScreen,
     status: StatusScreen,
-    ai: AIScreen,
+    group: GroupScreen,
     calls: CallsScreen,
   });
 
   const [routes] = useState([
     { key: "chats", title: "Itakurọsọ", icon: "chatbubbles-outline" },
+    { key: "group", title: "Groups", icon: "people-outline" },
     { key: "status", title: "Status", icon: "newspaper-outline" },
-    { key: "ai", title: "Itakurọsọ AI", icon: "diamond-outline" },
     { key: "calls", title: "Calls", icon: "call-outline" },
   ]);
 
