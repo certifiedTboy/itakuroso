@@ -143,23 +143,23 @@ export class ChatGateway
     },
     @ConnectedSocket() client: Socket,
   ) {
-    const { roomId, currentUserData } = data;
+    const { roomId } = data;
 
     await client.join(roomId);
 
-    return this.server
-      .to(roomId)
-      .emit(
-        'ai-message',
-        ChatHelpers.messageResponse(
-          `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
-          'AI',
-          ChatHelpers.generateRoomId(),
-          MessageStatus.READ,
-          roomId,
-          MessageStatus.READ,
-        ),
-      );
+    // return this.server
+    //   .to(roomId)
+    //   .emit(
+    //     'ai-message',
+    //     ChatHelpers.messageResponse(
+    //       `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
+    //       'AI',
+    //       ChatHelpers.generateRoomId(),
+    //       MessageStatus.READ,
+    //       roomId,
+    //       MessageStatus.READ,
+    //     ),
+    //   );
   }
 
   /**
@@ -368,7 +368,7 @@ export class ChatGateway
   }
 
   @SubscribeMessage('ai-message')
-  async handleAiMessage(
+  handleAiMessage(
     @MessageBody()
     data: {
       chatId: string;
@@ -393,7 +393,9 @@ export class ChatGateway
         ),
       );
 
-    const response = await this.aiService.runConveration(content);
+    // const response = await this.aiService.runConveration(content);
+
+    const response = { error: 'something went wrong' }; // Simulated error response
 
     if (response.error) {
       return this.server
@@ -401,7 +403,7 @@ export class ChatGateway
         .emit(
           'ai-message',
           ChatHelpers.messageResponse(
-            'Something went wrong while processing your request.',
+            'Something went wrong while processing your request. kindly check back later or try again.',
             'AI',
             ChatHelpers.generateRoomId(),
             MessageStatus.READ,
@@ -410,20 +412,20 @@ export class ChatGateway
         );
     }
 
-    if (response?.result) {
-      this.server
-        .to(roomId)
-        .emit(
-          'ai-message',
-          ChatHelpers.messageResponse(
-            response.result,
-            'AI',
-            ChatHelpers.generateRoomId(),
-            MessageStatus.READ,
-            roomId,
-          ),
-        );
-    }
+    // if (response?.result) {
+    //   this.server
+    //     .to(roomId)
+    //     .emit(
+    //       'ai-message',
+    //       ChatHelpers.messageResponse(
+    //         response.result,
+    //         'AI',
+    //         ChatHelpers.generateRoomId(),
+    //         MessageStatus.READ,
+    //         roomId,
+    //       ),
+    //     );
+    // }
   }
 
   @SubscribeMessage('markMessageAsRead')
