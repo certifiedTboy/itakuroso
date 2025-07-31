@@ -314,7 +314,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket.current;
 
     currentSocket.on("ai-message", (message: any) => {
-      setTriggerCount((prevCount) => prevCount + 1);
       setAiMessages((prevMessages) => [
         {
           senderId: message.senderId,
