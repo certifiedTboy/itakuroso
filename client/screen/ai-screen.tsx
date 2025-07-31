@@ -29,7 +29,7 @@ const AIScreen = () => {
           email: currentUser?.email,
         });
       }
-    }, [currentUser])
+    }, [])
   );
 
   // Memoized render function
@@ -61,7 +61,7 @@ const AIScreen = () => {
           lightColor="#fff"
         >
           <AnimatedFlatList
-            data={aiMessages.slice(0, -1)}
+            data={aiMessages}
             renderItem={RenderedCard}
             keyExtractor={(item: any) => item._id || item.chatId}
             numColumns={1}

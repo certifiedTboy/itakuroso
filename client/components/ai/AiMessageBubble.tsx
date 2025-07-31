@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { memo, useEffect, useRef } from "react";
+import { memo, useContext, useEffect, useRef } from "react";
 import { Animated, StyleSheet, Text, View } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import AnimatedTyping from "./AnimatedTyping";
+
+import { ChatContext } from "@/lib/context/chat-context";
 
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
@@ -19,6 +21,8 @@ type Message = {
 const MessageBubble = ({ message }: { message: Message }) => {
   const opacity = useRef(new Animated.Value(0)).current;
 
+  const { aiMessages } = useContext(ChatContext);
+
   const swipeableRef = useRef(null);
 
   useEffect(() => {
@@ -28,6 +32,9 @@ const MessageBubble = ({ message }: { message: Message }) => {
       useNativeDriver: true,
     }).start();
   }, []);
+
+  console.log("MessageBubble", aiMessages[aiMessages.length - 1]);
+  console.log("MessageBubble", message?._id);
 
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
@@ -111,7 +118,19 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   },
                 ]}
               >
-                <AnimatedTyping text={[message.message]} />
+                {aiMessages[aiMessages.length - 1]._id === message?._id ? (
+                  <AnimatedTyping text={[message?.message]} />
+                ) : (
+                  <Text
+                    style={[
+                      message.isSender
+                        ? styles.senderText
+                        : styles.receiverText,
+                    ]}
+                  >
+                    {message.message}
+                  </Text>
+                )}
 
                 <Text style={styles.messageTime}>
                   {formatDate(message.createdAt)}
