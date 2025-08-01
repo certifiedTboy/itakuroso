@@ -368,7 +368,7 @@ export class ChatGateway
   }
 
   @SubscribeMessage('ai-message')
-  handleAiMessage(
+  async handleAiMessage(
     @MessageBody()
     data: {
       chatId: string;
@@ -393,11 +393,16 @@ export class ChatGateway
         ),
       );
 
-    // const response = await this.aiService.runConveration(content);
+    this.server.to(roomId).emit('ai-loading', { isLoading: true });
+    const response = await this.aiService.runConveration(content);
 
-    const response = { error: 'something went wrong' }; // Simulated error response
+    // const response = {
+    //   error:
+    //     'Something went wrong while processing your request, kindly check back later or try again. Appologies for the inconvenience.',
+    // };
 
     if (response.error) {
+      this.server.to(roomId).emit('ai-loading', { isLoading: false });
       return this.server
         .to(roomId)
         .emit(
@@ -412,20 +417,21 @@ export class ChatGateway
         );
     }
 
-    // if (response?.result) {
-    //   this.server
-    //     .to(roomId)
-    //     .emit(
-    //       'ai-message',
-    //       ChatHelpers.messageResponse(
-    //         response.result,
-    //         'AI',
-    //         ChatHelpers.generateRoomId(),
-    //         MessageStatus.READ,
-    //         roomId,
-    //       ),
-    //     );
-    // }
+    if (response?.result) {
+      this.server.to(roomId).emit('ai-loading', { isLoading: false });
+      this.server
+        .to(roomId)
+        .emit(
+          'ai-message',
+          ChatHelpers.messageResponse(
+            response.result,
+            'AI',
+            ChatHelpers.generateRoomId(),
+            MessageStatus.READ,
+            roomId,
+          ),
+        );
+    }
   }
 
   @SubscribeMessage('markMessageAsRead')
