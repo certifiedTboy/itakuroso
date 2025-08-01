@@ -16,20 +16,10 @@ type ChatContextType = {
     file?: string;
     replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
   }[];
-  aiMessages: {
-    senderId: string;
-    message: string;
-    _id: string;
-    createdAt: string;
-  }[];
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
-  ) => void;
-  joinAiRoom: (
-    roomId: string,
-    currentUserData: { phoneNumber: string; email: string }
   ) => void;
   sendMessage: (messageData: {
     chatId: string;
@@ -44,21 +34,11 @@ type ChatContextType = {
       replyToSenderId: string;
     };
   }) => void;
-  sendAiMessage: (messageData: {
-    chatId: string;
-    content: string;
-    senderId: string;
-    roomId?: string;
-  }) => void;
   updateSocketMessages: (
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
   ) => void;
-
-  markMessageAsRead: (roomId: string) => void;
-  trigerRoomRefetch: () => void;
   leaveRoom: (currentUserId: { phoneNumber: string }) => void;
-  triggerCount: number;
 };
 
 export const ChatContext = createContext<ChatContextType>({
@@ -73,22 +53,11 @@ export const ChatContext = createContext<ChatContextType>({
       replyTo: { replyToId: "", replyToMessage: "", senderId: "" },
     },
   ],
-  aiMessages: [
-    {
-      senderId: "",
-      message: "",
-      _id: "",
-      createdAt: "",
-    },
-  ],
+
   joinRoom: (
     userId: { contactName: string; phoneNumber: string },
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
-  ) => {},
-  joinAiRoom: (
-    roomId: string,
-    currentUserData: { phoneNumber: string; email: string }
   ) => {},
   sendMessage: (messageData: {
     chatId: string;
@@ -103,24 +72,17 @@ export const ChatContext = createContext<ChatContextType>({
       replyToSenderId: string;
     };
   }) => {},
-  sendAiMessage: (messageData: {
-    chatId: string;
-    content: string;
-    senderId: string;
-    roomId?: string;
-  }) => {},
   updateSocketMessages: (
     messages: [],
     currentUser?: { phoneNumber: string; email: string }
   ) => {},
 
-  markMessageAsRead: (roomId: string) => {},
-  trigerRoomRefetch: () => {},
   leaveRoom: (currentUserId: { phoneNumber: string }) => {},
-  triggerCount: 0,
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
+  const socket = useRef(io(API_URL));
+  const isConntectedRef = useRef(false);
   /**
    * chat message state data
    */
@@ -135,10 +97,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     }[]
   >([]);
 
-  const [aiMessages, setAiMessages] = useState<
-    { senderId: string; message: string; _id: string; createdAt: string }[]
-  >([]);
-
   /**
    * network info state data
    */
@@ -146,10 +104,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     type: string;
     isConnected: boolean;
   }>({ type: "", isConnected: false });
-
-  const [triggerCount, setTriggerCount] = useState(0);
-
-  const socket = useRef(io(API_URL));
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -228,25 +182,13 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
-   * send message function
-   */
-  const sendAiMessage = async (messageData: {
-    chatId: string;
-    content: string;
-    senderId: string;
-    roomId?: string;
-  }) => {
-    socket.current.emit("ai-message", messageData);
-  };
-
-  /**
    * listens to incoming messages from the socket server
    */
   useEffect(() => {
     const currentSocket = socket.current;
 
     currentSocket.on("message", (message: any) => {
-      setTriggerCount((prevCount) => prevCount + 1);
+      // setTriggerCount((prevCount) => prevCount + 1);
       setSocketMessages((prevMessages) => [
         {
           senderId: message.senderId,
@@ -291,46 +233,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   }, [socket]);
 
   /**
-   * join AI room function
-   */
-  const joinAiRoom = (
-    roomId: string,
-    currentUserData: { phoneNumber: string; email: string }
-  ) => {
-    socket?.current.emit("joinAiRoom", {
-      roomId: roomId,
-      currentUserData: {
-        phoneNumber: currentUserData?.phoneNumber,
-        email: currentUserData?.email,
-      },
-    });
-  };
-
-  /**
-   * listens to AI messages from the socket server
-   * it updates the AI messages state with the new message
-   */
-  useEffect(() => {
-    const currentSocket = socket.current;
-
-    currentSocket.on("ai-message", (message: any) => {
-      setAiMessages((prevMessages) => [
-        {
-          senderId: message.senderId,
-          message: message.message,
-          _id: message.chatId,
-          createdAt: message.createdAt,
-        },
-        ...prevMessages,
-      ]);
-    });
-
-    return () => {
-      currentSocket.off("ai-message");
-    };
-  }, [socket]);
-
-  /**
    * network status effect
    * helps update current user status if online or offline
    */
@@ -342,6 +244,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       }
     } else {
       if (currentUser) {
+        isConntectedRef.current = false;
         currentSocket.emit("userOffline", currentUser);
       }
     }
@@ -351,28 +254,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       currentSocket.off("userOffline");
     };
   }, [networkInfo.isConnected, networkInfo.type, currentUser, socket]);
-
-  /**
-   * an helpers function to help mark message as read
-   */
-  const trigerRoomRefetch = () => {
-    return true;
-  };
-
-  /**
-   * marks messages as read
-   */
-  useEffect(() => {
-    const currentSocket = socket.current;
-
-    currentSocket.on("markMessageAsRead", () => {
-      setTriggerCount((prevCount) => prevCount + 1);
-    });
-
-    return () => {
-      currentSocket.off("markMessageAsRead");
-    };
-  }, [socket]);
 
   // update socket messages function
   const updateSocketMessages = async (
@@ -407,13 +288,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     );
   };
 
-  // mark message as read function
-  const markMessageAsRead = (roomId: string) => {
-    socket.current.emit("markMessageAsRead", {
-      roomId: roomId,
-    });
-  };
-
   // leave room handler function
   const leaveRoom = (currentUserId: string) => {
     socket.current.emit("leaveRoom", {
@@ -426,13 +300,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     joinRoom,
     sendMessage,
     updateSocketMessages,
-    markMessageAsRead,
-    trigerRoomRefetch,
+    // markMessageAsRead,
+    isConnected: isConntectedRef.current,
     leaveRoom,
-    triggerCount,
-    aiMessages,
-    joinAiRoom,
-    sendAiMessage,
   };
 
   // @ts-ignore

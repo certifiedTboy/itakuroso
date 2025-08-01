@@ -1,146 +1,67 @@
 import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { memo, useContext, useEffect, useRef } from "react";
-import { Animated, StyleSheet, Text, View } from "react-native";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { memo } from "react";
+import { StyleSheet, Text, View } from "react-native";
 import AnimatedTyping from "./AnimatedTyping";
-
-import { ChatContext } from "@/lib/context/chat-context";
-
-import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 
 type Message = {
   message: string;
-  senderId: string;
-  _id: string;
   createdAt: string;
   isSender: boolean;
 };
 
-const MessageBubble = ({ message }: { message: Message }) => {
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  const { aiMessages } = useContext(ChatContext);
-
-  const swipeableRef = useRef(null);
-
-  useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
-
-  console.log("MessageBubble", aiMessages[aiMessages.length - 1]);
-  console.log("MessageBubble", message?._id);
-
+const MessageBubble = ({ isSender, message, createdAt }: Message) => {
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
   );
 
   return (
-    <Animated.View style={{ opacity }}>
-      <GestureHandlerRootView>
-        {message?.isSender ? (
-          <Swipeable
-            ref={swipeableRef}
-            onSwipeableOpen={() => {
-              // @ts-ignore
-              swipeableRef.current?.close();
-            }}
-          >
-            <View
-              style={[
-                {
-                  flexDirection: "row",
-                },
-                message.isSender
-                  ? { alignSelf: "flex-end" }
-                  : { alignSelf: "flex-start" },
-              ]}
-            >
-              <View
-                style={[
-                  styles.container,
-                  message.isSender ? styles.sender : styles.receiver,
-
-                  !message.isSender && {
-                    backgroundColor: cardBg,
-                  },
-                ]}
-              >
-                <View>
-                  <Text
-                    style={[
-                      message.isSender
-                        ? styles.senderText
-                        : styles.receiverText,
-                    ]}
-                  >
-                    {message.message}
-                  </Text>
-                </View>
-
-                <Text style={styles.messageTime}>
-                  {formatDate(message.createdAt)}
-                </Text>
-              </View>
+    <>
+      {isSender ? (
+        <View
+          style={[
+            {
+              flexDirection: "row",
+            },
+            isSender ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" },
+          ]}
+        >
+          <View style={[styles.container, styles.sender]}>
+            <View>
+              <Text style={[styles.senderText]}>{message}</Text>
             </View>
-          </Swipeable>
-        ) : (
-          <Swipeable
-            onSwipeableOpen={() => {
-              // @ts-ignore
-              swipeableRef.current?.close();
-            }}
-            ref={swipeableRef}
+
+            <Text style={styles.messageTime}>{formatDate(createdAt)}</Text>
+          </View>
+        </View>
+      ) : (
+        <View
+          style={[
+            {
+              flexDirection: "row",
+              alignSelf: "flex-start",
+            },
+          ]}
+        >
+          <View
+            style={[
+              styles.container,
+              styles.receiver,
+
+              {
+                backgroundColor: cardBg,
+              },
+            ]}
           >
-            <View
-              style={[
-                {
-                  flexDirection: "row",
-                },
-                message.isSender
-                  ? { alignSelf: "flex-end" }
-                  : { alignSelf: "flex-start" },
-              ]}
-            >
-              <View
-                style={[
-                  styles.container,
-                  message.isSender ? styles.sender : styles.receiver,
+            <AnimatedTyping text={[message]} />
 
-                  !message.isSender && {
-                    backgroundColor: cardBg,
-                  },
-                ]}
-              >
-                {aiMessages[aiMessages.length - 1]._id === message?._id ? (
-                  <AnimatedTyping text={[message?.message]} />
-                ) : (
-                  <Text
-                    style={[
-                      message.isSender
-                        ? styles.senderText
-                        : styles.receiverText,
-                    ]}
-                  >
-                    {message.message}
-                  </Text>
-                )}
-
-                <Text style={styles.messageTime}>
-                  {formatDate(message.createdAt)}
-                </Text>
-              </View>
-            </View>
-          </Swipeable>
-        )}
-      </GestureHandlerRootView>
-    </Animated.View>
+            {/* <Text style={styles.messageTime}>{formatDate(createdAt)}</Text> */}
+          </View>
+        </View>
+      )}
+    </>
   );
 };
 

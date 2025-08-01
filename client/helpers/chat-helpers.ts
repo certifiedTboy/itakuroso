@@ -33,3 +33,11 @@ export const generateDbId = () => {
 export const formatDate = (date: string) => {
   return moment(date, "YYYY-MM-DD HH:mm:ss").fromNow();
 };
+
+/**
+ * @function removeAsteriks
+ * Removes asterisks from a message string.
+ */
+export const removeAsteriks = (message: string) => {
+  return message.replace(/\*/g, "");
+};

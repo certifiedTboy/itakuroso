@@ -3,7 +3,6 @@ import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
 import { generateRoomId } from "@/helpers/chat-helpers";
 import { getLocalChatsByRoomId } from "@/helpers/database/chats";
-// import { useGetChatsByRoomIdMutation } from "@/lib/apis/chat-apis";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ChatContext } from "@/lib/context/chat-context";
 import { useFocusEffect } from "@react-navigation/native";
@@ -12,7 +11,7 @@ import { useCallback, useContext, useState } from "react";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { Animated, FlatList, StyleSheet } from "react-native";
+import { FlatList, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 
 type ChatScreenProps = {
@@ -27,8 +26,6 @@ type ChatScreenProps = {
     };
   };
 };
-
-const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 const ChatScreen = ({ route }: ChatScreenProps) => {
   const [messageToRespondTo, setMessageToRespondTo] = useState<{
@@ -91,18 +88,6 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           chatCtx.updateSocketMessages(result, currentUser);
         }
       })();
-    }, [])
-  );
-
-  // Mark as read & leave room on blur
-  useFocusEffect(
-    useCallback(() => {
-      if (
-        route.params?.senderId !== currentUser?.phoneNumber &&
-        !route.params?.isRead
-      ) {
-        chatCtx.markMessageAsRead(roomId);
-      }
 
       return () => {
         chatCtx.leaveRoom({ phoneNumber: currentUser?.phoneNumber });
@@ -125,6 +110,9 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     []
   );
 
+  // Key extractor for FlatList
+  const keyExtractor = useCallback((item: any) => item._id || item.chatId, []);
+
   return (
     <SafeAreaView
       style={[{ backgroundColor: safeAreaBackground }, styles.container]}
@@ -140,10 +128,10 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           darkColor="#000"
           lightColor="#fff"
         >
-          <AnimatedFlatList
+          <FlatList
             data={chatCtx.messages}
             renderItem={RenderedCard}
-            keyExtractor={(item: any) => item._id || item.chatId}
+            keyExtractor={keyExtractor}
             numColumns={1}
             initialNumToRender={10}
             getItemLayout={(data, index) => ({
@@ -157,6 +145,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
             windowSize={10} // Adjust based on your needs
             onEndReachedThreshold={0.5} // Adjust sensitivity
             contentContainerStyle={styles.messageContentStyle}
+            showsVerticalScrollIndicator={false}
           />
 
           <MessageInput
