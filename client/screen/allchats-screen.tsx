@@ -79,9 +79,11 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     "background"
   );
 
-  useEffect(() => {
-    getCurrentUser(null);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      getCurrentUser(null);
+    }, [])
+  );
 
   useFocusEffect(
     useCallback(() => {
@@ -205,7 +207,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     <>
       <Pressable
         // @ts-ignore
-        onPress={() => navigate.navigate("ai-screen")}
+        onPress={() => navigate.push("ai-screen")}
         style={styles.aiIconContainer}
       >
         <Image

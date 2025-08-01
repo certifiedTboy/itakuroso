@@ -2,9 +2,8 @@ import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useRef, useState } from "react";
 import {
-  Animated,
   Image,
   Linking,
   Pressable,
@@ -40,15 +39,6 @@ type Message = {
 const MessageBubble = ({ message }: { message: Message }) => {
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
   const swipeableRef = useRef(null);
-  const opacity = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.timing(opacity, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-    }).start();
-  }, []);
 
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
@@ -81,7 +71,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
   };
 
   return (
-    <Animated.View style={{ opacity }}>
+    <>
       <ImagePreviewModal
         isVisible={imagePreviewVisible}
         imageUrl={message?.file || ""}
@@ -285,7 +275,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
           </Swipeable>
         )}
       </GestureHandlerRootView>
-    </Animated.View>
+    </>
   );
 };
 

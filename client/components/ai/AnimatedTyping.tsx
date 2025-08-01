@@ -2,12 +2,12 @@ import { Colors } from "@/constants/Colors";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text } from "react-native";
 
-export default function AnimatedTyping(props: any) {
-  let [text, setText] = useState("");
-  let [cursorColor, setCursorColor] = useState("transparent");
-  let [messageIndex, setMessageIndex] = useState(0);
-  let [textIndex, setTextIndex] = useState(0);
-  let [timeouts, setTimeouts] = useState<{
+const AnimatedTyping = (props: any) => {
+  const [text, setText] = useState("");
+  const [cursorColor, setCursorColor] = useState("transparent");
+  const [messageIndex, setMessageIndex] = useState(0);
+  const [textIndex, setTextIndex] = useState(0);
+  const [timeouts, setTimeouts] = useState<{
     cursorTimeout?: number;
     typingTimeout?: number;
     firstNewLineTimeout?: number;
@@ -19,19 +19,19 @@ export default function AnimatedTyping(props: any) {
     secondNewLineTimeout: undefined,
   });
 
-  let textRef = useRef(text);
+  const textRef = useRef(text);
   textRef.current = text;
 
-  let cursorColorRef = useRef(cursorColor);
+  const cursorColorRef = useRef(cursorColor);
   cursorColorRef.current = cursorColor;
 
-  let messageIndexRef = useRef(messageIndex);
+  const messageIndexRef = useRef(messageIndex);
   messageIndexRef.current = messageIndex;
 
-  let textIndexRef = useRef(textIndex);
+  const textIndexRef = useRef(textIndex);
   textIndexRef.current = textIndex;
 
-  let timeoutsRef = useRef(timeouts);
+  const timeoutsRef = useRef(timeouts);
   timeoutsRef.current = timeouts;
 
   const typingAnimation = () => {
@@ -43,13 +43,13 @@ export default function AnimatedTyping(props: any) {
       setTextIndex(textIndexRef.current + 1);
 
       let updatedTimeouts = { ...timeoutsRef.current };
-      updatedTimeouts.typingTimeout = setTimeout(typingAnimation, 50);
+      updatedTimeouts.typingTimeout = setTimeout(typingAnimation, 0);
       setTimeouts(updatedTimeouts);
     } else if (messageIndexRef.current + 1 < props.text.length) {
       setMessageIndex(messageIndexRef.current + 1);
       setTextIndex(0);
 
-      let updatedTimeouts = { ...timeoutsRef.current };
+      const updatedTimeouts = { ...timeoutsRef.current };
       updatedTimeouts.firstNewLineTimeout = setTimeout(newLineAnimation, 120);
       updatedTimeouts.secondNewLineTimeout = setTimeout(newLineAnimation, 200);
       updatedTimeouts.typingTimeout = setTimeout(typingAnimation, 280);
@@ -96,9 +96,11 @@ export default function AnimatedTyping(props: any) {
       <Text style={{ color: cursorColor, fontSize: 35 }}>|</Text>
     </Text>
   );
-}
+};
 
-let styles = StyleSheet.create({
+export default AnimatedTyping;
+
+const styles = StyleSheet.create({
   text: {
     fontSize: 14,
     fontWeight: 700,

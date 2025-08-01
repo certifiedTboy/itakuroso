@@ -1,49 +1,56 @@
-import AiMessageBubble from "@/components/ai/AiMessageBubble";
+import AiHintList from "@/components/ai/AiHintList";
 import AiMessageInput from "@/components/ai/AiMessageInput";
+import AiMessageList from "@/components/ai/AiMessageList";
+import TypingIndicator from "@/components/ai/TypingIndicator";
 import { ThemedView } from "@/components/ThemedView";
+import { hintMessages } from "@/helpers/ai-hint-messages";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ChatContext } from "@/lib/context/chat-context";
+import { AiChatContext } from "@/lib/context/aichat-context";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useContext } from "react";
-import { Animated, FlatList, StyleSheet } from "react-native";
+import { useCallback, useContext, useEffect, useState } from "react";
+import { StyleSheet } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 
 const AIScreen = () => {
   const { currentUser } = useSelector((state: any) => state.authState);
+  const [hintMessage, setHintMessage] = useState<string>("");
   const safeAreaBackground = useThemeColor(
     { light: "#fff", dark: "#000" },
     "background"
   );
 
-  const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
+  const {
+    joinAiRoom,
+    aiMessages,
+    isConnected,
+    updateSocketMessages,
+    isTyping,
+  } = useContext(AiChatContext);
 
-  const { joinAiRoom, aiMessages } = useContext(ChatContext);
+  useEffect(() => {
+    return () => updateSocketMessages();
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
-      if (currentUser && currentUser.phoneNumber) {
-        joinAiRoom(currentUser?.phoneNumber, {
-          phoneNumber: currentUser?.phoneNumber,
-          email: currentUser?.email,
-        });
-      }
+      const timer = setTimeout(() => {
+        if (currentUser && currentUser.phoneNumber && !isConnected) {
+          joinAiRoom(currentUser?.phoneNumber, {
+            phoneNumber: currentUser?.phoneNumber,
+            email: currentUser?.email,
+          });
+        }
+      }, 300);
+
+      return () => clearTimeout(timer);
     }, [])
   );
 
-  // Memoized render function
-  const RenderedCard = useCallback(
-    ({ item }: { item: any }) => (
-      <AiMessageBubble
-        message={{
-          ...item,
-          isSender: item.senderId === currentUser?.phoneNumber,
-        }}
-      />
-    ),
-    []
-  );
+  const getHintMessage = (message: string) => {
+    setHintMessage(message);
+  };
 
   return (
     <SafeAreaView
@@ -60,26 +67,16 @@ const AIScreen = () => {
           darkColor="#000"
           lightColor="#fff"
         >
-          <AnimatedFlatList
-            data={aiMessages}
-            renderItem={RenderedCard}
-            keyExtractor={(item: any) => item._id || item.chatId}
-            numColumns={1}
-            initialNumToRender={10}
-            getItemLayout={(data, index) => ({
-              length: 60,
-              offset: 60 * index,
-              index,
-            })}
-            inverted={true}
-            maxToRenderPerBatch={10}
-            scrollEventThrottle={10} // Improves performance
-            windowSize={10} // Adjust based on your needs
-            onEndReachedThreshold={0.5} // Adjust sensitivity
-            contentContainerStyle={styles.messageContentStyle}
+          {aiMessages.length === 0 ? (
+            <AiHintList hintMessages={hintMessages} onPress={getHintMessage} />
+          ) : (
+            <AiMessageList aiMessages={aiMessages} />
+          )}
+          {isTyping && <TypingIndicator />}
+          <AiMessageInput
+            hintMessage={hintMessage}
+            getHintMessage={getHintMessage}
           />
-
-          <AiMessageInput />
         </ThemedView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -102,7 +99,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  messageContentStyle: {
-    // backgroundColor: "red",
+  loaderContainer: {
+    padding: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

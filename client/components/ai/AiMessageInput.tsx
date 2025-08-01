@@ -2,7 +2,7 @@ import { Colors } from "@/constants/Colors";
 import { generateDbId } from "@/helpers/chat-helpers";
 import { useColorScheme } from "@/hooks/useColorScheme.web";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { ChatContext } from "@/lib/context/chat-context";
+import { AiChatContext } from "@/lib/context/aichat-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
   AudioModule,
@@ -25,12 +25,19 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import EmojiModal from "react-native-emoji-modal";
 import { useSelector } from "react-redux";
-
-const AiMessageInput = () => {
+const AiMessageInput = ({
+  hintMessage,
+  getHintMessage,
+}: {
+  hintMessage?: string;
+  getHintMessage: (message: string) => void;
+}) => {
   const [message, setMessage] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
+  const [showEmoji, setShowEmoji] = useState(false);
   const [inputHeight, setInputHeight] = useState(40);
   const inputRef = useRef<TextInput>(null);
   const heightRef = useRef<number>(85);
@@ -40,7 +47,7 @@ const AiMessageInput = () => {
   /**
    * chatContext
    */
-  const { sendAiMessage } = useContext(ChatContext);
+  const { sendAiMessage } = useContext(AiChatContext);
 
   const placeholderTextColor = useThemeColor(
     { light: "#333", dark: "#fff" },
@@ -87,6 +94,14 @@ const AiMessageInput = () => {
   };
 
   /**
+   * handleShowEmoji is used to toggle the visibility of the emoji picker.
+   * It sets the `showEmoji` state to true or false.
+   */
+  const handleShowEmoji = () => {
+    return setShowEmoji(!showEmoji);
+  };
+
+  /**
    * playAudio is used to play the recorded audio.
    * It uses the `expo-audio` library to handle audio playback.
    */
@@ -115,6 +130,28 @@ const AiMessageInput = () => {
     })();
   }, []);
 
+  /**
+   * useEffect to handle hint messages.
+   * If a hint message is provided or clicked by the user, it will send the message to the AI chat.
+   */
+  useEffect(() => {
+    if (hintMessage) {
+      sendAiMessage({
+        chatId: generateDbId(),
+        content: hintMessage,
+        senderId: currentUser?.phoneNumber,
+        roomId: currentUser?.phoneNumber,
+      });
+
+      getHintMessage("");
+    }
+  }, [hintMessage]);
+
+  /**
+   * handleSend is used to send the message to the AI chat.
+   * It checks if the message is not empty and then sends it.
+   * It also resets the input field and height.
+   */
   const handleSend = async () => {
     if (message.trim().length > 0) {
       sendAiMessage({
@@ -127,14 +164,27 @@ const AiMessageInput = () => {
       setMessage("");
 
       setInputHeight(40);
-      // @ts-ignore
-      setMessageToRespondTo && setMessageToRespondTo(null);
     }
   };
 
   return (
     <>
       <View style={[styles.container, { height: heightRef.current }]}>
+        {showEmoji && (
+          <View style={styles.emojiContainer}>
+            <EmojiModal
+              onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
+              onPressOutside={() => console.log("pressed outside")}
+              searchStyle={{
+                backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
+              }}
+              emojiSize={35}
+              containerStyle={{ backgroundColor: textInputBackgroundColor }}
+              // modalStyle={}
+            />
+          </View>
+        )}
+
         <View style={styles.row}>
           <TextInput
             placeholderTextColor={placeholderTextColor}
@@ -157,6 +207,12 @@ const AiMessageInput = () => {
               setInputHeight(event.nativeEvent.contentSize.height)
             }
           />
+
+          <View style={styles.recordingContainer}>
+            <TouchableOpacity onPress={handleShowEmoji}>
+              <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
+            </TouchableOpacity>
+          </View>
 
           <View style={{ marginLeft: 5 }}>
             {message ? (
@@ -242,7 +298,7 @@ const styles = StyleSheet.create({
   recordingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: -80,
+    marginLeft: -47,
     zIndex: 1,
   },
   emojiContainer: { position: "absolute", bottom: 60, left: 0, right: 0 },

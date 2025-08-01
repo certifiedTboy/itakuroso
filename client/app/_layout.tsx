@@ -5,6 +5,7 @@ import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import AiChatContextProvider from "@/lib/context/aichat-context";
 import AuthContextProvider, { AuthContext } from "@/lib/context/auth-context";
 import ChatContextProvider from "@/lib/context/chat-context";
 import ContactScreenDropdownProvider, {
@@ -125,6 +126,10 @@ const AuthenticatedStack = () => {
     "background"
   );
 
+  const titleColor = useThemeColor(
+    { light: Colors.light.btnBgc, dark: Colors.dark.text },
+    "text"
+  );
   const chatScreenTitleColor = useThemeColor(
     { light: "#000", dark: "#fff" },
     "text"
@@ -150,6 +155,8 @@ const AuthenticatedStack = () => {
         component={AIScreen}
         options={() => ({
           headerShown: true,
+          detatchInactiveScreens: false,
+          detachPreviousScreen: false,
           headerTitle: () => {
             return (
               <View
@@ -162,7 +169,7 @@ const AuthenticatedStack = () => {
               >
                 <Text
                   style={{
-                    color: chatScreenTitleColor,
+                    color: titleColor,
                     fontWeight: "500",
                     fontSize: 24,
                   }}
@@ -183,13 +190,25 @@ const AuthenticatedStack = () => {
             backgroundColor,
           },
           animation: "slide_from_right",
+          unMountOnBlur: false,
         })}
       />
       <Stack.Screen
         name="chat-screen"
         // @ts-ignore
         component={ChatScreen}
-        options={({ route }) => ({
+        options={({
+          route,
+        }: {
+          route: {
+            params?: {
+              contactName?: string;
+              phoneNumber?: string;
+              isOnline?: boolean;
+              lastSeen?: string | number | Date;
+            };
+          };
+        }) => ({
           headerShown: true,
 
           headerTitle: () => {
@@ -202,17 +221,19 @@ const AuthenticatedStack = () => {
               >
                 <Text
                   style={{
-                    color: chatScreenTitleColor,
+                    color: titleColor,
                     fontWeight: "500",
                     fontSize: 16,
                   }}
                   numberOfLines={1}
                   ellipsizeMode="tail"
                 >
-                  {route.params!.contactName[0].toUpperCase() +
-                    route.params!.contactName.slice(1) ??
-                    route.params!.phoneNumber ??
-                    "Chat"}
+                  {route && route.params && route.params.contactName
+                    ? route.params.contactName[0].toUpperCase() +
+                      route.params.contactName.slice(1)
+                    : route && route.params && route.params.phoneNumber
+                    ? route.params.phoneNumber
+                    : "Chat"}
                 </Text>
 
                 {!route?.params?.isOnline ? (
@@ -235,7 +256,11 @@ const AuthenticatedStack = () => {
                         }
                       )}`}
                     {" - "}
-                    {formatDate(route.params?.lastSeen)}
+                    {formatDate(
+                      route.params?.lastSeen
+                        ? String(route.params.lastSeen)
+                        : ""
+                    )}
                   </Text>
                 ) : (
                   <View
@@ -385,11 +410,13 @@ const Navigation = () => {
       <SafeAreaProvider initialMetrics={initialWindowMetrics}>
         {authCtx.isAuthenticated ? (
           <ChatContextProvider>
-            <ContactScreenDropdownProvider>
-              <DropdownContextProvider>
-                <AuthenticatedStack />
-              </DropdownContextProvider>
-            </ContactScreenDropdownProvider>
+            <AiChatContextProvider>
+              <ContactScreenDropdownProvider>
+                <DropdownContextProvider>
+                  <AuthenticatedStack />
+                </DropdownContextProvider>
+              </ContactScreenDropdownProvider>
+            </AiChatContextProvider>
           </ChatContextProvider>
         ) : (
           <AuthStack />
