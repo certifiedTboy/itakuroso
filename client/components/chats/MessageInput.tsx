@@ -20,7 +20,6 @@ import {
   View,
 } from "react-native";
 
-import Reanimated from "react-native-reanimated";
 import LoaderSpinner from "../spinner/LoaderSpinner";
 
 import Icon from "../ui/Icon";
@@ -46,7 +45,9 @@ import {
 import { useFocusEffect } from "expo-router";
 
 import * as ImagePicker from "expo-image-picker";
-import EmojiModal from "react-native-emoji-modal";
+// import EmojiModal from "react-native-emoji-modal";
+import { EmojiPicker } from "../common/emjoi-picker/EmojiPicker";
+import { EmojiType } from "../common/emjoi-picker/types";
 
 import {
   useDeleteFileMutation,
@@ -70,8 +71,6 @@ type ChatInputProps = {
     _id: string;
   }) => void;
 };
-
-const AnimatedTextInput = Reanimated.createAnimatedComponent(TextInput);
 
 const MessageInput = ({
   receiverId,
@@ -255,14 +254,6 @@ const MessageInput = ({
   };
 
   /**
-   * handleShowEmoji is used to toggle the visibility of the emoji picker.
-   * It sets the `showEmoji` state to true or false.
-   */
-  const handleShowEmoji = () => {
-    return setShowEmoji(!showEmoji);
-  };
-
-  /**
    * handleSend is used to send a message.
    * It checks if the message is not empty or if an image is selected.
    * If so, it calls the `sendMessage` method from the chat context.
@@ -290,6 +281,12 @@ const MessageInput = ({
       // @ts-ignore
       setMessageToRespondTo && setMessageToRespondTo(null);
     }
+  };
+
+  const onChangeText = (text: string) => {
+    chatCtx.triggerTypingIndicator(roomId);
+
+    setMessage(text);
   };
 
   return (
@@ -366,10 +363,20 @@ const MessageInput = ({
         </View>
       )}
 
-      <View style={[styles.container, { height: heightRef.current }]}>
+      <View
+        style={[
+          styles.container,
+          {
+            height:
+              inputHeight < heightRef.current
+                ? heightRef?.current
+                : inputHeight,
+          },
+        ]}
+      >
         {showEmoji && (
           <View style={styles.emojiContainer}>
-            <EmojiModal
+            {/* <EmojiModal
               onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
               onPressOutside={() => console.log("pressed outside")}
               searchStyle={{
@@ -377,13 +384,36 @@ const MessageInput = ({
               }}
               emojiSize={35}
               containerStyle={{ backgroundColor: textInputBackgroundColor }}
-              // modalStyle={}
+              // modalSty
+              // le={}
+            /> */}
+
+            <EmojiPicker
+              open={showEmoji}
+              onClose={() => setShowEmoji(false)}
+              onEmojiSelected={(emoji: EmojiType) =>
+                setMessage((prev) => prev + emoji?.emoji)
+              }
+              theme={{
+                backdrop: "#16161888",
+                knob: "#766dfc",
+                container: "#282829",
+                header: "#fff",
+                skinTonesContainer: "#252427",
+                category: {
+                  icon: "#766dfc",
+                  iconActive: "#fff",
+                  container: "#252427",
+                  containerActive: "#766dfc",
+                },
+              }}
+              allowMultipleSelections={true}
             />
           </View>
         )}
 
         <View style={styles.row}>
-          <AnimatedTextInput
+          <TextInput
             placeholderTextColor={placeholderTextColor}
             style={[
               styles.input,
@@ -395,7 +425,7 @@ const MessageInput = ({
             ]}
             placeholder="Type a message"
             value={message}
-            onChangeText={setMessage}
+            onChangeText={onChangeText}
             onFocus={() => setShowEmoji(false)}
             editable={!isRecording}
             selectTextOnFocus={!isRecording}
@@ -420,7 +450,7 @@ const MessageInput = ({
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity onPress={handleShowEmoji}>
+              <TouchableOpacity onPress={() => setShowEmoji(!showEmoji)}>
                 <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
               </TouchableOpacity>
             </View>
@@ -455,12 +485,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
-
-    // bottom: 25,
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
   imagePressable: {
     width: 40,
@@ -512,7 +541,7 @@ const styles = StyleSheet.create({
     marginLeft: -80,
     zIndex: 1,
   },
-  emojiContainer: { position: "absolute", bottom: 60, left: 0, right: 0 },
+  emojiContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
   input: {
     flex: 1,
     paddingHorizontal: 10,

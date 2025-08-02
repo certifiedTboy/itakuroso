@@ -1,3 +1,4 @@
+import TypingIndicator from "@/components/ai/TypingIndicator";
 import MessageBubble from "@/components/chats/MessageBubble";
 import MessageInput from "@/components/chats/MessageInput";
 import { ThemedView } from "@/components/ThemedView";
@@ -8,10 +9,9 @@ import { ChatContext } from "@/lib/context/chat-context";
 import { useFocusEffect } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useCallback, useContext, useState } from "react";
+import { FlatList, StyleSheet } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
-
-import { FlatList, StyleSheet } from "react-native";
 import { useSelector } from "react-redux";
 
 type ChatScreenProps = {
@@ -147,7 +147,7 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
             contentContainerStyle={styles.messageContentStyle}
             showsVerticalScrollIndicator={false}
           />
-
+          {chatCtx.isTyping && <TypingIndicator />}
           <MessageInput
             receiverId={phoneNumber}
             roomId={roomId}

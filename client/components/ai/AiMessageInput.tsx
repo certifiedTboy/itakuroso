@@ -10,14 +10,7 @@ import {
   useAudioPlayer,
   useAudioRecorder,
 } from "expo-audio";
-import { useFocusEffect } from "expo-router";
-import React, {
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import {
   Alert,
   StyleSheet,
@@ -40,7 +33,6 @@ const AiMessageInput = ({
   const [showEmoji, setShowEmoji] = useState(false);
   const [inputHeight, setInputHeight] = useState(40);
   const inputRef = useRef<TextInput>(null);
-  const heightRef = useRef<number>(85);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -111,12 +103,6 @@ const AiMessageInput = ({
     }
   }, [audioUri]);
 
-  useFocusEffect(
-    useCallback(() => {
-      heightRef.current = 50;
-    }, [])
-  );
-
   /**
    * requestPermissions is used to request microphone permissions.
    * It uses the `expo-audio` library to handle permissions.
@@ -169,7 +155,7 @@ const AiMessageInput = ({
 
   return (
     <>
-      <View style={[styles.container, { height: heightRef.current }]}>
+      <View style={[styles.container, { height: inputHeight }]}>
         {showEmoji && (
           <View style={styles.emojiContainer}>
             <EmojiModal
@@ -244,12 +230,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
-
-    // bottom: 25,
+    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-end",
   },
   imagePressable: {
     width: 40,
