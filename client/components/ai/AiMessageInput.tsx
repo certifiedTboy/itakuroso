@@ -1,6 +1,5 @@
 import { Colors } from "@/constants/Colors";
 import { generateDbId } from "@/helpers/chat-helpers";
-import { useColorScheme } from "@/hooks/useColorScheme.web";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AiChatContext } from "@/lib/context/aichat-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -10,7 +9,14 @@ import {
   useAudioPlayer,
   useAudioRecorder,
 } from "expo-audio";
-import React, { useContext, useEffect, useRef, useState } from "react";
+import { useFocusEffect } from "expo-router";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   Alert,
   StyleSheet,
@@ -18,21 +24,24 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import EmojiModal from "react-native-emoji-modal";
 import { useSelector } from "react-redux";
-const AiMessageInput = ({
-  hintMessage,
-  getHintMessage,
-}: {
+import { EmojiPicker } from "../common/emjoi-picker/EmojiPicker";
+import { EmojiType } from "../common/emjoi-picker/types";
+
+type ChatInputProps = {
   hintMessage?: string;
   getHintMessage: (message: string) => void;
-}) => {
+};
+
+const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
   const [message, setMessage] = useState("");
+  const [showEmoji, setShowEmoji] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [audioUri, setAudioUri] = useState<string>("");
-  const [showEmoji, setShowEmoji] = useState(false);
-  const [inputHeight, setInputHeight] = useState(40);
+
+  const [inputHeight, setInputHeight] = useState(35);
   const inputRef = useRef<TextInput>(null);
+  const heightRef = useRef<number>(85);
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -55,7 +64,6 @@ const AiMessageInput = ({
   );
 
   const textInputColor = useThemeColor({ light: "#333", dark: "#fff" }, "text");
-  const theme = useColorScheme();
 
   /**
    * AudioRecorder is used to record audio messages.
@@ -86,14 +94,6 @@ const AiMessageInput = ({
   };
 
   /**
-   * handleShowEmoji is used to toggle the visibility of the emoji picker.
-   * It sets the `showEmoji` state to true or false.
-   */
-  const handleShowEmoji = () => {
-    return setShowEmoji(!showEmoji);
-  };
-
-  /**
    * playAudio is used to play the recorded audio.
    * It uses the `expo-audio` library to handle audio playback.
    */
@@ -102,6 +102,15 @@ const AiMessageInput = ({
       player.play();
     }
   }, [audioUri]);
+
+  /**
+   * control the height of the message input field
+   */
+  useFocusEffect(
+    useCallback(() => {
+      heightRef.current = 50;
+    }, [])
+  );
 
   /**
    * requestPermissions is used to request microphone permissions.
@@ -153,72 +162,166 @@ const AiMessageInput = ({
     }
   };
 
+  const showKeyboard = () => {
+    setShowEmoji(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  };
+
   return (
     <>
-      <View style={[styles.container, { height: inputHeight }]}>
-        {showEmoji && (
-          <View style={styles.emojiContainer}>
-            <EmojiModal
-              onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
-              onPressOutside={() => console.log("pressed outside")}
-              searchStyle={{
-                backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
-              }}
-              emojiSize={35}
-              containerStyle={{ backgroundColor: textInputBackgroundColor }}
-              // modalStyle={}
-            />
-          </View>
-        )}
-
-        <View style={styles.row}>
-          <TextInput
-            placeholderTextColor={placeholderTextColor}
+      {showEmoji && (
+        <View style={styles.emojiContainer}>
+          <View
             style={[
-              styles.input,
+              styles.container,
               {
+                height:
+                  inputHeight < heightRef.current
+                    ? heightRef?.current
+                    : inputHeight,
+
                 backgroundColor: textInputBackgroundColor,
-                color: textInputColor,
-                height: inputHeight,
               },
             ]}
-            placeholder="Type a message"
-            value={message}
-            onChangeText={setMessage}
-            editable={!isRecording}
-            selectTextOnFocus={!isRecording}
-            multiline
-            ref={inputRef}
-            onContentSizeChange={(event) =>
-              setInputHeight(event.nativeEvent.contentSize.height)
-            }
-          />
+          >
+            <View style={styles.row}>
+              <TouchableOpacity onPress={() => showKeyboard()}>
+                <MaterialIcons name="keyboard" size={27} color="#B1B1B1FF" />
+              </TouchableOpacity>
+              <TextInput
+                placeholderTextColor={placeholderTextColor}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: textInputBackgroundColor,
+                    color: textInputColor,
+                    height: inputHeight,
+                  },
+                ]}
+                placeholder="Type a message"
+                value={message}
+                onChangeText={setMessage}
+                onFocus={() => showKeyboard()}
+                editable={!isRecording}
+                selectTextOnFocus={!isRecording}
+                multiline
+                ref={inputRef}
+                onContentSizeChange={(event) =>
+                  setInputHeight(event.nativeEvent.contentSize.height)
+                }
+              />
 
-          <View style={styles.recordingContainer}>
-            <TouchableOpacity onPress={handleShowEmoji}>
-              <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
-            </TouchableOpacity>
+              <View style={{ marginLeft: 5 }}>
+                <TouchableOpacity
+                  onPress={isRecording ? stopRecording : record}
+                >
+                  <MaterialIcons
+                    name={"keyboard-voice"}
+                    size={27}
+                    color={
+                      isRecording ? Colors.light.errorText : Colors.light.btnBgc
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
+          <EmojiPicker
+            expandable={false}
+            open={showEmoji}
+            onClose={() => {
+              setShowEmoji(false);
+            }}
+            onEmojiSelected={(emoji: EmojiType) =>
+              setMessage((prev) => prev + emoji?.emoji)
+            }
+            categoryPosition="top"
+            theme={{
+              backdrop: "#16161888",
+              knob: Colors.light.btnBgc,
+              container: textInputBackgroundColor,
+              header: "#fff",
+              skinTonesContainer: textInputBackgroundColor,
+              category: {
+                icon: Colors.light.btnBgc,
+                iconActive: "#fff",
+                container: textInputBackgroundColor,
+                containerActive: Colors.light.btnBgc,
+              },
+            }}
+            allowMultipleSelections={true}
+            hideHeader={true}
+            emojiSize={30}
+            enableCategoryChangeAnimation={false}
+          />
+        </View>
+      )}
 
-          <View style={{ marginLeft: 5 }}>
-            {message ? (
-              <TouchableOpacity onPress={async () => await handleSend()}>
-                <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
+      {!showEmoji && (
+        <View
+          style={[
+            styles.container,
+            {
+              height:
+                inputHeight < heightRef.current
+                  ? heightRef?.current
+                  : inputHeight,
+
+              backgroundColor: textInputBackgroundColor,
+            },
+          ]}
+        >
+          <View style={styles.row}>
+            <>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEmoji(!showEmoji);
+                }}
+              >
+                <Ionicons name="happy-outline" size={27} color="#B1B1B1FF" />
               </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={isRecording ? stopRecording : record}>
-                <MaterialIcons
-                  name={"keyboard-voice"}
-                  size={35}
-                  color={
-                    isRecording ? Colors.light.errorText : Colors.light.btnBgc
-                  }
-                />
-              </TouchableOpacity>
-            )}
+              <TextInput
+                placeholderTextColor={placeholderTextColor}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: textInputBackgroundColor,
+                    color: textInputColor,
+                    height: inputHeight,
+                  },
+                ]}
+                placeholder="Type a message"
+                value={message}
+                onChangeText={setMessage}
+                onFocus={() => showKeyboard()}
+                editable={!isRecording}
+                selectTextOnFocus={!isRecording}
+                multiline
+                ref={inputRef}
+                onContentSizeChange={(event) =>
+                  setInputHeight(event.nativeEvent.contentSize.height)
+                }
+              />
+
+              <View style={{ marginLeft: 5 }}>
+                <TouchableOpacity
+                  onPress={isRecording ? stopRecording : record}
+                >
+                  <MaterialIcons
+                    name="keyboard-voice"
+                    size={27}
+                    color={
+                      isRecording ? Colors.light.errorText : Colors.light.btnBgc
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+            </>
           </View>
         </View>
-      </View>
+      )}
     </>
   );
 };
@@ -230,11 +333,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
-    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
   },
   imagePressable: {
     width: 40,
@@ -247,6 +349,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     marginVertical: 23,
+  },
+
+  previewImageContainer2: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    // marginVertical: 23,
   },
 
   loaderContainer: {
@@ -283,17 +394,18 @@ const styles = StyleSheet.create({
   recordingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: -47,
+    // marginLeft: -80,
     zIndex: 1,
   },
-  emojiContainer: { position: "absolute", bottom: 60, left: 0, right: 0 },
+  emojiContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
   input: {
     flex: 1,
     paddingHorizontal: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ccc",
+    // borderRadius: 20,
+    // borderWidth: 1,
+    // borderColor: "#ccc",
     marginHorizontal: 8,
     textAlignVertical: "top",
+    fontSize: 20,
   },
 });

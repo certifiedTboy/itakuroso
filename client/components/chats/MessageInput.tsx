@@ -1,6 +1,21 @@
+import { Colors } from "@/constants/Colors";
 import { generateDbId } from "@/helpers/chat-helpers";
+import { useThemeColor } from "@/hooks/useThemeColor";
+import {
+  useDeleteFileMutation,
+  useUploadFileMutation,
+} from "@/lib/apis/chat-apis";
+import { ChatContext } from "@/lib/context/chat-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import {
+  AudioModule,
+  RecordingPresets,
+  useAudioPlayer,
+  useAudioRecorder,
+} from "expo-audio";
 import * as DocumentPicker from "expo-document-picker";
+import * as ImagePicker from "expo-image-picker";
+import { useFocusEffect } from "expo-router";
 import React, {
   useCallback,
   useContext,
@@ -19,41 +34,12 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-import LoaderSpinner from "../spinner/LoaderSpinner";
-
-import Icon from "../ui/Icon";
-
-import { Colors } from "@/constants/Colors";
-import { useColorScheme } from "@/hooks/useColorScheme.web";
-import { useThemeColor } from "@/hooks/useThemeColor";
-import { ChatContext } from "@/lib/context/chat-context";
-
-import ImagePreviewModal from "./ImagePreviewModal";
-
-import {
-  Waveform,
-  type IWaveformRef,
-} from "@simform_solutions/react-native-audio-waveform";
-import {
-  AudioModule,
-  RecordingPresets,
-  useAudioPlayer,
-  useAudioRecorder,
-} from "expo-audio";
-
-import { useFocusEffect } from "expo-router";
-
-import * as ImagePicker from "expo-image-picker";
-// import EmojiModal from "react-native-emoji-modal";
+import { useSelector } from "react-redux";
 import { EmojiPicker } from "../common/emjoi-picker/EmojiPicker";
 import { EmojiType } from "../common/emjoi-picker/types";
-
-import {
-  useDeleteFileMutation,
-  useUploadFileMutation,
-} from "@/lib/apis/chat-apis";
-import { useSelector } from "react-redux";
+import LoaderSpinner from "../spinner/LoaderSpinner";
+import Icon from "../ui/Icon";
+import ImagePreviewModal from "./ImagePreviewModal";
 
 type ChatInputProps = {
   receiverId: string;
@@ -85,8 +71,7 @@ const MessageInput = ({
   const [imagePreviewIsVisible, setImagePreviewIsVisible] = useState(false);
   const [imageUri, setImageUri] = useState<string>("");
   const [publicId, setPublicId] = useState<string>("");
-  const [inputHeight, setInputHeight] = useState(40);
-  const ref = useRef<IWaveformRef>(null);
+  const [inputHeight, setInputHeight] = useState(35);
   const inputRef = useRef<TextInput>(null);
   const heightRef = useRef<number>(85);
 
@@ -116,7 +101,6 @@ const MessageInput = ({
   );
 
   const textInputColor = useThemeColor({ light: "#333", dark: "#fff" }, "text");
-  const theme = useColorScheme();
 
   /**
    * AudioRecorder is used to record audio messages.
@@ -179,7 +163,7 @@ const MessageInput = ({
   }, []);
 
   /**
-   * control the height of the message input field
+   * controls the height of the message input field
    */
   useEffect(() => {
     if (messageToRespondTo?.message) {
@@ -289,6 +273,13 @@ const MessageInput = ({
     setMessage(text);
   };
 
+  const showKeyboard = () => {
+    setShowEmoji(false);
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 70);
+  };
+
   return (
     <>
       {imageUri && (
@@ -296,19 +287,6 @@ const MessageInput = ({
           isVisible={imagePreviewIsVisible}
           onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
           imageUrl={imageUri}
-        />
-      )}
-
-      {audioUri && (
-        <Waveform
-          mode="static"
-          ref={ref}
-          path={audioUri}
-          candleSpace={2}
-          candleWidth={4}
-          scrubColor="white"
-          onPlayerStateChange={(playerState) => console.log(playerState)}
-          onPanStateChange={(isMoving) => console.log(isMoving)}
         />
       )}
 
@@ -363,117 +341,261 @@ const MessageInput = ({
         </View>
       )}
 
-      <View
-        style={[
-          styles.container,
-          {
-            height:
-              inputHeight < heightRef.current
-                ? heightRef?.current
-                : inputHeight,
-          },
-        ]}
-      >
-        {showEmoji && (
-          <View style={styles.emojiContainer}>
-            {/* <EmojiModal
-              onEmojiSelected={(emoji) => setMessage((prev) => prev + emoji)}
-              onPressOutside={() => console.log("pressed outside")}
-              searchStyle={{
-                backgroundColor: theme === "dark" ? "#333" : "#E8E8E8FF",
-              }}
-              emojiSize={35}
-              containerStyle={{ backgroundColor: textInputBackgroundColor }}
-              // modalSty
-              // le={}
-            /> */}
-
-            <EmojiPicker
-              open={showEmoji}
-              onClose={() => setShowEmoji(false)}
-              onEmojiSelected={(emoji: EmojiType) =>
-                setMessage((prev) => prev + emoji?.emoji)
-              }
-              theme={{
-                backdrop: "#16161888",
-                knob: "#766dfc",
-                container: "#282829",
-                header: "#fff",
-                skinTonesContainer: "#252427",
-                category: {
-                  icon: "#766dfc",
-                  iconActive: "#fff",
-                  container: "#252427",
-                  containerActive: "#766dfc",
-                },
-              }}
-              allowMultipleSelections={true}
-            />
-          </View>
-        )}
-
-        <View style={styles.row}>
-          <TextInput
-            placeholderTextColor={placeholderTextColor}
-            style={[
-              styles.input,
-              {
-                backgroundColor: textInputBackgroundColor,
-                color: textInputColor,
-                height: inputHeight,
-              },
-            ]}
-            placeholder="Type a message"
-            value={message}
-            onChangeText={onChangeText}
-            onFocus={() => setShowEmoji(false)}
-            editable={!isRecording}
-            selectTextOnFocus={!isRecording}
-            multiline
-            ref={inputRef}
-            onContentSizeChange={(event) =>
-              setInputHeight(event.nativeEvent.contentSize.height)
-            }
-          />
-
-          {!isRecording && (
-            <View style={styles.recordingContainer}>
-              {
-                <TouchableOpacity onPress={handleFilePick}>
-                  <Ionicons name="attach" size={35} color="#B1B1B1FF" />
-                </TouchableOpacity>
-              }
-
-              {false && (
-                <TouchableOpacity onPress={handleImagePick}>
-                  <Ionicons name="image" size={25} color="#B1B1B1FF" />
-                </TouchableOpacity>
-              )}
-
-              <TouchableOpacity onPress={() => setShowEmoji(!showEmoji)}>
-                <Ionicons name="happy-outline" size={35} color="#B1B1B1FF" />
-              </TouchableOpacity>
+      {showEmoji && (
+        <View style={styles.emojiContainer}>
+          {isLoading && (
+            <View style={styles.loaderContainer}>
+              <LoaderSpinner />
             </View>
           )}
-          <View style={{ marginLeft: 5 }}>
-            {message || data?.data?.secureUrl?.trim().length > 0 ? (
-              <TouchableOpacity onPress={async () => await handleSend()}>
-                <Ionicons name="send" size={35} color={Colors.light.btnBgc} />
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity onPress={isRecording ? stopRecording : record}>
-                <MaterialIcons
-                  name={"keyboard-voice"}
-                  size={35}
-                  color={
-                    isRecording ? Colors.light.errorText : Colors.light.btnBgc
+
+          {imageUri && (
+            <View style={styles.previewImageContainer2}>
+              <Pressable
+                onPress={() => setImagePreviewIsVisible(true)}
+                style={styles.imagePressable}
+              >
+                <Image style={styles.previewImage} source={{ uri: imageUri }} />
+              </Pressable>
+
+              <View style={styles.iconContainer}>
+                <Icon
+                  name="close-circle-outline"
+                  size={25}
+                  color={placeholderTextColor}
+                  onPress={() => deleteFile(publicId.split("/").pop())}
+                />
+              </View>
+            </View>
+          )}
+
+          {messageToRespondTo && messageToRespondTo.message && (
+            <View style={styles.responseTextContainer}>
+              <Text
+                numberOfLines={1}
+                ellipsizeMode="tail"
+                textBreakStrategy="balanced"
+                style={{ color: textInputColor, fontWeight: 400, fontSize: 13 }}
+              >
+                {messageToRespondTo.message}
+              </Text>
+
+              <View style={styles.iconContainer}>
+                <Icon
+                  name="close-circle-outline"
+                  size={25}
+                  color={placeholderTextColor}
+                  onPress={() =>
+                    // @ts-ignore
+                    setMessageToRespondTo && setMessageToRespondTo(null)
                   }
                 />
+              </View>
+            </View>
+          )}
+          <View
+            style={[
+              styles.container,
+              {
+                height:
+                  inputHeight < heightRef.current
+                    ? heightRef?.current
+                    : inputHeight,
+
+                backgroundColor: textInputBackgroundColor,
+              },
+            ]}
+          >
+            <View style={styles.row}>
+              <TouchableOpacity onPress={() => showKeyboard()}>
+                <MaterialIcons name="keyboard" size={27} color="#B1B1B1FF" />
               </TouchableOpacity>
-            )}
+              <TextInput
+                placeholderTextColor={placeholderTextColor}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: textInputBackgroundColor,
+                    color: textInputColor,
+                    height: inputHeight,
+                  },
+                ]}
+                placeholder="Type a message"
+                value={message}
+                onChangeText={onChangeText}
+                onFocus={() => showKeyboard()}
+                editable={!isRecording}
+                selectTextOnFocus={!isRecording}
+                multiline
+                ref={inputRef}
+                onContentSizeChange={(event) =>
+                  setInputHeight(event.nativeEvent.contentSize.height)
+                }
+              />
+
+              {!isRecording && (
+                <View style={styles.recordingContainer}>
+                  {
+                    <TouchableOpacity onPress={handleFilePick}>
+                      <Ionicons name="attach" size={27} color="#B1B1B1FF" />
+                    </TouchableOpacity>
+                  }
+
+                  {false && (
+                    <TouchableOpacity onPress={handleImagePick}>
+                      <Ionicons name="image" size={25} color="#B1B1B1FF" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+              <View style={{ marginLeft: 5 }}>
+                {message || data?.data?.secureUrl?.trim().length > 0 ? (
+                  <TouchableOpacity onPress={async () => await handleSend()}>
+                    <Ionicons
+                      name="send"
+                      size={27}
+                      color={Colors.light.btnBgc}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={isRecording ? stopRecording : record}
+                  >
+                    <MaterialIcons
+                      name={"keyboard-voice"}
+                      size={27}
+                      color={
+                        isRecording
+                          ? Colors.light.errorText
+                          : Colors.light.btnBgc
+                      }
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </View>
+          </View>
+          <EmojiPicker
+            expandable={false}
+            open={showEmoji}
+            onClose={() => {
+              setShowEmoji(false);
+            }}
+            onEmojiSelected={(emoji: EmojiType) =>
+              setMessage((prev) => prev + emoji?.emoji)
+            }
+            categoryPosition="top"
+            theme={{
+              backdrop: "#16161888",
+              knob: Colors.light.btnBgc,
+              container: textInputBackgroundColor,
+              header: "#fff",
+              skinTonesContainer: textInputBackgroundColor,
+              category: {
+                icon: Colors.light.btnBgc,
+                iconActive: "#fff",
+                container: textInputBackgroundColor,
+                containerActive: Colors.light.btnBgc,
+              },
+            }}
+            allowMultipleSelections={true}
+            hideHeader={true}
+            emojiSize={30}
+            enableCategoryChangeAnimation={true}
+          />
+        </View>
+      )}
+
+      {!showEmoji && (
+        <View
+          style={[
+            styles.container,
+            {
+              height:
+                inputHeight < heightRef.current
+                  ? heightRef?.current
+                  : inputHeight,
+
+              backgroundColor: textInputBackgroundColor,
+            },
+          ]}
+        >
+          <View style={styles.row}>
+            <>
+              <TouchableOpacity
+                onPress={() => {
+                  setShowEmoji(!showEmoji);
+                }}
+              >
+                <Ionicons name="happy-outline" size={27} color="#B1B1B1FF" />
+              </TouchableOpacity>
+              <TextInput
+                placeholderTextColor={placeholderTextColor}
+                style={[
+                  styles.input,
+                  {
+                    backgroundColor: textInputBackgroundColor,
+                    color: textInputColor,
+                    height: inputHeight,
+                  },
+                ]}
+                placeholder="Type a message"
+                value={message}
+                onChangeText={onChangeText}
+                onFocus={() => showKeyboard()}
+                editable={!isRecording}
+                selectTextOnFocus={!isRecording}
+                multiline
+                ref={inputRef}
+                onContentSizeChange={(event) =>
+                  setInputHeight(event.nativeEvent.contentSize.height)
+                }
+              />
+
+              {!isRecording && (
+                <View style={styles.recordingContainer}>
+                  {
+                    <TouchableOpacity onPress={handleFilePick}>
+                      <Ionicons name="attach" size={27} color="#B1B1B1FF" />
+                    </TouchableOpacity>
+                  }
+
+                  {false && (
+                    <TouchableOpacity onPress={handleImagePick}>
+                      <Ionicons name="image" size={25} color="#B1B1B1FF" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              )}
+              <View style={{ marginLeft: 5 }}>
+                {message || data?.data?.secureUrl?.trim().length > 0 ? (
+                  <TouchableOpacity onPress={async () => await handleSend()}>
+                    <Ionicons
+                      name="send"
+                      size={27}
+                      color={Colors.light.btnBgc}
+                    />
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity
+                    onPress={isRecording ? stopRecording : record}
+                  >
+                    <MaterialIcons
+                      name="keyboard-voice"
+                      size={27}
+                      color={
+                        isRecording
+                          ? Colors.light.errorText
+                          : Colors.light.btnBgc
+                      }
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
+            </>
           </View>
         </View>
-      </View>
+      )}
     </>
   );
 };
@@ -485,11 +607,10 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderColor: "#ddd",
     padding: 5,
-    marginBottom: 10,
   },
   row: {
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
   },
   imagePressable: {
     width: 40,
@@ -502,6 +623,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 10,
     marginVertical: 23,
+  },
+
+  previewImageContainer2: {
+    flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 10,
+    // marginVertical: 23,
   },
 
   loaderContainer: {
@@ -538,17 +668,18 @@ const styles = StyleSheet.create({
   recordingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginLeft: -80,
+    // marginLeft: -80,
     zIndex: 1,
   },
   emojiContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
   input: {
     flex: 1,
     paddingHorizontal: 10,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#ccc",
+    // borderRadius: 20,
+    // borderWidth: 1,
+    // borderColor: "#ccc",
     marginHorizontal: 8,
     textAlignVertical: "top",
+    fontSize: 20,
   },
 });

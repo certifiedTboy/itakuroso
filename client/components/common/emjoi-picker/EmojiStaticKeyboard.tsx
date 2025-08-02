@@ -46,7 +46,7 @@ export const EmojiStaticKeyboard = React.memo(
     const hasMomentumBegan = React.useRef(false);
 
     const getItemLayout = React.useCallback(
-      (_: EmojisByCategory[] | null | undefined, index: number) => ({
+      (_: ArrayLike<EmojisByCategory> | null | undefined, index: number) => ({
         length: width,
         offset: width * index,
         index,
@@ -56,9 +56,14 @@ export const EmojiStaticKeyboard = React.memo(
 
     const [keyboardScrollOffsetY, setKeyboardScrollOffsetY] = React.useState(0);
 
+    interface RenderItemProps {
+      item: EmojisByCategory;
+      index: number;
+    }
+
     const renderItem = React.useCallback(
-      (props) => {
-        const item = { ...props.item, data: [] };
+      (props: RenderItemProps) => {
+        const item: EmojisByCategory = { ...props.item, data: [] };
         const shouldRenderEmojis =
           activeCategoryIndex === props.index ||
           activeCategoryIndex === props.index - 1 ||
@@ -173,7 +178,7 @@ export const EmojiStaticKeyboard = React.memo(
               )}
               {customButtons}
             </View>
-            <Animated.FlatList<EmojisByCategory>
+            <FlatList<EmojisByCategory>
               extraData={[keyboardState.recentlyUsed.length, searchPhrase]}
               data={renderList}
               keyExtractor={keyExtractor}
@@ -207,8 +212,10 @@ export const EmojiStaticKeyboard = React.memo(
   () => true
 );
 
+EmojiStaticKeyboard.displayName = "EmojiStaticKeyboard";
+
 const styles = StyleSheet.create({
-  flex: { flex: 1 },
+  flex: { flex: 1, position: "relative" },
   container: {
     flex: 1,
     borderRadius: 16,

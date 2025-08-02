@@ -207,6 +207,7 @@ const EmojiCategoryComponent = ({
           onEndReachedThreshold={0.3}
           keyExtractor={keyExtractor}
           numColumns={numberOfColumns}
+          showsVerticalScrollIndicator={false}
           renderItem={renderItem}
           onScroll={handleOnScroll}
           ListFooterComponent={
