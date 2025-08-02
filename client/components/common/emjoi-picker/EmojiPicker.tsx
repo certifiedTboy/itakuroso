@@ -2,7 +2,7 @@ import * as React from "react";
 import { Animated, useWindowDimensions } from "react-native";
 import { EmojiStaticKeyboard } from "./EmojiStaticKeyboard";
 import { Knob } from "./Knob";
-import { ModalWithBackdrop } from "./ModalWithBackdrop";
+// import { ModalWithBackdrop } from "./ModalWithBackdrop";
 import type { KeyboardProps } from "./context/keyboard-context";
 import { defaultKeyboardContext } from "./context/keyboard-context";
 import { KeyboardProvider } from "./context/keyboard-provider";
@@ -35,7 +35,7 @@ export const EmojiPicker = ({
     Animated.timing(additionalHeight, {
       toValue: newAdditionalHeightValue,
       useNativeDriver: false,
-      duration: 200,
+      duration: 50,
     }).start();
   }, [additionalHeight, isExpanded, keyboardHeight, keyboardVisible]);
 
@@ -57,34 +57,34 @@ export const EmojiPicker = ({
       defaultHeight={defaultHeight}
       {...props}
     >
-      <ModalWithBackdrop
+      {/* <ModalWithBackdrop
         isOpen={open}
         backdropPress={close}
         onRequestClose={onRequestClose || close}
-      >
-        <>
-          {expandable && (
-            <Knob
-              height={height}
-              offsetY={offsetY}
-              onClose={onClose}
-              setIsExpanded={setIsExpanded}
-            />
-          )}
-          <Animated.View
-            style={[
-              {
-                height: Animated.add(
-                  Animated.subtract(height, offsetY),
-                  additionalHeight
-                ),
-              },
-            ]}
-          >
-            <EmojiStaticKeyboard />
-          </Animated.View>
-        </>
-      </ModalWithBackdrop>
+      > */}
+      <>
+        {expandable && (
+          <Knob
+            height={height}
+            offsetY={offsetY}
+            onClose={onClose}
+            setIsExpanded={setIsExpanded}
+          />
+        )}
+        <Animated.View
+          style={[
+            {
+              height: Animated.add(
+                Animated.subtract(height, offsetY),
+                additionalHeight
+              ),
+            },
+          ]}
+        >
+          <EmojiStaticKeyboard />
+        </Animated.View>
+      </>
+      {/* </ModalWithBackdrop> */}
     </KeyboardProvider>
   );
 };

@@ -170,7 +170,7 @@ export const defaultKeyboardContext: Required<KeyboardProps> & {
   open: false,
   onClose: () => {},
   onEmojiSelected: (_emoji: EmojiType) => {},
-  emojiSize: 28,
+  emojiSize: 35,
   expandable: true,
   hideHeader: false,
   defaultHeight: "40%",

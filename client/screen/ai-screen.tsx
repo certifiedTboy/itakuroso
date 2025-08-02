@@ -7,8 +7,9 @@ import { hintMessages } from "@/helpers/ai-hint-messages";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AiChatContext } from "@/lib/context/aichat-context";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import { StyleSheet } from "react-native";
+
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
@@ -97,6 +98,12 @@ const styles = StyleSheet.create({
 
   content: {
     flex: 1,
+  },
+
+  contentContainer: {
+    flex: 1,
+    padding: 36,
+    alignItems: "center",
   },
 
   loaderContainer: {
