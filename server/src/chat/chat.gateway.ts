@@ -146,20 +146,6 @@ export class ChatGateway
     const { roomId } = data;
 
     await client.join(roomId);
-
-    // return this.server
-    //   .to(roomId)
-    //   .emit(
-    //     'ai-message',
-    //     ChatHelpers.messageResponse(
-    //       `Kindly invite ${currentUserData.email} to create an account with his phone number: ${currentUserData.phoneNumber} to join the chat`,
-    //       'AI',
-    //       ChatHelpers.generateRoomId(),
-    //       MessageStatus.READ,
-    //       roomId,
-    //       MessageStatus.READ,
-    //     ),
-    //   );
   }
 
   /**
@@ -242,6 +228,16 @@ export class ChatGateway
      * update the user offline status on database
      */
     await this.usersService.updateUserOfflineStatus(currentUserData._id);
+  }
+
+  @SubscribeMessage('userTyping')
+  handleUserTyping(
+    @MessageBody() data: { roomId: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+
+    return client.broadcast.to(roomId).emit('userTyping', { isTyping: true });
   }
 
   @SubscribeMessage('message')

@@ -39,6 +39,8 @@ type ChatContextType = {
     currentUser?: { phoneNumber: string; email: string }
   ) => void;
   leaveRoom: (currentUserId: { phoneNumber: string }) => void;
+  triggerTypingIndicator: (roomId: string) => void;
+  isTyping?: boolean;
 };
 
 export const ChatContext = createContext<ChatContextType>({
@@ -78,6 +80,8 @@ export const ChatContext = createContext<ChatContextType>({
   ) => {},
 
   leaveRoom: (currentUserId: { phoneNumber: string }) => {},
+  triggerTypingIndicator: (roomId: string) => {},
+  isTyping: false,
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
@@ -96,6 +100,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       file?: string;
     }[]
   >([]);
+
+  const [isTyping, setIsTyping] = useState(false);
 
   /**
    * network info state data
@@ -180,6 +186,33 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   }) => {
     socket.current.emit("message", messageData);
   };
+
+  /**
+   * trigger typing indicator function
+   */
+  const triggerTypingIndicator = (roomId: string) => {
+    socket.current.emit("userTyping", {
+      roomId,
+    });
+  };
+
+  /**
+   * listens to typing indicator from the socket server
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("userTyping", () => {
+      setIsTyping(true);
+      setTimeout(() => {
+        setIsTyping(false);
+      }, 2000);
+    });
+
+    return () => {
+      currentSocket.off("userTyping");
+    };
+  }, [socket]);
 
   /**
    * listens to incoming messages from the socket server
@@ -303,6 +336,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     // markMessageAsRead,
     isConnected: isConntectedRef.current,
     leaveRoom,
+    triggerTypingIndicator,
+    isTyping,
   };
 
   // @ts-ignore
