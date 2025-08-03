@@ -17,7 +17,7 @@ export class QueueWorker extends WorkerHost {
       await this.mailerService.sendMail(
         job?.data?.email!,
         job?.data?.subject!,
-        `Your verification code is: ${job?.data?.verificationCode}`,
+        job?.data?.message!,
       );
     } else {
       const result = await this.fileUploadService.uploadFileToCloud(

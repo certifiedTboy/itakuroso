@@ -20,6 +20,12 @@ export class User {
   @Prop()
   verificationCodeExpiresIn: Date;
 
+  @Prop()
+  passwordResetToken: string;
+
+  @Prop()
+  passwordResetTokenExpiresIn: Date;
+
   @Prop({ default: false })
   isOnline: boolean;
 

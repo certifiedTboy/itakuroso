@@ -8,6 +8,7 @@ import { UserDocument } from './schemas/user-schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasscodeDto } from './dto/update-passcode.dto';
 import { CodeGenerator } from '../helpers/code-generator';
+import { CustomJwtService } from '../common/jwt/custom-jwt.service';
 import { Time } from '../helpers/time';
 
 /**
@@ -20,6 +21,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly queueService: QueueService,
+    private readonly jwtService: CustomJwtService,
   ) {}
 
   /**
@@ -63,7 +65,7 @@ export class UsersService {
         'email',
         {
           email: updatedUser.email,
-          verificationCode: updatedUser.verificationCode,
+          message: `Your verification code is: ${updatedUser.verificationCode}`,
           type: 'Verification Token',
         },
         10000,
@@ -84,7 +86,7 @@ export class UsersService {
       'email',
       {
         email: user?.email,
-        verificationCode: user?.verificationCode,
+        message: `Your verification code is: ${user?.verificationCode}`,
         subject: 'Verification Token',
       },
       10000,
@@ -125,7 +127,7 @@ export class UsersService {
         'email',
         {
           email: updatedUser?.email,
-          verificationCode: updatedUser?.verificationCode,
+          message: `Your verification code is: ${updatedUser?.verificationCode}`,
           subject: 'Verification Token',
         },
         10000,
@@ -179,7 +181,7 @@ export class UsersService {
       'email',
       {
         email: updatedUser?.email,
-        verificationCode: updatedUser?.verificationCode,
+        message: `Your verification code is: ${updatedUser?.verificationCode}`,
         subject: 'Verification Token',
       },
       10000,
@@ -270,6 +272,81 @@ export class UsersService {
       { isOnline: true },
       { new: true },
     );
+  }
+
+  /**
+   * @method getResetPasscodeLink
+   * @description Generates a passcode reset link for the user.
+   * @param {string} email - The email address of the user.
+   * @returns {Promise<UserDocument>} - The generated passcode reset link.
+   */
+  async getResetPasscodeLink(email: string) {
+    const user = await this.checkIfUserExist({ email });
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const token = CodeGenerator.generateOtp();
+
+    const passwordResetToken = await this.jwtService.signToken({
+      email: user?.email,
+      token,
+      sub: user?.phoneNumber,
+    });
+
+    const verificationLink = `http://localhost:3000/reset-password?token=${passwordResetToken}`;
+
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { email: user?.email },
+      {
+        passwordResetToken: token,
+        passwordResetTokenExpiresIn: new Date(Date.now() + 3600000),
+      },
+      { new: true },
+    );
+
+    await this.queueService.addJob(
+      'email',
+      {
+        email: user?.email,
+        message: `Your password reset link is: ${verificationLink}`,
+        subject: 'Password Reset',
+      },
+      10000,
+    );
+
+    return updatedUser;
+  }
+
+  /**
+   * @method verifyPasswordResetToken
+   * @description Verifies the password reset link for the user.
+   * @param {string} token - The password reset token to verify.
+   */
+  async verifyResetToken(token: string) {
+    const decoded = await this.jwtService.verifyToken(token);
+
+    if (!decoded) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    const user = await this.checkIfUserExist({
+      passwordResetToken: decoded.token,
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid token');
+    }
+
+    if (
+      user.passwordResetTokenExpiresIn &&
+      Time.checkIfTimeIsExpired(user.passwordResetTokenExpiresIn)
+    ) {
+      throw new BadRequestException('Token has expired');
+    }
+
+    return user;
   }
 
   /**
