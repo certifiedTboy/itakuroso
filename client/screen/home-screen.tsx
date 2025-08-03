@@ -9,19 +9,27 @@ import { useThemeColor } from "@/hooks/useThemeColor";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
 import { useCallback } from "react";
-import { Dimensions, Image, Linking, StyleSheet, View } from "react-native";
+import {
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from "react-native";
 
 type HomeScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
 };
-
-const { width } = Dimensions.get("window");
 
 const HomeScreen = ({ navigation }: HomeScreenInterface) => {
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
     "text"
   );
+
+  const { width, height } = useWindowDimensions();
 
   /**
    * useFocusEffect hook to create the contact and chat tables
@@ -41,7 +49,6 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
   );
 
   const openWebsite = async () => {
-    console.log("Opening website...");
     const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
     const supported = await Linking.canOpenURL(url);
 
@@ -55,45 +62,53 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
   return (
     <ThemedView
       style={styles.container}
-      darkColor="transparent"
-      lightColor="transparent"
+      darkColor="#000"
+      lightColor={Colors.light.background}
     >
-      <View style={styles.textContainer}>
-        <ThemedText style={styles.introText}>Welcome to Itakurọsọ</ThemedText>
-      </View>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.imageContainer}>
+          <ThemedView
+            darkColor="#000"
+            style={[{ width: width * 0.4, height: height * 0.2 }]}
+          >
+            <Image
+              style={styles.image}
+              source={require("@/assets/images/chat-bubble.png")}
+            />
+          </ThemedView>
+        </View>
 
-      <View style={styles.imageContainer}>
-        <ThemedView style={styles.imageBgContainer}>
-          <Image
-            style={styles.image}
-            source={require("@/assets/images/chat-bubble.png")}
-          />
-        </ThemedView>
-      </View>
+        <View style={styles.textContainer}>
+          <Text style={styles.introText}>Itakurọsọ</Text>
+        </View>
 
-      <View style={styles.btnContainer}>
-        <ThemedButton
-          darkBackground={Colors.dark.btnBgc}
-          lightBackground={Colors.light.btnBgc}
-          onPress={() => navigation.navigate("reg-screen")}
-        >
-          <ThemedText style={styles.btnText}>Continue</ThemedText>
-        </ThemedButton>
-      </View>
-
-      <View style={styles.footerTextContainer}>
-        <ThemedText
-          style={{
-            textAlign: "center",
-            marginTop: 20,
-            fontSize: 15,
-            color: textColor,
-          }}
-          onPress={() => openWebsite()}
-        >
-          See who created me!
-        </ThemedText>
-      </View>
+        <View style={styles.btnContainer}>
+          <ThemedButton
+            darkBackground={Colors.dark.btnBgc}
+            lightBackground={Colors.light.btnBgc}
+            onPress={() => navigation.navigate("reg-screen")}
+          >
+            <ThemedText style={styles.btnText}>Get Started!</ThemedText>
+          </ThemedButton>
+        </View>
+        <View style={styles.footerTextContainer}>
+          <ThemedText
+            style={{
+              textAlign: "center",
+              fontFamily: "robotoMedium",
+              marginTop: 20,
+              fontSize: 13,
+              color: textColor,
+            }}
+            onPress={() => openWebsite()}
+          >
+            Chat Freely, Stay Secure!
+          </ThemedText>
+        </View>
+      </ScrollView>
     </ThemedView>
   );
 };
@@ -108,50 +123,42 @@ const styles = StyleSheet.create({
     width: "100%",
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 80,
-    marginBottom: 50,
+    marginTop: 60,
+
+    // marginBottom: 50,
   },
 
   introText: {
-    fontSize: 30,
+    fontSize: 45,
     fontWeight: "bold",
+    fontFamily: "robotoBold",
   },
 
   imageContainer: {
-    width: "100%",
     flexDirection: "row",
     justifyContent: "center",
-    marginVertical: 50,
-  },
-
-  imageBgContainer: {
-    width: width * 0.7,
-    padding: 20,
-    borderRadius: 15,
+    marginTop: 90,
   },
 
   image: {
     width: "100%",
-    height: 200,
+    height: "100%",
     resizeMode: "contain",
   },
 
   btnContainer: {
-    width: 100,
+    width: 300,
     marginHorizontal: "auto",
-    marginTop: 10,
-    // justifyContent: "center",
-    // alignItems: "center",
+    marginTop: 40,
   },
 
   btnText: {
     fontWeight: "condensedBold",
     fontSize: 17,
+    fontFamily: "robotoMedium",
   },
 
   footerTextContainer: {
-    width: "100%",
-    alignItems: "center",
     flex: 1,
     justifyContent: "flex-end",
     marginBottom: 30,
