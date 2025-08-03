@@ -7,6 +7,7 @@ import {
 import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
+import { GenerateNewTokenDto } from './dto/generate-token.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 
 /**
@@ -64,7 +65,6 @@ export class UsersController {
       return ResponseHandler.ok(201, 'User created successfully', result || {});
     } catch (error) {
       if (error instanceof Error) {
-        console.log(error);
         throw new BadRequestException('', {
           cause: error.cause,
           description: error.message,
@@ -96,6 +96,53 @@ export class UsersController {
       }
 
       return ResponseHandler.ok(200, 'User verified successfully', result!);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method generateNewVerificationCode
+   * @description Handles requests to generate a new verification code for the user.
+   * Validates the input data and checks if the user exists.
+   * If valid, generates a new verification code and sends it to the user.
+   * @param {GenerateNewTokenDto} GenerateNewTokenDto - The email of the user for whom the verification code is to be generated.
+   * @throws {Error} - Throws an error if the code generation process fails.
+   */
+  @Post('new-verification-code')
+  async generateNewVerificationCode(
+    @Body() generateNewTokenDto: GenerateNewTokenDto,
+  ) {
+    try {
+      const { email } = generateNewTokenDto;
+
+      if (!email) {
+        throw new BadRequestException('', {
+          cause: 'Email is required',
+          description: 'Please provide a valid email address',
+        });
+      }
+
+      const updatedUser = await this.usersService.newVerificationCode(email);
+
+      if (!updatedUser) {
+        throw new BadRequestException('', {
+          cause: 'User not found',
+          description: 'No user found with the provided email address',
+        });
+      }
+
+      // Send the verification code via email
+      return ResponseHandler.ok(
+        201,
+        'New verification code generated successfully',
+        updatedUser,
+      );
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {

@@ -105,6 +105,14 @@ export const userApis = createApi({
         }
       },
     }),
+
+    getNewVerificationCode: builder.mutation({
+      query: (payload) => ({
+        url: `/users/new-verification-code`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -114,4 +122,5 @@ export const {
   useUpdatePasscodeMutation,
   useGetCurrentUserMutation,
   useGetUserProfileMutation,
+  useGetNewVerificationCodeMutation,
 } = userApis;
