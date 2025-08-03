@@ -121,11 +121,15 @@ export class UsersService {
         { new: true },
       );
 
-      // await this.mailerService.sendMail(
-      //   updatedUser.email,
-      //   'Verification Token',
-      //   updatedUser.verificationCode,
-      // );
+      await this.queueService.addJob(
+        'email',
+        {
+          email: updatedUser?.email,
+          verificationCode: updatedUser?.verificationCode,
+          subject: 'Verification Token',
+        },
+        10000,
+      );
 
       return updatedUser;
     }
@@ -140,6 +144,45 @@ export class UsersService {
         verificationCodeExpiresIn: null,
       },
       { new: true },
+    );
+
+    return updatedUser;
+  }
+
+  /**
+   * @method newVerificationCode
+   * @description Generates a new verification code for the user.
+   * @param {string} email - The email of the user to generate a new verification code for.
+   * @returns {Promise<UserDocument | null>} - The user object with the new verification code or null if not found.
+   * @throws {Error} - Throws an error if the code generation process fails.
+   */
+  async newVerificationCode(email: string): Promise<UserDocument | null> {
+    const userExist = await this.checkIfUserExist({ email });
+
+    if (!userExist) {
+      throw new BadRequestException('', {
+        cause: 'User not found',
+        description: 'User does not exist',
+      });
+    }
+
+    const otp = CodeGenerator.generateOtp();
+    const verificationCodeExpiresIn = Time.getTimeInOneHour();
+
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { email },
+      { verificationCode: otp, verificationCodeExpiresIn },
+      { new: true },
+    );
+
+    await this.queueService.addJob(
+      'email',
+      {
+        email: updatedUser?.email,
+        verificationCode: updatedUser?.verificationCode,
+        subject: 'Verification Token',
+      },
+      10000,
     );
 
     return updatedUser;

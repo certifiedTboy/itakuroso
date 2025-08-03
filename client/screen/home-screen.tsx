@@ -82,7 +82,9 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
         </View>
 
         <View style={styles.textContainer}>
-          <Text style={styles.introText}>Itakurọsọ</Text>
+          <Text style={[styles.introText, { color: textColor }]}>
+            Itakurọsọ
+          </Text>
         </View>
 
         <View style={styles.btnContainer}>

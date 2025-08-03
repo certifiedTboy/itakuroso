@@ -1,16 +1,25 @@
-import ErrorModal from "@/components/modals/ErrorModal";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { validateRegform } from "@/helpers/form-validation";
+import { useGetScreenOrientation } from "@/hooks/useGetScreenOrientation";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useCreateNewUserMutation } from "@/lib/apis/userApis";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Formik } from "formik";
-import { useEffect, useState } from "react";
-import { Image, Linking, StyleSheet, View, useColorScheme } from "react-native";
+import { useEffect } from "react";
+import {
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  View,
+  useColorScheme,
+  useWindowDimensions,
+} from "react-native";
 import { TextInput } from "react-native-paper";
 
 /**
@@ -25,19 +34,21 @@ type RegScreenProps = {
  */
 const SignupSchema = validateRegform();
 
+const openWebsite = async () => {
+  const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
+  const supported = await Linking.canOpenURL(url);
+
+  if (supported) {
+    await Linking.openURL(url);
+  } else {
+    // console.log(`Don't know how to open this URL: ${url}`);
+  }
+};
+
 const RegScreen = ({ navigation }: RegScreenProps) => {
-  const [showModalError, setShowModalError] = useState(false);
+  const { width } = useWindowDimensions();
 
-  const openWebsite = async () => {
-    const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
-    const supported = await Linking.canOpenURL(url);
-
-    if (supported) {
-      await Linking.openURL(url);
-    } else {
-      // console.log(`Don't know how to open this URL: ${url}`);
-    }
-  };
+  const { isPortrait, getScreenOrientation } = useGetScreenOrientation();
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
@@ -70,10 +81,11 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
       });
     }
 
-    if (isError) {
-      setShowModalError(true);
-    }
-  }, [isSuccess, isError]);
+    /**
+     * get screen orienttion if its portrait or landscape
+     */
+    getScreenOrientation(width);
+  }, [isSuccess, width]);
 
   const createNewUserHandler = async (values: {
     isValid: boolean;
@@ -101,96 +113,130 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
           lightColor={Colors.light.bgc}
           style={styles.container}
         >
-          {showModalError && (
-            <ErrorModal
-              errorMessage={
-                error && "data" in error && (error as any).data?.message
-                  ? (error as any).data.message
-                  : "Something went wrong"
-              }
-              modalVisible={showModalError}
-              setModalVisible={setShowModalError}
-            />
-          )}
-
-          <View style={styles.textContainer}>
-            <Image
-              source={require("../assets/images/chat-bubble.png")}
-              style={styles.bubbleImage}
-            />
-          </View>
-
-          <View style={styles.descTextContainer}>
-            <ThemedText style={styles.descText}>
-              Itakuroso needs to verify your Phone number and email
-            </ThemedText>
-          </View>
-
-          <View style={styles.inputContainer}>
-            {/* <ThemedText style={styles.inputLabel}>Phone Number:</ThemedText> */}
-            <TextInput
-              style={[styles.input, { color: placeholderColor }]}
-              autoCapitalize="none"
-              keyboardType="number-pad"
-              onBlur={handleBlur("phoneNumber")}
-              onChangeText={handleChange("phoneNumber")}
-              value={values.phoneNumber}
-              label={"Phone Number"}
-              mode={theme === "dark" ? "flat" : "outlined"}
-            />
-            {errors?.phoneNumber && (
-              <ThemedText style={styles.errorText}>
-                {errors.phoneNumber}
-              </ThemedText>
-            )}
-
-            {/* <ThemedText style={[styles.inputLabel, { marginTop: 20 }]}>
-              Email:
-            </ThemedText> */}
-            <TextInput
-              style={[styles.input, { color: placeholderColor }]}
-              autoCapitalize="none"
-              placeholderTextColor={placeholderColor}
-              keyboardType="email-address"
-              onBlur={handleBlur("email")}
-              onChangeText={handleChange("email")}
-              value={values.email}
-              label={"Email"}
-              mode={theme === "dark" ? "flat" : "outlined"}
-            />
-            {errors?.email && (
-              <ThemedText style={styles.errorText}>{errors?.email}</ThemedText>
-            )}
-
-            <View style={styles.btnContainer}>
-              <ThemedButton
-                onPress={() => createNewUserHandler({ isValid, value: values })}
-                darkBackground={Colors.dark.btnBgc}
-                lightBackground={Colors.light.btnBgc}
-              >
-                {!isLoading ? (
-                  <ThemedText>Next</ThemedText>
-                ) : (
-                  <LoaderSpinner color="#fff" />
-                )}
-              </ThemedButton>
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={[styles.textContainer, { width: width * 0.1 }]}>
+              <Image
+                source={require("../assets/images/chat-bubble.png")}
+                style={styles.bubbleImage}
+              />
             </View>
-          </View>
 
-          <View style={styles.footerTextContainer}>
-            <ThemedText
-              style={{
-                textAlign: "center",
-                marginTop: 20,
-                fontSize: 15,
-                color: textColor,
-                fontFamily: "robotoMedium",
-              }}
-              onPress={() => openWebsite()}
+            <View
+              style={[
+                styles.descTextContainer,
+                { width: isPortrait ? width * 0.6 : width * 0.4 },
+              ]}
             >
-              See who created me!
-            </ThemedText>
-          </View>
+              <ThemedText style={styles.descText}>
+                Itakurọsọ needs to verify your Phone number and email
+              </ThemedText>
+            </View>
+
+            <View
+              style={[
+                styles.inputContainer,
+                { width: isPortrait ? width * 0.8 : width * 0.6 },
+              ]}
+            >
+              <TextInput
+                style={[styles.input, { color: placeholderColor }]}
+                autoCapitalize="none"
+                keyboardType="number-pad"
+                onBlur={handleBlur("phoneNumber")}
+                onChangeText={handleChange("phoneNumber")}
+                value={values.phoneNumber}
+                label={"Phone Number"}
+                mode={theme === "dark" ? "flat" : "outlined"}
+              />
+              {errors?.phoneNumber && (
+                <View style={styles.errorTextContainer}>
+                  <Icon
+                    name="alert-circle"
+                    size={16}
+                    color={Colors.light.errorText}
+                  />
+                  <ThemedText style={styles.errorText}>
+                    {errors.phoneNumber}
+                  </ThemedText>
+                </View>
+              )}
+
+              <TextInput
+                style={[styles.input, { color: placeholderColor }]}
+                autoCapitalize="none"
+                placeholderTextColor={placeholderColor}
+                keyboardType="email-address"
+                onBlur={handleBlur("email")}
+                onChangeText={handleChange("email")}
+                value={values.email}
+                label={"Email"}
+                mode={theme === "dark" ? "flat" : "outlined"}
+              />
+              {errors?.email && (
+                <View style={styles.errorTextContainer}>
+                  <Icon
+                    name="alert-circle"
+                    size={16}
+                    color={Colors.light.errorText}
+                  />
+                  <ThemedText style={styles.errorText}>
+                    {errors.email}
+                  </ThemedText>
+                </View>
+              )}
+
+              <View
+                style={[
+                  styles.btnContainer,
+                  { width: isPortrait ? width * 0.8 : width * 0.6 },
+                ]}
+              >
+                <ThemedButton
+                  onPress={() =>
+                    createNewUserHandler({ isValid, value: values })
+                  }
+                  darkBackground={Colors.dark.btnBgc}
+                  lightBackground={Colors.light.btnBgc}
+                >
+                  {!isLoading ? (
+                    <ThemedText style={styles.btnText}>Next</ThemedText>
+                  ) : (
+                    <LoaderSpinner color="#fff" />
+                  )}
+                </ThemedButton>
+
+                {isError && (
+                  <View style={styles.errorTextContainer}>
+                    <Icon
+                      name="alert-circle"
+                      size={16}
+                      color={Colors.light.errorText}
+                    />
+                    <ThemedText style={styles.errorText}>
+                      {error && "data" in error && (error as any).data?.message
+                        ? (error as any).data.message
+                        : "Something went wrong"}
+                    </ThemedText>
+                  </View>
+                )}
+              </View>
+            </View>
+
+            <View style={styles.footerTextContainer}>
+              <ThemedText
+                style={{
+                  textAlign: "center",
+                  marginTop: 20,
+                  fontSize: 15,
+                  color: textColor,
+                  fontFamily: "robotoMedium",
+                }}
+                onPress={() => openWebsite()}
+              >
+                See who created me!
+              </ThemedText>
+            </View>
+          </ScrollView>
         </ThemedView>
       )}
     </Formik>
@@ -205,24 +251,22 @@ const styles = StyleSheet.create({
   },
 
   textContainer: {
-    width: "60%",
     alignItems: "center",
-    marginBottom: 50,
     marginHorizontal: "auto",
   },
 
   bubbleImage: {
-    width: 50,
+    width: "100%",
     height: 200,
     resizeMode: "contain",
-    marginBottom: 15,
   },
 
   descTextContainer: {
-    width: "80%",
     marginHorizontal: "auto",
-    // marginTop: -20,
+    marginTop: -60,
   },
+
+  errorTextContainer: { flexDirection: "row", alignItems: "center" },
 
   descText: {
     fontSize: 14,
@@ -232,28 +276,34 @@ const styles = StyleSheet.create({
   },
 
   inputContainer: {
-    width: "80%",
     marginHorizontal: "auto",
-    marginTop: 50,
+    marginTop: 30,
   },
 
   input: {
-    height: 50,
-    marginTop: 20,
+    height: 45,
+    marginTop: 10,
+    fontFamily: "robotoMedium",
+    fontSize: 16,
   },
 
   inputLabel: { marginBottom: -10 },
 
   btnContainer: {
-    width: 100,
     marginHorizontal: "auto",
-    marginTop: 100,
+    marginTop: 25,
+  },
+
+  btnText: {
+    fontWeight: "condensedBold",
+    fontSize: 17,
+    fontFamily: "robotoMedium",
   },
 
   errorText: {
     color: Colors.light.errorText,
     fontSize: 12,
-    marginBottom: 5,
+    fontFamily: "robotoMedium",
   },
 
   footerTextContainer: {

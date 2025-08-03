@@ -5,9 +5,11 @@ export const validateRegform = () => {
 
   const Schema = Yup.object().shape({
     phoneNumber: Yup.string()
-      .required("Phone number is required")
+      .required("You need to provide a phone number")
       .matches(phoneRegExp, "Phone number is not valid"),
-    email: Yup.string().email("Invalid email").required("Email is required"),
+    email: Yup.string()
+      .email("Invalid email")
+      .required("You need to provide an email"),
   });
 
   return Schema;
