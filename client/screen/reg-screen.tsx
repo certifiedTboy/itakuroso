@@ -118,15 +118,11 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
               source={require("../assets/images/chat-bubble.png")}
               style={styles.bubbleImage}
             />
-
-            <ThemedText style={styles.introText}>
-              Enter you phone number and email
-            </ThemedText>
           </View>
 
           <View style={styles.descTextContainer}>
             <ThemedText style={styles.descText}>
-              Itakuroso will need to verify your phone number and email
+              Itakuroso needs to verify your Phone number and email
             </ThemedText>
           </View>
 
@@ -188,6 +184,7 @@ const RegScreen = ({ navigation }: RegScreenProps) => {
                 marginTop: 20,
                 fontSize: 15,
                 color: textColor,
+                fontFamily: "robotoMedium",
               }}
               onPress={() => openWebsite()}
             >
@@ -221,23 +218,17 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
 
-  introText: {
-    fontSize: 19,
-    fontWeight: "600",
-    textAlign: "center",
-    marginTop: -80,
-  },
-
   descTextContainer: {
     width: "80%",
     marginHorizontal: "auto",
-    marginTop: -20,
+    // marginTop: -20,
   },
 
   descText: {
     fontSize: 14,
     textAlign: "center",
     fontWeight: "500",
+    fontFamily: "robotoMedium",
   },
 
   inputContainer: {
