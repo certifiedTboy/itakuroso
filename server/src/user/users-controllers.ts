@@ -8,7 +8,9 @@ import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
 import { GenerateNewTokenDto } from './dto/generate-token.dto';
+import { PasscodeResetDto } from './dto/passcode-reset.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
+import { UpdatePasscodeDto } from './dto/update-passcode.dto';
 
 /**
  * @class UsersController
@@ -141,6 +143,122 @@ export class UsersController {
       return ResponseHandler.ok(
         201,
         'New verification code generated successfully',
+        updatedUser,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method requestPassCodeReset
+   * @description Handles requests to generate a passcode reset link for the user.
+   * Validates the input data and checks if the user exists.
+   * If valid, generates a passcode reset link and sends it to the user's email.
+   * @param {GenerateNewTokenDto} passcodeResetDto - The data transfer object containing user credentials.
+   * @throws {Error} - Throws an error if the passcode reset link generation process fails.
+   */
+  @Post('passcode/reset')
+  async requestPasscodeReset(@Body() passcodeResetDto: GenerateNewTokenDto) {
+    try {
+      const { email } = passcodeResetDto;
+
+      if (!email) {
+        throw new BadRequestException('', {
+          cause: 'Email is required',
+          description: 'Please provide a valid email address',
+        });
+      }
+
+      const user = await this.usersService.getResetPasscodeLink(email);
+
+      return ResponseHandler.ok(200, 'Passcode reset link sent successfully', {
+        email: user?.email,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method verifyPasswordResetToken
+   * @description Handles requests to verify the passcode reset token.
+   * Validates the input data and checks if the token is valid.
+   * @param {resetToken} string - The passcode reset token to verify.
+   * @throws {Error} - Throws an error if the token verification process fails.
+   */
+  @Post('passcode/reset/verify')
+  async verifyPasscodeResetToken(@Body() passcodeResetDto: PasscodeResetDto) {
+    try {
+      const { resetToken } = passcodeResetDto;
+
+      const result = await this.usersService.verifyResetToken(resetToken);
+
+      if (!result) {
+        throw new BadRequestException('', {
+          cause: 'Invalid token',
+          description: 'The provided passcode reset token is invalid',
+        });
+      }
+
+      return ResponseHandler.ok(
+        200,
+        'Password reset token verified successfully',
+        result,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new InternalServerErrorException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+    }
+  }
+
+  /**
+   * @method updatePasscode
+   * @description Handles requests to update the user's passcode.
+   * Validates the input data and checks if the user exists.
+   * If valid, updates the user's passcode and returns the updated user object.
+   * @param {UpdatePasscodeDto} passcodeResetDto - The data transfer object containing the new passcode and reset token.
+   * @throws {Error} - Throws an error if the passcode update process fails.
+   */
+  @Patch('passcode/reset/update')
+  async updatePasscode(@Body() updatePasscodeDto: UpdatePasscodeDto) {
+    try {
+      const { passcode, email } = updatePasscodeDto;
+
+      if (!passcode || !email) {
+        throw new BadRequestException('', {
+          cause: 'Passcode and email are required',
+          description: 'Please provide a valid passcode and email address',
+        });
+      }
+
+      const updatedUser =
+        await this.usersService.updateUserPasscode(updatePasscodeDto);
+
+      if (!updatedUser) {
+        throw new BadRequestException('', {
+          cause: 'User not found',
+          description: 'No user found with the provided email address',
+        });
+      }
+
+      return ResponseHandler.ok(
+        200,
+        'Passcode updated successfully',
         updatedUser,
       );
     } catch (error: unknown) {

@@ -1,7 +1,7 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
 import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { UsersService } from '../user/users-service';
+import { CustomJwtService } from '../common/jwt/custom-jwt.service';
 
 /**
  * @class AuthService
@@ -13,8 +13,8 @@ import { UsersService } from '../user/users-service';
 @Injectable()
 export class AuthService {
   constructor(
-    private usersService: UsersService,
-    private jwtService: JwtService,
+    private readonly usersService: UsersService,
+    private readonly jwtService: CustomJwtService,
   ) {}
 
   /**
@@ -56,7 +56,7 @@ export class AuthService {
         sub: user.phoneNumber,
       };
 
-      return { authToken: await this.jwtService.signAsync(payload), user };
+      return { authToken: await this.jwtService.signToken(payload), user };
     } else {
       // update user passcode
       const updatedUser = await this.usersService.updateUserPasscode({
@@ -70,7 +70,7 @@ export class AuthService {
       };
 
       return {
-        authToken: await this.jwtService.signAsync(payload),
+        authToken: await this.jwtService.signToken(payload),
         updatedUser,
       };
     }
@@ -85,7 +85,7 @@ export class AuthService {
   async verifyToken(token: string) {
     try {
       const decoded: { email: string; iat: string; sub: string; exp: string } =
-        await this.jwtService.verifyAsync(token);
+        await this.jwtService.verifyToken(token);
 
       const currentUser = await this.usersService.checkIfUserExist({
         email: decoded.email,
@@ -113,6 +113,6 @@ export class AuthService {
       sub: phoneNumber,
     };
 
-    return { authToken: await this.jwtService.signAsync(payload) };
+    return { authToken: await this.jwtService.signToken(payload) };
   }
 }
