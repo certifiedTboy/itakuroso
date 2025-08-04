@@ -104,15 +104,15 @@ export class ChatGateway
     // check if room already exist on database
     const roomExist = await this.chatService.findRoomById(user.roomId);
 
-    /**
-     * check if current user with phone number exist on database
-     */
-    // Define a type for the user object returned by checkIfUserExist
-    type User = { _id?: string; [key: string]: any };
+    // /**
+    //  * check if current user with phone number exist on database
+    //  */
+    // // Define a type for the user object returned by checkIfUserExist
+    // type User = { _id?: string; [key: string]: any };
 
-    const currentUser = (await this.usersService.checkIfUserExist({
+    const currentUser = await this.usersService.checkIfUserExist({
       phoneNumber: currentUserId.phoneNumber,
-    })) as User | null;
+    });
 
     if (!roomExist) {
       /**
@@ -121,12 +121,8 @@ export class ChatGateway
 
       await this.chatService.createRoom({
         roomId,
-        currentUserId:
-          currentUser && currentUser._id ? String(currentUser._id) : '',
-        otherUserId:
-          userWithPhoneExist && (userWithPhoneExist as User)._id
-            ? String((userWithPhoneExist as User)._id)
-            : '',
+        currentUserId: currentUser ? currentUser._id.toString() : '',
+        otherUserId: userWithPhoneExist && userWithPhoneExist._id.toString(),
         roomName: '',
         roomLink: '',
         roomImage: '',

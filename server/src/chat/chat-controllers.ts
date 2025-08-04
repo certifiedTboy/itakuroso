@@ -172,7 +172,7 @@ export class ChatControllers {
     }
 
     try {
-      const result = await this.chatService.deleteChatFile(publicId);
+      await this.chatService.deleteChatFile(publicId);
 
       // if (result?.result !== 'ok') {
       //   throw new InternalServerErrorException('Failed to delete file');

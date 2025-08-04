@@ -15,7 +15,8 @@ export class CustomJwtService {
       iat: string;
       sub: string;
       exp: string;
-      token?: string;
+      token: string;
+      _id: string;
     } = await this.jwtService.verifyAsync(token);
 
     return decoded;

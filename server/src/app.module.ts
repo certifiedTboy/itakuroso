@@ -10,7 +10,6 @@ import { AuthModule } from './auth/auth-module';
 import { MongooseModule } from '@nestjs/mongoose';
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue-module';
-// import { ChatGateway } from './chat/chat.gateway';
 import { ChatModule } from './chat/chat-module';
 
 @Module({
@@ -23,17 +22,6 @@ import { ChatModule } from './chat/chat-module';
 
       inject: [ConfigService],
     }),
-    // BullModule.forRoot({
-    //   connection: {
-    //     host: 'localhost',
-    //     port: 6379,
-    //   },
-    //   defaultJobOptions: {
-    //     removeOnComplete: true,
-    //     removeOnFail: true,
-    //   },
-    // }),
-
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
