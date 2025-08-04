@@ -5,11 +5,11 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { AuthService } from '../auth/auth-services';
+import { CustomJwtService } from '../common/jwt/custom-jwt.service';
 
 // Define a UserPayload interface that includes _id, email, and phoneNumber
 interface UserPayload {
-  _id: string;
+  _id: string; // Optional, as it may not be used in all cases
   email: string;
   phoneNumber: string;
 }
@@ -17,13 +17,13 @@ interface UserPayload {
 // Extend Express Request interface to include 'user'
 declare module 'express' {
   interface Request {
-    user?: UserPayload;
+    user: UserPayload;
   }
 }
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly authService: AuthService) {}
+  constructor(private readonly jwtService: CustomJwtService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
@@ -37,18 +37,18 @@ export class AuthGuard implements CanActivate {
     }
 
     if (authToken) {
-      const payload = (await this.authService.verifyToken(
+      const payload = await this.jwtService.verifyToken(
         authToken.split(' ')[1],
-      )) as UserPayload | null;
+      );
 
       if (!payload) {
         return false;
       }
 
       request.user = {
-        _id: payload._id,
+        _id: payload._id, // Assuming sub is the user ID
         email: payload.email,
-        phoneNumber: payload.phoneNumber,
+        phoneNumber: payload.sub,
       }; // Assign the user data to the request object
 
       return true;

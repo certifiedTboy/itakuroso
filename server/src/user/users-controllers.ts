@@ -1,9 +1,19 @@
-import { Controller, Post, Patch, Body, Get } from '@nestjs/common';
-// import { AuthGuard } from '../guard/auth-guard';
+import {
+  Controller,
+  Post,
+  Patch,
+  Body,
+  Get,
+  UploadedFile,
+  UseGuards,
+  Req,
+} from '@nestjs/common';
+import { AuthGuard } from '../guard/auth-guard';
 import {
   BadRequestException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { UsersService } from './users-service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { VerifyUserDto } from './dto/verify-user.dto';
@@ -11,6 +21,8 @@ import { GenerateNewTokenDto } from './dto/generate-token.dto';
 import { PasscodeResetDto } from './dto/passcode-reset.dto';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 import { UpdatePasscodeDto } from './dto/update-passcode.dto';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { UseInterceptors } from '@nestjs/common';
 
 /**
  * @class UsersController
@@ -268,6 +280,40 @@ export class UsersController {
           description: error.message,
         });
       }
+    }
+  }
+
+  @Patch('profile/upload-image')
+  @UseGuards(AuthGuard)
+  @UseInterceptors(FileInterceptor('image'))
+  async updateProfileImage(
+    @Req() req: Request,
+    @UploadedFile() profileImage: Express.Multer.File,
+  ) {
+    try {
+      const currentUser = req.user;
+
+      const result = await this.usersService.uploadProfileImage(
+        profileImage,
+        currentUser?._id,
+      );
+
+      if (result) {
+        return ResponseHandler.ok(
+          200,
+          'Profile image uploaded successfully',
+          result,
+        );
+      }
+    } catch (error: unknown) {
+      console.error('Error uploading profile image:', error);
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
     }
   }
 }

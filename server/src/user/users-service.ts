@@ -9,6 +9,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasscodeDto } from './dto/update-passcode.dto';
 import { CodeGenerator } from '../helpers/code-generator';
 import { CustomJwtService } from '../common/jwt/custom-jwt.service';
+import { FileUploadService } from 'src/common/file-upload/file-upload-service';
 import { Time } from '../helpers/time';
 
 /**
@@ -22,6 +23,7 @@ export class UsersService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly queueService: QueueService,
     private readonly jwtService: CustomJwtService,
+    private readonly fileUploadService: FileUploadService,
   ) {}
 
   /**
@@ -197,6 +199,43 @@ export class UsersService {
    */
   async checkIfUserExist(query: object): Promise<User | null> {
     return this.userModel.findOne(query);
+  }
+
+  /**
+   * @method uploadProfileImage
+   * @description Uploads a file to the cloudinary storage.
+   * @param {Express.Multer.File} profileImage - The data transfer object containing the file to be uploaded.
+   */
+  async uploadProfileImage(profileImage: Express.Multer.File, userId: string) {
+    const user = await this.checkUserExistById(userId);
+
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    const result = await this.fileUploadService.uploadFileToCloud(
+      profileImage.buffer,
+    );
+
+    if (!result) {
+      throw new BadRequestException('File upload failed');
+    }
+
+    const updatedUser = await this.userModel.findOneAndUpdate(
+      { email: user?.email },
+      { profilePicture: result.secureUrl },
+      { new: true },
+    );
+
+    return {
+      _id: updatedUser?._id,
+      profilePicture: updatedUser?.profilePicture,
+      phoneNumber: updatedUser?.phoneNumber,
+      email: updatedUser?.email,
+      isActive: updatedUser?.isActive,
+      isOnline: updatedUser?.isOnline,
+      isVerified: updatedUser?.isVerified,
+    };
   }
 
   /**

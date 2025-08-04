@@ -53,6 +53,7 @@ export class AuthService {
 
       const payload = {
         email: user.email,
+        _id: user._id.toString(),
         sub: user.phoneNumber,
       };
 
@@ -66,6 +67,7 @@ export class AuthService {
 
       const payload = {
         email: updatedUser!.email,
+        _id: updatedUser!._id.toString(),
         sub: updatedUser!.phoneNumber,
       };
 
