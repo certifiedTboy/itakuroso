@@ -55,8 +55,8 @@ export class UsersController {
       );
     } catch (error) {
       if (error instanceof Error) {
-        throw new BadRequestException('', {
-          cause: error.cause,
+        throw new InternalServerErrorException('Something went wrong', {
+          cause: new Error(),
           description: error.message,
         });
       }
@@ -79,8 +79,8 @@ export class UsersController {
       return ResponseHandler.ok(201, 'User created successfully', result || {});
     } catch (error) {
       if (error instanceof Error) {
-        throw new BadRequestException('', {
-          cause: error.cause,
+        throw new InternalServerErrorException('Something went wrong', {
+          cause: new Error(),
           description: error.message,
         });
       }
@@ -112,8 +112,8 @@ export class UsersController {
       return ResponseHandler.ok(200, 'User verified successfully', result!);
     } catch (error: unknown) {
       if (error instanceof Error) {
-        throw new InternalServerErrorException('', {
-          cause: error.cause,
+        throw new InternalServerErrorException('Something went wrong', {
+          cause: new Error(),
           description: error.message,
         });
       }
@@ -276,7 +276,7 @@ export class UsersController {
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {
-          cause: error.cause,
+          cause: error.message,
           description: error.message,
         });
       }
@@ -306,14 +306,17 @@ export class UsersController {
         );
       }
     } catch (error: unknown) {
-      console.error('Error uploading profile image:', error);
       if (error instanceof Error) {
         throw new BadRequestException('', {
-          cause: error.cause,
+          cause: error.message,
           description: error.message,
         });
       }
-      throw new InternalServerErrorException('An unexpected error occurred');
+      throw new InternalServerErrorException('', {
+        cause: 'Internal server error',
+        description:
+          'An unexpected error occurred while uploading the profile image.',
+      });
     }
   }
 }

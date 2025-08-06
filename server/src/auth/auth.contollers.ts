@@ -11,6 +11,7 @@ import {
 import { Request } from 'express';
 import { AuthService } from './auth-services';
 import { AuthDto } from './dto/auth.dto';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { AuthGuard } from '../guard/auth-guard';
 import { ResponseHandler } from '../common/response-handler/response-handler';
 import { UsersService } from '../user/users-service';
@@ -124,31 +125,20 @@ export class AuthControllers {
   /**
    * @method getNewToken
    * @description Handles requests to generate a new token for the user.
-   * Validates the input data and checks if the user exists.
-   * If valid, generates a new JWT token for the user.
-   * @param {AuthDto} authDto - The data transfer object containing user credentials.
-   * @param {Request} req - The HTTP request object.
+   * @param {RefreshTokenDto} refreshTokenDto - The data transfer object containing user credentials.
    */
-  @Get('new-token')
-  @UseGuards(AuthGuard)
-  async getNewtoken(@Req() req: Request) {
+  @Post('new-token')
+  async getNewtoken(@Body() refreshTokenDto: RefreshTokenDto) {
     try {
-      const currentUser = req.user;
+      const { refreshToken } = refreshTokenDto;
 
-      if (currentUser) {
-        const token = await this.authService.generateNewToken(
-          currentUser?.email,
-          currentUser?.phoneNumber,
-        );
+      const result = await this.authService.generateNewToken(refreshToken);
 
-        const result = { authToken: token, user: currentUser };
-
-        return ResponseHandler.ok(
-          200,
-          'new token generated successfully',
-          result,
-        );
-      }
+      return ResponseHandler.ok(
+        200,
+        'new token generated successfully',
+        result,
+      );
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {

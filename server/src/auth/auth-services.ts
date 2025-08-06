@@ -1,7 +1,8 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PasscodeHashing } from '../helpers/passcode-hashing';
 import { UsersService } from '../user/users-service';
-import { CustomJwtService } from '../common/jwt/custom-jwt.service';
+import { AccessJwtService } from '../common/jwt/access-jwt.service';
+import { RefreshJwtService } from 'src/common/jwt/refresh-jwt-service';
 
 /**
  * @class AuthService
@@ -14,7 +15,8 @@ import { CustomJwtService } from '../common/jwt/custom-jwt.service';
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly jwtService: CustomJwtService,
+    private readonly accessJwtService: AccessJwtService,
+    private readonly refreshJwtService: RefreshJwtService,
   ) {}
 
   /**
@@ -28,7 +30,12 @@ export class AuthService {
   async signIn(
     passcode: string,
     email: string,
-  ): Promise<{ authToken: string; updatedUser?: any; user?: any }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    updatedUser?: any;
+    user?: any;
+  }> {
     const user = await this.usersService.checkIfUserExist({ email });
 
     if (!user) {
@@ -57,7 +64,11 @@ export class AuthService {
         sub: user.phoneNumber,
       };
 
-      return { authToken: await this.jwtService.signToken(payload), user };
+      return {
+        accessToken: await this.accessJwtService.signToken(payload),
+        refreshToken: await this.refreshJwtService.signToken(payload),
+        user,
+      };
     } else {
       // update user passcode
       const updatedUser = await this.usersService.updateUserPasscode({
@@ -72,49 +83,39 @@ export class AuthService {
       };
 
       return {
-        authToken: await this.jwtService.signToken(payload),
+        accessToken: await this.accessJwtService.signToken(payload),
+        refreshToken: await this.refreshJwtService.signToken(payload),
         updatedUser,
       };
     }
   }
 
   /**
-   * @method verifyToken
-   * @description Verifies the provided JWT token.
-   * If valid, returns the decoded token data.
-   * @param {string} token - The JWT token to verify.
-   */
-  async verifyToken(token: string) {
-    try {
-      const decoded: { email: string; iat: string; sub: string; exp: string } =
-        await this.jwtService.verifyToken(token);
-
-      const currentUser = await this.usersService.checkIfUserExist({
-        email: decoded.email,
-      });
-
-      return currentUser;
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        throw new UnauthorizedException('', {
-          cause: error.message,
-          description: error.message,
-        });
-      }
-    }
-  }
-
-  /**
    * @method generateNewToken
-   * @description Generates a new JWT token for the user.
-   * @param {string} email - The user's email address.
+   * @description Generates a new access JWT token for the user.
+   * @param {string} refreshToken - The user's refresh token.
    */
-  async generateNewToken(email: string, phoneNumber: string) {
+  async generateNewToken(refreshToken: string) {
+    const { email } = await this.refreshJwtService.verifyToken(refreshToken);
+
+    const userData = await this.usersService.checkIfUserExist({ email });
+
+    if (!userData) {
+      throw new UnauthorizedException('', {
+        cause: `Invalid token`,
+        description: 'User with this email does not exist',
+      });
+    }
+
     const payload = {
-      email,
-      sub: phoneNumber,
+      email: userData.email,
+      _id: userData._id.toString(),
+      sub: userData.phoneNumber,
     };
 
-    return { authToken: await this.jwtService.signToken(payload) };
+    return {
+      accessToken: await this.accessJwtService.signToken(payload),
+      user: userData,
+    };
   }
 }

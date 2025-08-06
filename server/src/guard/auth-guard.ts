@@ -1,11 +1,11 @@
 import {
-  BadRequestException,
   CanActivate,
   ExecutionContext,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { CustomJwtService } from '../common/jwt/custom-jwt.service';
+import { AccessJwtService } from '../common/jwt/access-jwt.service';
 
 // Define a UserPayload interface that includes _id, email, and phoneNumber
 interface UserPayload {
@@ -23,27 +23,23 @@ declare module 'express' {
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-  constructor(private readonly jwtService: CustomJwtService) {}
+  constructor(private readonly jwtService: AccessJwtService) {}
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest<Request>();
 
-    const authToken = request.headers['authorization'];
+    const accessToken = request.headers['authorization'];
 
-    if (authToken?.split(' ')[0] !== 'Bearer') {
-      throw new BadRequestException('', {
-        cause: `Invalid token`,
+    if (accessToken?.split(' ')[0] !== 'Bearer') {
+      throw new UnauthorizedException('jwt expired', {
+        cause: new Error()['message'],
         description: 'Invalid token',
       });
     }
 
-    if (authToken) {
+    if (accessToken) {
       const payload = await this.jwtService.verifyToken(
-        authToken.split(' ')[1],
+        accessToken.split(' ')[1],
       );
-
-      if (!payload) {
-        return false;
-      }
 
       request.user = {
         _id: payload._id, // Assuming sub is the user ID
