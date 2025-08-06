@@ -28,7 +28,12 @@ export class AuthService {
   async signIn(
     passcode: string,
     email: string,
-  ): Promise<{ authToken: string; updatedUser?: any; user?: any }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    updatedUser?: any;
+    user?: any;
+  }> {
     const user = await this.usersService.checkIfUserExist({ email });
 
     if (!user) {
@@ -57,7 +62,11 @@ export class AuthService {
         sub: user.phoneNumber,
       };
 
-      return { authToken: await this.jwtService.signToken(payload), user };
+      return {
+        accessToken: await this.jwtService.signToken(payload),
+        refreshToken: await this.jwtService.signToken(payload),
+        user,
+      };
     } else {
       // update user passcode
       const updatedUser = await this.usersService.updateUserPasscode({
@@ -72,7 +81,8 @@ export class AuthService {
       };
 
       return {
-        authToken: await this.jwtService.signToken(payload),
+        accessToken: await this.jwtService.signToken(payload),
+        refreshToken: await this.jwtService.signToken(payload),
         updatedUser,
       };
     }

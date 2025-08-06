@@ -12,7 +12,7 @@ import { CustomJwtService } from './custom-jwt.service';
         global: true,
         secret: configService.get<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d',
         },
       }),
 
