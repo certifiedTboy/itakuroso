@@ -8,7 +8,7 @@ import { UserDocument } from './schemas/user-schema';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdatePasscodeDto } from './dto/update-passcode.dto';
 import { CodeGenerator } from '../helpers/code-generator';
-import { CustomJwtService } from '../common/jwt/custom-jwt.service';
+import { AccessJwtService } from '../common/jwt/access-jwt.service';
 import { FileUploadService } from 'src/common/file-upload/file-upload-service';
 import { Time } from '../helpers/time';
 
@@ -22,7 +22,7 @@ export class UsersService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     private readonly queueService: QueueService,
-    private readonly jwtService: CustomJwtService,
+    private readonly accessJwtService: AccessJwtService,
     private readonly fileUploadService: FileUploadService,
   ) {}
 
@@ -198,7 +198,9 @@ export class UsersService {
    * @param {object} query - The query object to search for the user.
    */
   async checkIfUserExist(query: object): Promise<User | null> {
-    return this.userModel.findOne(query);
+    return this.userModel
+      .findOne(query)
+      .select('-passcode -verificationCode -verificationCodeExpiresIn -__v');
   }
 
   /**
@@ -247,7 +249,9 @@ export class UsersService {
   async checkUserExistById(userId: string): Promise<UserDocument | null> {
     return this.userModel
       .findById(userId)
-      .select('-passcode -verificationCode -verificationCodeExpiresIn -__v');
+      .select(
+        '-passcode -verificationCode -verificationCodeExpiresIn -__v -passwordResetToken -passwordResetTokenExpiresIn',
+      );
   }
 
   /**
@@ -295,7 +299,9 @@ export class UsersService {
   async findAllUsers() {
     return this.userModel
       .find()
-      .select('-passcode -verificationCode -verificationCodeExpiresIn -__v')
+      .select(
+        '-passcode -verificationCode -verificationCodeExpiresIn -__v, -passwordResetToken, -passwordResetTokenExpiresIn',
+      )
       .exec();
   }
 
@@ -328,7 +334,7 @@ export class UsersService {
 
     const token = CodeGenerator.generateOtp();
 
-    const passwordResetToken = await this.jwtService.signToken({
+    const passwordResetToken = await this.accessJwtService.signToken({
       email: user?.email,
       token,
       sub: user?.phoneNumber,
@@ -364,7 +370,7 @@ export class UsersService {
    * @param {string} token - The password reset token to verify.
    */
   async verifyResetToken(token: string) {
-    const decoded = await this.jwtService.verifyToken(token);
+    const decoded = await this.accessJwtService.verifyToken(token);
 
     if (!decoded) {
       throw new BadRequestException('Invalid token');

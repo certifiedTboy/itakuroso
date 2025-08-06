@@ -6,6 +6,8 @@ export type ChatDocument = mongoose.HydratedDocument<Chat>;
 
 @Schema({ timestamps: true })
 export class Chat {
+  _id: mongoose.Types.ObjectId;
+
   @Prop()
   senderId: string;
 

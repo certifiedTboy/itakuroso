@@ -1,7 +1,7 @@
 import { Module, Global } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CustomJwtService } from './custom-jwt.service';
+import { AccessJwtService } from './access-jwt.service';
 
 @Global()
 @Module({
@@ -10,16 +10,17 @@ import { CustomJwtService } from './custom-jwt.service';
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
         global: true,
-        secret: configService.get<string>('JWT_SECRET'),
+        secret: configService.get<string>('JWT_ACCESS_TOKEN_SECRET'),
         signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1d',
+          expiresIn:
+            configService.get<string>('JWT_ACCESS_TOKEN_EXPIRES_IN') || '1d',
         },
       }),
 
       inject: [ConfigService],
     }),
   ],
-  providers: [CustomJwtService],
-  exports: [CustomJwtService],
+  providers: [AccessJwtService],
+  exports: [AccessJwtService],
 })
-export class CustomJWTModule {}
+export class AccessJWTModule {}
