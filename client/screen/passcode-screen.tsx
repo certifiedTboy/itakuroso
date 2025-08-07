@@ -1,18 +1,30 @@
-import ErrorModal from "@/components/modals/ErrorModal";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import ThemedButton from "@/components/ThemedButton";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
+import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { validatePasscodeForm } from "@/helpers/form-validation";
+import { useGetScreenOrientation } from "@/hooks/useGetScreenOrientation";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useUpdatePasscodeMutation } from "@/lib/apis/userApis";
+import {
+  useRequestPasscodeResetMutation,
+  useUpdatePasscodeMutation,
+} from "@/lib/apis/userApis";
 import { AuthContext } from "@/lib/context/auth-context";
 import { RouteProp } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { Formik } from "formik";
-import { useContext, useEffect, useState } from "react";
-import { Image, Linking, StyleSheet, View } from "react-native";
+import { useContext, useEffect } from "react";
+import {
+  Image,
+  Linking,
+  ScrollView,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
+
 import { OtpInput } from "react-native-otp-entry";
 
 export type RootStackParamList = {
@@ -34,12 +46,14 @@ type VerificationScreenProps = {
 const PasscodeSchema = validatePasscodeForm();
 
 const PasscodeScreen = ({ route }: VerificationScreenProps) => {
-  const [showModalError, setShowModalError] = useState(false);
-
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
     "text"
   );
+
+  const { width } = useWindowDimensions();
+
+  const { isPortrait, getScreenOrientation } = useGetScreenOrientation();
 
   const openWebsite = async () => {
     const url = "https://www.linkedin.com/in/emmanuel-tosin-817257149";
@@ -57,15 +71,18 @@ const PasscodeScreen = ({ route }: VerificationScreenProps) => {
   const [updatePasscode, { isSuccess, data, error, isError, isLoading }] =
     useUpdatePasscodeMutation();
 
+  const [requestPasscodeReset, { isLoading: requestPasscodeResetLoading }] =
+    useRequestPasscodeResetMutation();
+
+  // console.log("login data", data?.data);
+
   useEffect(() => {
     if (isSuccess) {
-      authCtx.authenticate(data?.data?.authToken);
+      authCtx.authenticate(data?.data?.accessToken, data?.data?.refreshToken);
     }
 
-    if (isError) {
-      setShowModalError(true);
-    }
-  }, [isError, isSuccess]);
+    getScreenOrientation(width);
+  }, [isSuccess, width]);
 
   const verifyUserAccountHandler = async (values: {
     isValid: boolean;
@@ -93,78 +110,141 @@ const PasscodeScreen = ({ route }: VerificationScreenProps) => {
           lightColor={Colors.light.bgc}
           style={styles.container}
         >
-          {showModalError && (
-            <ErrorModal
-              errorMessage={
-                error && "data" in error && (error as any).data?.message
-                  ? (error as any).data.message
-                  : "Something went wrong"
-              }
-              modalVisible={showModalError}
-              setModalVisible={setShowModalError}
-            />
-          )}
-
-          <View style={styles.textContainer}>
-            <Image
-              source={require("../assets/images/chat-bubble.png")}
-              style={styles.bubbleImage}
-            />
-
-            <ThemedText style={styles.introText}>Choose a passcode</ThemedText>
-          </View>
-
-          <View style={styles.descTextContainer}>
-            <ThemedText style={styles.descText}>
-              Choose a passcode that you will remember to secure your account
-            </ThemedText>
-          </View>
-
-          <View style={styles.inputContainer}>
-            <OtpInput
-              numberOfDigits={6}
-              onTextChange={handleChange("passcode")}
-              onBlur={() => handleBlur("passcode")}
-              theme={{
-                pinCodeTextStyle: styles.pinCodeText,
-              }}
-            />
-            {errors?.passcode && (
-              <ThemedText style={styles.errorText}>
-                {errors.passcode}
-              </ThemedText>
-            )}
-
-            <View style={styles.btnContainer}>
-              <ThemedButton
-                onPress={() =>
-                  verifyUserAccountHandler({ isValid, value: values })
-                }
-                darkBackground={Colors.dark.btnBgc}
-                lightBackground={Colors.light.btnBgc}
-              >
-                {!isLoading ? (
-                  <ThemedText>Continue</ThemedText>
-                ) : (
-                  <LoaderSpinner color="#fff" />
-                )}
-              </ThemedButton>
+          <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={[styles.textContainer, { width: width * 0.1 }]}>
+              <Image
+                source={require("../assets/images/chat-bubble.png")}
+                style={styles.bubbleImage}
+              />
             </View>
-          </View>
 
-          <View style={styles.footerTextContainer}>
-            <ThemedText
-              style={{
-                textAlign: "center",
-                marginTop: 20,
-                fontSize: 15,
-                color: textColor,
-              }}
-              onPress={() => openWebsite()}
+            <View
+              style={[
+                styles.descTextContainer,
+                { width: isPortrait ? width * 0.7 : width * 0.4 },
+              ]}
             >
-              See DevTee!
-            </ThemedText>
-          </View>
+              <ThemedText style={styles.descText}>
+                Choose a passcode to secure your account
+              </ThemedText>
+            </View>
+
+            <View style={styles.inputContainer}>
+              <OtpInput
+                numberOfDigits={6}
+                onTextChange={handleChange("passcode")}
+                onBlur={() => handleBlur("passcode")}
+                theme={{
+                  pinCodeTextStyle: styles.pinCodeText,
+                  filledPinCodeContainerStyle: styles.input,
+                  containerStyle: {
+                    ...styles.inputContainer,
+                    width: isPortrait ? width * 0.8 : width * 0.6,
+                  },
+                }}
+                textInputProps={{
+                  accessibilityLabel: "One-Time Passcode Input",
+                }}
+              />
+
+              <View style={styles.errorTextContainer}>
+                {errors?.passcode && (
+                  <>
+                    <Icon
+                      name="alert-circle"
+                      size={16}
+                      color={Colors.light.errorText}
+                    />
+                    <ThemedText style={styles.errorText}>
+                      {errors.passcode}
+                    </ThemedText>
+                  </>
+                )}
+              </View>
+              <View
+                style={[
+                  styles.btnContainer,
+                  { width: isPortrait ? width * 0.8 : width * 0.6 },
+                ]}
+              >
+                <ThemedButton
+                  onPress={() =>
+                    verifyUserAccountHandler({ isValid, value: values })
+                  }
+                  darkBackground={Colors.dark.btnBgc}
+                  lightBackground={Colors.light.btnBgc}
+                >
+                  {!isLoading ? (
+                    <ThemedText style={styles.btnText}>Continue</ThemedText>
+                  ) : (
+                    <LoaderSpinner color="#fff" />
+                  )}
+                </ThemedButton>
+
+                <View style={styles.infoTextContainer}>
+                  <View style={styles.errorTextContainer}>
+                    {isError && (
+                      <>
+                        <Icon
+                          name="alert-circle"
+                          size={16}
+                          color={Colors.light.errorText}
+                        />
+                        <ThemedText style={styles.errorText}>
+                          {error &&
+                          "data" in error &&
+                          (error as any).data?.message
+                            ? (error as any).data.message
+                            : "Something went wrong"}
+                        </ThemedText>
+                      </>
+                    )}
+                  </View>
+
+                  <View style={styles.timerContainer}>
+                    {requestPasscodeResetLoading && (
+                      <LoaderSpinner size="small" />
+                    )}
+                    <ThemedButton
+                      darkBackground="transparent"
+                      lightBackground="transparent"
+                      onPress={() => {
+                        // if (countdownTimeLeft === 60) {
+                        // startCountdown();
+                        requestPasscodeReset({
+                          email: route.params?.email,
+                        });
+                        // }
+                      }}
+                    >
+                      <ThemedText
+                        darkColor={Colors.dark.text}
+                        lightColor={Colors.light.text}
+                        style={styles.resendBtnText}
+                      >
+                        Reset Passcode
+                      </ThemedText>
+                    </ThemedButton>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.footerTextContainer}>
+              <ThemedText
+                style={{
+                  textAlign: "center",
+                  marginTop: 20,
+                  fontSize: 15,
+                  color: textColor,
+                  fontFamily: "robotoMedium",
+                }}
+                onPress={() => openWebsite()}
+              >
+                See DevTee!
+              </ThemedText>
+            </View>
+          </ScrollView>
         </ThemedView>
       )}
     </Formik>
@@ -179,18 +259,14 @@ const styles = StyleSheet.create({
   },
 
   textContainer: {
-    width: "60%",
     alignItems: "center",
-    marginTop: 40,
-    marginBottom: 50,
     marginHorizontal: "auto",
   },
 
   bubbleImage: {
-    width: 50,
+    width: "100%",
     height: 200,
     resizeMode: "contain",
-    marginBottom: 15,
   },
 
   introText: {
@@ -201,9 +277,8 @@ const styles = StyleSheet.create({
   },
 
   descTextContainer: {
-    width: "80%",
     marginHorizontal: "auto",
-    marginTop: 10,
+    marginTop: -60,
   },
 
   descText: {
@@ -212,33 +287,54 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  btnText: {
+    fontWeight: "condensedBold",
+    fontSize: 17,
+    fontFamily: "robotoMedium",
+  },
+
   inputContainer: {
-    width: "80%",
     marginHorizontal: "auto",
-    marginTop: 50,
+    marginTop: 30,
   },
   pinCodeText: { color: "#0263FFFF" },
-  input: {
-    height: 40,
-    borderColor: "#333",
-    borderWidth: 1,
-    marginTop: 20,
-    paddingHorizontal: 10,
-  },
+  input: {},
 
   inputLabel: { marginBottom: -10 },
 
   btnContainer: {
-    width: 100,
     marginHorizontal: "auto",
-    marginTop: 100,
+    marginTop: 15,
+  },
+
+  errorTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
   },
 
   errorText: {
     color: Colors.light.errorText,
     fontSize: 12,
     marginVertical: 5,
+    fontFamily: "robotoMedium",
   },
+
+  resendBtnText: {
+    fontSize: 15,
+    fontFamily: "robotoMedium",
+    alignSelf: "flex-end",
+    marginLeft: -10,
+    marginRight: -13,
+  },
+
+  infoTextContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: -10,
+  },
+
+  timerContainer: { flexDirection: "row", alignItems: "center" },
 
   footerTextContainer: {
     width: "100%",

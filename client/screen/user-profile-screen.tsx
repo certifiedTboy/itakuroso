@@ -1,7 +1,17 @@
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { useUploadProfileImageMutation } from "@/lib/apis/userApis";
+import * as ImagePicker from "expo-image-picker";
+import {
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Avatar } from "react-native-paper";
 import { useSelector } from "react-redux";
 import dummyAvatar from "../assets/images/dummy-avatar.png";
@@ -9,23 +19,58 @@ import dummyAvatar from "../assets/images/dummy-avatar.png";
 const UserProfileScreen = () => {
   const { currentUser } = useSelector((state: any) => state.authState);
 
+  const [uploadProfileImage, { isLoading }] = useUploadProfileImageMutation();
+
   const titleColor = useThemeColor(
     { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
     "text"
   );
 
+  /**
+   * handleImagePick is used to pick an image from the device's library.
+   * It uses the `expo-image-picker` library to handle image picking.
+   */
+  const handleImagePick = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync();
+
+    if (!result.canceled) {
+      const asset = result.assets[0];
+
+      const formData = new FormData();
+      formData.append("image", {
+        uri:
+          Platform.OS === "android"
+            ? asset.uri
+            : asset.uri.replace("file://", ""),
+        name: asset.fileName,
+        type: asset.mimeType,
+      } as any);
+
+      await uploadProfileImage(formData);
+    }
+  };
+
   return (
     <ScrollView style={styles.profileContainer}>
       <View style={styles.profileImageContainer}>
         <Pressable style={({ pressed }) => [pressed && { opacity: 0.8 }]}>
-          <Avatar.Image
-            size={150}
-            source={currentUser?.profilePicture || dummyAvatar}
-          />
+          {currentUser?.profilePicture ? (
+            <Avatar.Image
+              size={150}
+              source={{ uri: currentUser?.profilePicture }}
+            />
+          ) : (
+            <Avatar.Image size={150} source={dummyAvatar} />
+          )}
         </Pressable>
-        <Text style={[styles.profileEditText, { color: titleColor }]}>
-          Edit
-        </Text>
+
+        <Pressable onPress={handleImagePick}>
+          <Text style={[styles.profileEditText, { color: titleColor }]}>
+            Edit
+          </Text>
+        </Pressable>
+
+        {isLoading && <LoaderSpinner />}
       </View>
 
       <View style={styles.detailsContainer}>

@@ -8,7 +8,6 @@ import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
 import { AuthContext } from "@/lib/context/auth-context";
-import { ChatContext } from "@/lib/context/chat-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect, useNavigation } from "expo-router";
@@ -66,7 +65,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   const { toggleDropdown } = useContext(DropdownContext);
   const authCtx = useContext(AuthContext);
-  const chatCtx = useContext(ChatContext);
 
   /**
    * useColorScheme hook to get the current color scheme of the device

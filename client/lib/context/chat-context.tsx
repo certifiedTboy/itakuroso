@@ -1,7 +1,12 @@
-import { insertChat } from "@/helpers/database/chats";
+import {
+  insertChat,
+  markDbMessagesAsDelivered,
+  markDbMessagesAsRead,
+} from "@/helpers/database/chats";
 import { updateRoomLastMessageId } from "@/helpers/database/contacts";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
+
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
 const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
@@ -12,8 +17,8 @@ type ChatContextType = {
     message: string;
     _id: string;
     createdAt: string;
-    type: string;
     file?: string;
+    messageStatus: string;
     replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
   }[];
   joinRoom: (
@@ -40,6 +45,11 @@ type ChatContextType = {
   ) => void;
   leaveRoom: (currentUserId: { phoneNumber: string }) => void;
   triggerTypingIndicator: (roomId: string) => void;
+  markMessagesAsRead: (
+    roomId: string,
+    currentUserId: { phoneNumber: string }
+  ) => void;
+
   isTyping?: boolean;
 };
 
@@ -50,8 +60,8 @@ export const ChatContext = createContext<ChatContextType>({
       message: "",
       _id: "",
       createdAt: "",
-      type: "",
       file: "",
+      messageStatus: "",
       replyTo: { replyToId: "", replyToMessage: "", senderId: "" },
     },
   ],
@@ -81,6 +91,10 @@ export const ChatContext = createContext<ChatContextType>({
 
   leaveRoom: (currentUserId: { phoneNumber: string }) => {},
   triggerTypingIndicator: (roomId: string) => {},
+  markMessagesAsRead: (
+    roomId: string,
+    currentUserId: { phoneNumber: string }
+  ) => {},
   isTyping: false,
 });
 
@@ -96,7 +110,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       message: string;
       _id: string;
       createdAt: string;
-      type: string;
+      messageStatus: string;
       file?: string;
     }[]
   >([]);
@@ -197,6 +211,19 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
+   * mark messages as read function
+   * @description This function emits an event to the server to mark messages as read
+   * @param {string} roomId - The ID of the room where the messages are read.
+   * @param {Object} currentUserId - The ID of the current user.
+   */
+  const markMessagesAsRead = (
+    roomId: string,
+    currentUserId: { phoneNumber: string }
+  ) => {
+    socket.current.emit("markMessagesAsRead", { roomId, currentUserId });
+  };
+
+  /**
    * listens to typing indicator from the socket server
    */
   useEffect(() => {
@@ -229,7 +256,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
           _id: message.chatId,
           createdAt: message.createdAt,
           file: message?.file,
-          type: "text",
+          messageStatus: message?.messageStatus,
           replyTo: {
             replyToId: message?.replyTo?.replyToId,
             replyToMessage: message?.replyTo?.replyToMessage,
@@ -252,6 +279,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
             message: message.message,
             chatRoomId: message.roomId,
             file: message?.file,
+            messageStatus: message?.messageStatus,
             replyToId: message?.replyTo?.replyToId,
           });
 
@@ -263,6 +291,41 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       currentSocket.off("message");
     };
+  }, [socket]);
+
+  /**
+   * handles listening to the socket server emitting the markMessagesAsRead event
+   * and updates the message status that belongs to a particular room
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on(
+      "markMessagesAsRead",
+      (data: { roomId: string; currentUserId: { phoneNumber: string } }) => {
+        const { roomId } = data;
+
+        (async () => {
+          if (roomId) {
+            await markDbMessagesAsRead(roomId);
+          }
+        })();
+      }
+    );
+  }, [socket]);
+
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("markMessagesAsDelivered", (data: { roomId: string }) => {
+      const { roomId } = data;
+
+      (async () => {
+        if (roomId) {
+          await markDbMessagesAsDelivered(roomId);
+        }
+      })();
+    });
   }, [socket]);
 
   /**
@@ -308,8 +371,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
             message: message.message,
             _id: message._id,
             createdAt: message.timestamp,
-            type: "text",
             file: message?.file,
+            messageStatus: message.messageStatus,
             replyTo: {
               replyToId: message?.repliedMessageId,
               replyToMessage: message?.repliedMessage,
@@ -333,7 +396,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     joinRoom,
     sendMessage,
     updateSocketMessages,
-    // markMessageAsRead,
+    markMessagesAsRead,
     isConnected: isConntectedRef.current,
     leaveRoom,
     triggerTypingIndicator,

@@ -43,6 +43,7 @@ export const insertChat = async (chatData: {
   senderId: string;
   message: string;
   chatRoomId: string;
+  messageStatus: string;
   file?: string;
   replyToId?: string;
 }) => {
@@ -53,13 +54,14 @@ export const insertChat = async (chatData: {
 
       if (db) {
         await db.runAsync(
-          `INSERT OR REPLACE INTO chatss (_id, senderId, message, roomId, file, replyToId) VALUES (?, ?, ?, ?, ?, ?)`,
+          `INSERT OR REPLACE INTO chatss (_id, senderId, message, roomId, file, messageStatus, replyToId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
           [
             chatData.chatId,
             chatData.senderId,
             chatData.message,
             chatData.chatRoomId,
             chatData.file || null,
+            chatData.messageStatus,
             chatData.replyToId || null,
           ]
         );
@@ -112,6 +114,7 @@ export const getLocalChatsByRoomId = async (roomId: string) => {
         c.message,
         c.file,
         c.roomId,
+        c.messageStatus,
         c.timestamp,
         c.replyToId,
 
@@ -158,4 +161,76 @@ export const getLastChatByRoomId = async (roomId: string) => {
   } catch (error) {
     console.log(error);
   }
+};
+
+/**
+ * @method deleteChatById
+ * Deletes a chat message by its ID from the chats table.
+ * @param {string} chatId - The ID of the chat message to delete.
+ */
+export const deleteChatById = async (chatId: string) => {
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
+
+      if (db) {
+        await db.runAsync(`DELETE FROM chatss WHERE _id = ?`, [chatId]);
+      }
+
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error deleting chat:", error);
+    }
+  });
+};
+
+/**
+ * @method markDbMessagesAsRead
+ * Marks all messages in a specific room as read.
+ * @param {string} roomId - The ID of the room for which to mark messages
+ */
+export const markDbMessagesAsRead = async (roomId: string) => {
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
+
+      if (db) {
+        await db.runAsync(
+          `UPDATE chatss SET messageStatus = 'read' WHERE roomId = ? AND messageStatus != 'read'`,
+          [roomId]
+        );
+      }
+
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error marking messages as read:", error);
+    }
+  });
+};
+
+/**
+ * @method markDbMessagesAsDelivered
+ * Marks all messages in a specific room as delivered.
+ * @param {string} roomId - The ID of the room for which to mark messages
+ */
+export const markDbMessagesAsDelivered = async (roomId: string) => {
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
+
+      if (db) {
+        await db.runAsync(
+          `UPDATE chatss SET messageStatus = 'delivered' WHERE roomId = ? AND messageStatus != 'read'`,
+          [roomId]
+        );
+      }
+
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error marking messages as delivered:", error);
+    }
+  });
 };

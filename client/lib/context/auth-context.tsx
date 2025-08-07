@@ -4,14 +4,14 @@ import { useGetCurrentUserMutation } from "../apis/userApis";
 
 type AuthContextType = {
   isAuthenticated: boolean;
-  authenticate: (token: string) => void;
+  authenticate: (accessToken: string, refreshToken: string) => void;
   checkUserIsAuthenticated: () => void;
   logout: () => void;
 };
 
 export const AuthContext = createContext<AuthContextType>({
   isAuthenticated: false,
-  authenticate: (token: string) => {},
+  authenticate: (accessToken: string, refreshToken: string) => {},
   checkUserIsAuthenticated: () => {},
   logout: () => {},
 });
@@ -22,10 +22,12 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
 
   /**
    * Function to authenticate the user and set the authentication state
-   * @param token - The authentication token to be stored
+   * @param accessToken - The authentication token to be stored
+   * @param refreshToken - The refresh token to be stored
    */
-  const authenticate = async (token: string) => {
-    await AsyncStorage.setItem("token", token);
+  const authenticate = async (accessToken: string, refreshToken: string) => {
+    await AsyncStorage.setItem("accessToken", accessToken);
+    await AsyncStorage.setItem("refreshToken", refreshToken);
     setIsAuthenticated(true);
   };
 
@@ -35,7 +37,8 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
    */
   const logout = async () => {
     // await dropDatabase();
-    await AsyncStorage.removeItem("token");
+    await AsyncStorage.removeItem("accessToken");
+    await AsyncStorage.removeItem("refreshToken");
     setIsAuthenticated(false);
   };
 
@@ -44,9 +47,9 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
    * It retrieves the token from AsyncStorage and updates the authentication state accordingly
    */
   const checkUserIsAuthenticated = async () => {
-    const token = await AsyncStorage.getItem("token");
+    const accessToken = await AsyncStorage.getItem("accessToken");
 
-    if (!token) {
+    if (!accessToken) {
       return setIsAuthenticated(false);
     }
 

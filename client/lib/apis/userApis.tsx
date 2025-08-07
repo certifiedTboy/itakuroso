@@ -9,7 +9,7 @@ export const userApis = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: async (headers, { getState }) => {
-      const authToken = await AsyncStorage.getItem("token");
+      const authToken = await AsyncStorage.getItem("accessToken");
 
       headers.set("Authorization", `Bearer ${authToken}`);
       return headers;
@@ -45,9 +45,10 @@ export const userApis = createApi({
           const { data } = await queryFulfilled;
 
           if (data) {
-            const { authToken, user } = data.data;
+            const { accessToken, refreshToken, user } = data.data;
 
-            await AsyncStorage.setItem("authToken", authToken);
+            await AsyncStorage.setItem("accessToken", accessToken);
+            await AsyncStorage.setItem("refreshToken", refreshToken);
 
             dispatch(setCurrentUser({ currentUser: user }));
           }
@@ -69,8 +70,13 @@ export const userApis = createApi({
 
           dispatch(setCurrentUser({ currentUser: data.data }));
         } catch (error: unknown) {
+          // @ts-ignore
           if (error?.error?.data.message === "jwt expired") {
-            dispatch(userApis.endpoints.getNewToken.initiate({}));
+            dispatch(
+              userApis.endpoints.getNewToken.initiate({
+                refreshToken: await AsyncStorage.getItem("refreshToken"),
+              })
+            );
           }
         }
       },
@@ -83,10 +89,29 @@ export const userApis = createApi({
       }),
     }),
 
+    uploadProfileImage: builder.mutation({
+      query: (payload) => ({
+        url: `/users/profile/upload-image`,
+        method: "PATCH",
+        body: payload,
+      }),
+
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          dispatch(setCurrentUser({ currentUser: data.data }));
+        } catch (error: unknown) {
+          console.log(error);
+        }
+      },
+    }),
+
     getNewToken: builder.mutation({
-      query: () => ({
+      query: (payload) => ({
         url: `/auth/new-token`,
-        method: "GET",
+        method: "POST",
+        body: payload,
       }),
 
       async onQueryStarted(arg, { dispatch, queryFulfilled }) {
@@ -94,9 +119,9 @@ export const userApis = createApi({
           const { data } = await queryFulfilled;
 
           if (data) {
-            const { authToken, user } = data.data;
+            const { accessToken, user } = data.data;
 
-            await AsyncStorage.setItem("authToken", authToken);
+            await AsyncStorage.setItem("accessToken", accessToken);
 
             dispatch(setCurrentUser({ currentUser: user }));
           }
@@ -108,7 +133,15 @@ export const userApis = createApi({
 
     getNewVerificationCode: builder.mutation({
       query: (payload) => ({
-        url: `/users/new-verification-code`,
+        url: `/users/passcode/reset`,
+        method: "POST",
+        body: payload,
+      }),
+    }),
+
+    requestPasscodeReset: builder.mutation({
+      query: (payload) => ({
+        url: `/users/request-passcode-reset`,
         method: "POST",
         body: payload,
       }),
@@ -123,4 +156,6 @@ export const {
   useGetCurrentUserMutation,
   useGetUserProfileMutation,
   useGetNewVerificationCodeMutation,
+  useRequestPasscodeResetMutation,
+  useUploadProfileImageMutation,
 } = userApis;
