@@ -263,8 +263,8 @@ export class UsersController {
 
       if (!updatedUser) {
         throw new BadRequestException('', {
-          cause: 'User not found',
-          description: 'No user found with the provided email address',
+          cause: 'passcode update failed',
+          description: 'passcode failed to be updated',
         });
       }
 

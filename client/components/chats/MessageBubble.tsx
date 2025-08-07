@@ -1,15 +1,14 @@
 import { Colors } from "@/constants/Colors";
 import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+// import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { memo, useRef, useState } from "react";
 import {
   Image,
-  Linking,
   Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
+  // TouchableOpacity,
   View,
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -23,8 +22,8 @@ type Message = {
   senderId: string;
   _id: string;
   createdAt: string;
-  type: string;
   isSender: boolean;
+  messageStatus: string;
   setMessageToRespondTo: ({
     message,
     _id,
@@ -33,6 +32,7 @@ type Message = {
     _id: string;
   }) => void;
   file?: string;
+
   replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
 };
 
@@ -50,9 +50,9 @@ const MessageBubble = ({ message }: { message: Message }) => {
     "text"
   );
 
-  const handleOpenFile = () => {
-    Linking.openURL(message.message);
-  };
+  // const handleOpenFile = () => {
+  //   Linking.openURL(message.message);
+  // };
 
   const renderRightActions = () => (
     <View style={styles.rightAction}>
@@ -106,17 +106,8 @@ const MessageBubble = ({ message }: { message: Message }) => {
                 />
               )} */}
 
-              <View
-                style={[
-                  styles.container,
-                  message.isSender ? styles.sender : styles.receiver,
-
-                  !message.isSender && {
-                    backgroundColor: cardBg,
-                  },
-                ]}
-              >
-                {message.type === "file" && (
+              <View style={[styles.container, styles.sender]}>
+                {/* {message.type === "file" && (
                   <TouchableOpacity
                     style={styles.fileButton}
                     onPress={handleOpenFile}
@@ -130,7 +121,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
                       {message.message || "Open File"}
                     </Text>
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 <View>
                   {message?.replyTo && message?.replyTo?.replyToMessage && (
@@ -146,9 +137,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
 
                   <Text
                     style={[
-                      message.isSender
-                        ? styles.senderText
-                        : styles.receiverText,
+                      styles.senderText,
                       message.file && { marginBottom: 5 },
                     ]}
                   >
@@ -165,16 +154,44 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   </Pressable>
                 )}
 
-                {message.type === "audio" && (
+                {/* {message.type === "audio" && (
                   <TouchableOpacity style={styles.audioButton}>
                     <Ionicons name="play-circle" size={30} color="#fff" />
                     <Text style={styles.audioText}>Play Audio</Text>
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 <Text style={styles.messageTime}>
                   {formatDate(message.createdAt)}
                 </Text>
+
+                <View
+                  style={{ flexDirection: "row", justifyContent: "flex-end" }}
+                >
+                  {message?.messageStatus === "sent" && (
+                    <Icon
+                      name="checkmark-circle-sharp"
+                      size={15}
+                      color={cardBg}
+                    />
+                  )}
+
+                  {message?.messageStatus === "delivered" && (
+                    <Icon
+                      name="checkmark-done-circle-sharp"
+                      size={15}
+                      color={cardBg}
+                    />
+                  )}
+
+                  {message?.messageStatus === "red" && (
+                    <Icon
+                      name="checkmark-done-circle-sharp"
+                      size={15}
+                      color={cardBg}
+                    />
+                  )}
+                </View>
               </View>
             </View>
           </Swipeable>
@@ -192,10 +209,8 @@ const MessageBubble = ({ message }: { message: Message }) => {
               style={[
                 {
                   flexDirection: "row",
+                  alignSelf: "flex-start",
                 },
-                message.isSender
-                  ? { alignSelf: "flex-end" }
-                  : { alignSelf: "flex-start" },
               ]}
             >
               {/* {!message.isSender && (
@@ -208,14 +223,13 @@ const MessageBubble = ({ message }: { message: Message }) => {
               <View
                 style={[
                   styles.container,
-                  message.isSender ? styles.sender : styles.receiver,
-
-                  !message.isSender && {
+                  styles.receiver,
+                  {
                     backgroundColor: cardBg,
                   },
                 ]}
               >
-                {message.type === "file" && (
+                {/* {message.type === "file" && (
                   <TouchableOpacity
                     style={styles.fileButton}
                     onPress={handleOpenFile}
@@ -229,7 +243,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
                       {message.message || "Open File"}
                     </Text>
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 {message?.replyTo && message?.replyTo?.replyToMessage && (
                   <Text
@@ -244,7 +258,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
 
                 <Text
                   style={[
-                    message.isSender ? styles.senderText : styles.receiverText,
+                    styles.receiverText,
                     message.file && { marginBottom: 5 },
                   ]}
                 >
@@ -260,12 +274,12 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   </Pressable>
                 )}
 
-                {message.type === "audio" && (
+                {/* {message.type === "audio" && (
                   <TouchableOpacity style={styles.audioButton}>
                     <Ionicons name="play-circle" size={30} color="#fff" />
                     <Text style={styles.audioText}>Play Audio</Text>
                   </TouchableOpacity>
-                )}
+                )} */}
 
                 <Text style={styles.messageTime}>
                   {formatDate(message.createdAt)}

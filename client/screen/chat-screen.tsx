@@ -33,7 +33,6 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
     _id: string;
   } | null>(null);
 
-  // const [getChatsByRoomId, { data, isSuccess }] = useGetChatsByRoomIdMutation();
   const { currentUser } = useSelector((state: any) => state.authState);
 
   const chatCtx = useContext(ChatContext);
@@ -69,6 +68,10 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
             },
             roomId
           );
+
+          chatCtx.markMessagesAsRead(roomId, {
+            phoneNumber: currentUser?.phoneNumber,
+          });
         }
       })();
     }, [])

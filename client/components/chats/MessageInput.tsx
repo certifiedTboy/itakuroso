@@ -77,7 +77,8 @@ const MessageInput = ({
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
-  const [uploadFile, { data, isLoading, isSuccess }] = useUploadFileMutation();
+  const [uploadFile, { data, isLoading, isSuccess, error }] =
+    useUploadFileMutation();
 
   const [deleteFile, { isSuccess: fileDeletedSuccess }] =
     useDeleteFileMutation();

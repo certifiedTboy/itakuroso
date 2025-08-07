@@ -25,6 +25,7 @@ export class ChatHelpers {
       createdAt: new Date(),
       replyTo: replyTo,
       roomId,
+      messageStatus,
     };
   }
 

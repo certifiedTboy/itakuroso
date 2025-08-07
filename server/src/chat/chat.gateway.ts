@@ -198,6 +198,10 @@ export class ChatGateway
                   : undefined,
               ),
             );
+
+            this.server
+              .to(message.roomId)
+              .emit('markMessagesAsDelivered', { roomId: message.roomId });
           }
         }
       }
@@ -343,7 +347,7 @@ export class ChatGateway
             data.content,
             data.senderId,
             chatId,
-            MessageStatus.DELIVERED,
+            MessageStatus.READ,
             roomId,
             data.file,
             data.replyTo && data?.replyTo?.replyToMessage
@@ -426,15 +430,28 @@ export class ChatGateway
     }
   }
 
-  @SubscribeMessage('markMessageAsRead')
-  async handleMarkMessageAsRead(
-    @MessageBody() data: { roomId: string },
+  @SubscribeMessage('markMessagesAsRead')
+  handleMarkMessagesAsRead(
+    @MessageBody()
+    data: { roomId: string; currentUserId: { phoneNumber: string } },
     // @ConnectedSocket() client: Socket,
   ) {
-    const { roomId } = data;
-    await this.chatService.updateLastMessageReadStatus(roomId);
+    const { roomId, currentUserId } = data;
 
-    return this.server.to(roomId).emit('markMessageAsRead', {});
+    return this.server.to(roomId).emit('markMessagesAsRead', { currentUserId });
+  }
+
+  @SubscribeMessage('markMessagesAsDelivered')
+  handleMarkMessagesAsDelivered(
+    @MessageBody()
+    data: { roomId: string; currentUserId: { phoneNumber: string } },
+    // @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, currentUserId } = data;
+
+    return this.server
+      .to(roomId)
+      .emit('markMessagesAsDelivered', { currentUserId });
   }
 
   @SubscribeMessage('leaveRoom')

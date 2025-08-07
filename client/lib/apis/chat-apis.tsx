@@ -8,7 +8,7 @@ export const chatApis = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: async (headers, { getState }) => {
-      const authToken = await AsyncStorage.getItem("token");
+      const authToken = await AsyncStorage.getItem("accessToken");
 
       headers.set("Authorization", `Bearer ${authToken}`);
       return headers;
