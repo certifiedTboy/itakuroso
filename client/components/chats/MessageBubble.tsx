@@ -13,6 +13,9 @@ import {
 } from "react-native";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import type { GestureResponderEvent } from "react-native";
+import ChatBubbleDropdown from "./ChatBubbleDropdown";
+
 import Swipeable from "react-native-gesture-handler/ReanimatedSwipeable";
 import Icon from "../ui/Icon";
 import ImagePreviewModal from "./ImagePreviewModal";
@@ -24,6 +27,7 @@ type Message = {
   createdAt: string;
   isSender: boolean;
   messageStatus: string;
+  receiverId: string;
   setMessageToRespondTo: ({
     message,
     _id,
@@ -34,14 +38,24 @@ type Message = {
   file?: string;
 
   replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
+  roomId: string;
 };
 
 const MessageBubble = ({ message }: { message: Message }) => {
   const [imagePreviewVisible, setImagePreviewVisible] = useState(false);
+  const [rightMenuPosition, setRightMenuPosition] = useState({ x: 0, y: 0 });
+  const [leftMenuPosition, setLeftMenuPosition] = useState({ x: 0, y: 0 });
+  const [rightMenuIsVisible, setRightMenuIsVisible] = useState(false);
+  const [leftMenuIsVisible, setLeftMenuIsVisible] = useState(false);
   const swipeableRef = useRef(null);
 
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
+    "background"
+  );
+
+  const iconColor = useThemeColor(
+    { light: Colors.light.btnBgc, dark: Colors.dark.background },
     "background"
   );
 
@@ -70,6 +84,18 @@ const MessageBubble = ({ message }: { message: Message }) => {
     return message.setMessageToRespondTo({ _id, message: messageText });
   };
 
+  const handleRightLongPress = (event: GestureResponderEvent) => {
+    const { pageX, pageY } = event.nativeEvent;
+    setRightMenuPosition({ x: pageX - 60, y: pageY - 60 });
+    setRightMenuIsVisible(true);
+  };
+
+  const handleLeftLongPress = (event: GestureResponderEvent) => {
+    const { pageX, pageY } = event.nativeEvent;
+    setLeftMenuPosition({ x: pageX + 80, y: pageY });
+    setLeftMenuIsVisible(true);
+  };
+
   return (
     <>
       <ImagePreviewModal
@@ -89,25 +115,32 @@ const MessageBubble = ({ message }: { message: Message }) => {
               swipeableRef.current?.close();
             }}
           >
-            <View
-              style={[
-                {
-                  flexDirection: "row",
-                },
-                message.isSender
-                  ? { alignSelf: "flex-end" }
-                  : { alignSelf: "flex-start" },
+            <Pressable
+              style={({ pressed }) => [
+                pressed && { opacity: 0.9 },
+                { alignSelf: "flex-end" },
               ]}
+              onLongPress={handleRightLongPress}
             >
-              {/* {!message.isSender && (
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                  },
+                  message.isSender
+                    ? { alignSelf: "flex-end" }
+                    : { alignSelf: "flex-start" },
+                ]}
+              >
+                {/* {!message.isSender && (
                 <Image
                   source={require("../../assets/images/avatar.png")}
                   style={styles.avatar}
                 />
               )} */}
 
-              <View style={[styles.container, styles.sender]}>
-                {/* {message.type === "file" && (
+                <View style={[styles.container, styles.sender]}>
+                  {/* {message.type === "file" && (
                   <TouchableOpacity
                     style={styles.fileButton}
                     onPress={handleOpenFile}
@@ -122,78 +155,91 @@ const MessageBubble = ({ message }: { message: Message }) => {
                     </Text>
                   </TouchableOpacity>
                 )} */}
+                  <View>
+                    {message?.replyTo && message?.replyTo?.replyToMessage && (
+                      <Text
+                        style={{ color: "#888888" }}
+                        numberOfLines={1}
+                        ellipsizeMode="tail"
+                        textBreakStrategy="balanced"
+                      >
+                        {message?.replyTo?.replyToMessage}
+                      </Text>
+                    )}
 
-                <View>
-                  {message?.replyTo && message?.replyTo?.replyToMessage && (
                     <Text
-                      style={{ color: "#888888" }}
-                      numberOfLines={1}
-                      ellipsizeMode="tail"
-                      textBreakStrategy="balanced"
+                      style={[
+                        styles.senderText,
+                        message.file && { marginBottom: 5 },
+                      ]}
                     >
-                      {message?.replyTo?.replyToMessage}
+                      {message.message}
                     </Text>
+                  </View>
+                  {message.file && (
+                    <Pressable onPress={() => setImagePreviewVisible(true)}>
+                      <Image
+                        source={{ uri: message.file }}
+                        style={styles.image}
+                      />
+                    </Pressable>
                   )}
-
-                  <Text
-                    style={[
-                      styles.senderText,
-                      message.file && { marginBottom: 5 },
-                    ]}
+                  {/* {message.type === "audio" && (
+                    <TouchableOpacity style={styles.audioButton}>
+                      <Ionicons name="play-circle" size={30} color="#fff" />
+                      <Text style={styles.audioText}>Play Audio</Text>
+                    </TouchableOpacity>
+                  )} */}
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "flex-end",
+                      gap: 5,
+                    }}
                   >
-                    {message.message}
-                  </Text>
-                </View>
+                    <Text style={styles.messageTime} selectable={true}>
+                      {formatDate(message.createdAt)}
+                    </Text>
+                    <View style={styles.messageCheckIconContainer}>
+                      {message?.messageStatus === "sent" && (
+                        <Icon
+                          name="checkmark-circle-sharp"
+                          size={15}
+                          color={iconColor}
+                        />
+                      )}
 
-                {message.file && (
-                  <Pressable onPress={() => setImagePreviewVisible(true)}>
-                    <Image
-                      source={{ uri: message.file }}
-                      style={styles.image}
-                    />
-                  </Pressable>
-                )}
+                      {message?.messageStatus === "delivered" && (
+                        <Icon
+                          name="checkmark-done-circle-sharp"
+                          size={15}
+                          color={iconColor}
+                        />
+                      )}
 
-                {/* {message.type === "audio" && (
-                  <TouchableOpacity style={styles.audioButton}>
-                    <Ionicons name="play-circle" size={30} color="#fff" />
-                    <Text style={styles.audioText}>Play Audio</Text>
-                  </TouchableOpacity>
-                )} */}
-
-                <Text style={styles.messageTime}>
-                  {formatDate(message.createdAt)}
-                </Text>
-
-                <View
-                  style={{ flexDirection: "row", justifyContent: "flex-end" }}
-                >
-                  {message?.messageStatus === "sent" && (
-                    <Icon
-                      name="checkmark-circle-sharp"
-                      size={15}
-                      color={cardBg}
-                    />
-                  )}
-
-                  {message?.messageStatus === "delivered" && (
-                    <Icon
-                      name="checkmark-done-circle-sharp"
-                      size={15}
-                      color={cardBg}
-                    />
-                  )}
-
-                  {message?.messageStatus === "red" && (
-                    <Icon
-                      name="checkmark-done-circle-sharp"
-                      size={15}
-                      color={cardBg}
-                    />
-                  )}
+                      {message?.messageStatus === "red" && (
+                        <Icon
+                          name="checkmark-done-circle-sharp"
+                          size={15}
+                          color={iconColor}
+                        />
+                      )}
+                    </View>
+                  </View>
                 </View>
               </View>
-            </View>
+            </Pressable>
+            <ChatBubbleDropdown
+              menuVisible={rightMenuIsVisible}
+              setMenuVisible={setRightMenuIsVisible}
+              setMenuPosition={setRightMenuPosition}
+              menuPosition={rightMenuPosition}
+              chatId={message._id}
+              roomId={message.roomId}
+              receiverId={message.receiverId}
+              isSender={message.isSender}
+            />
           </Swipeable>
         ) : (
           <Swipeable
@@ -205,31 +251,38 @@ const MessageBubble = ({ message }: { message: Message }) => {
             }}
             ref={swipeableRef}
           >
-            <View
-              style={[
-                {
-                  flexDirection: "row",
-                  alignSelf: "flex-start",
-                },
+            <Pressable
+              style={({ pressed }) => [
+                pressed && { opacity: 0.9 },
+                { alignSelf: "flex-start" },
               ]}
+              onLongPress={handleLeftLongPress}
             >
-              {/* {!message.isSender && (
+              <View
+                style={[
+                  {
+                    flexDirection: "row",
+                    alignSelf: "flex-start",
+                  },
+                ]}
+              >
+                {/* {!message.isSender && (
                 <Image
                   source={require("../../assets/images/avatar.png")}
                   style={styles.avatar}
                 />
               )} */}
 
-              <View
-                style={[
-                  styles.container,
-                  styles.receiver,
-                  {
-                    backgroundColor: cardBg,
-                  },
-                ]}
-              >
-                {/* {message.type === "file" && (
+                <View
+                  style={[
+                    styles.container,
+                    styles.receiver,
+                    {
+                      backgroundColor: cardBg,
+                    },
+                  ]}
+                >
+                  {/* {message.type === "file" && (
                   <TouchableOpacity
                     style={styles.fileButton}
                     onPress={handleOpenFile}
@@ -245,47 +298,59 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   </TouchableOpacity>
                 )} */}
 
-                {message?.replyTo && message?.replyTo?.replyToMessage && (
+                  {message?.replyTo && message?.replyTo?.replyToMessage && (
+                    <Text
+                      style={{ color: "#888" }}
+                      numberOfLines={1}
+                      ellipsizeMode="tail"
+                      textBreakStrategy="balanced"
+                      selectable={true}
+                    >
+                      {message?.replyTo?.replyToMessage}
+                    </Text>
+                  )}
+
                   <Text
-                    style={{ color: "#888" }}
-                    numberOfLines={1}
-                    ellipsizeMode="tail"
-                    textBreakStrategy="balanced"
+                    style={[
+                      styles.receiverText,
+                      message.file && { marginBottom: 5 },
+                    ]}
                   >
-                    {message?.replyTo?.replyToMessage}
+                    {message.message}
                   </Text>
-                )}
 
-                <Text
-                  style={[
-                    styles.receiverText,
-                    message.file && { marginBottom: 5 },
-                  ]}
-                >
-                  {message.message}
-                </Text>
+                  {message.file && (
+                    <Pressable onPress={() => setImagePreviewVisible(true)}>
+                      <Image
+                        source={{ uri: message.file }}
+                        style={styles.image}
+                      />
+                    </Pressable>
+                  )}
 
-                {message.file && (
-                  <Pressable onPress={() => setImagePreviewVisible(true)}>
-                    <Image
-                      source={{ uri: message.file }}
-                      style={styles.image}
-                    />
-                  </Pressable>
-                )}
-
-                {/* {message.type === "audio" && (
+                  {/* {message.type === "audio" && (
                   <TouchableOpacity style={styles.audioButton}>
                     <Ionicons name="play-circle" size={30} color="#fff" />
                     <Text style={styles.audioText}>Play Audio</Text>
                   </TouchableOpacity>
                 )} */}
 
-                <Text style={styles.messageTime}>
-                  {formatDate(message.createdAt)}
-                </Text>
+                  <Text style={styles.messageTime}>
+                    {formatDate(message.createdAt)}
+                  </Text>
+                </View>
+                <ChatBubbleDropdown
+                  menuVisible={leftMenuIsVisible}
+                  setMenuVisible={setLeftMenuIsVisible}
+                  setMenuPosition={setLeftMenuPosition}
+                  menuPosition={leftMenuPosition}
+                  chatId={message._id}
+                  roomId={message.roomId}
+                  receiverId={message.receiverId}
+                  isSender={message.isSender}
+                />
               </View>
-            </View>
+            </Pressable>
           </Swipeable>
         )}
       </GestureHandlerRootView>
@@ -327,6 +392,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 700,
     color: "#333",
+    fontFamily: "robotoMedium",
   },
 
   receiverText: {
@@ -379,5 +445,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     width: 80,
+  },
+  messageCheckIconContainer: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
   },
 });

@@ -19,7 +19,7 @@ export const createChatTable = async () => {
           messageStatus TEXT DEFAULT 'sent',
           timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
           replyToId TEXT DEFAULT NULL,
-          FOREIGN KEY (replyToId) REFERENCES chatss(_id)
+          FOREIGN KEY (replyToId) REFERENCES chatss(_id) ON DELETE CASCADE
         );
         CREATE INDEX IF NOT EXISTS idx_roomId ON chatss(roomId);
       `);
