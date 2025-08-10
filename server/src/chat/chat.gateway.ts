@@ -153,7 +153,7 @@ export class ChatGateway
   async handleUserOnline(
     @MessageBody()
     currentUserData: { _id: string; phoneNumber: string; email: string },
-    // @ConnectedSocket() client: Socket,
+    @ConnectedSocket() client: Socket,
   ) {
     if (currentUserData.phoneNumber && currentUserData.email) {
       /**
@@ -180,28 +180,35 @@ export class ChatGateway
         while (userMessageQueue.size > 0) {
           const message = userMessageQueue.dequeue();
           if (message) {
-            this.server.to(message.roomId).emit(
-              'message',
-              ChatHelpers.messageResponse(
-                message.content,
-                message.senderId,
-                message.chatId,
-                MessageStatus.SENT,
-                message.roomId,
-                message.file,
-                message.replyTo && message?.replyTo?.replyToMessage
-                  ? {
-                      replyToId: message.replyTo.replyToId,
-                      replyToMessage: message.replyTo.replyToMessage,
-                      replyToSenderId: message.replyTo.replyToSenderId,
-                    }
-                  : undefined,
-              ),
-            );
+            if (message.content === 'delete message') {
+              client.to(message.roomId).emit('deleteEveryoneMessage', {
+                chatId: message.chatId,
+                roomId: message.roomId,
+              });
+            } else {
+              client.to(message.roomId).emit(
+                'message',
+                ChatHelpers.messageResponse(
+                  message.content,
+                  message.senderId,
+                  message.chatId,
+                  MessageStatus.SENT,
+                  message.roomId,
+                  message.file,
+                  message.replyTo && message?.replyTo?.replyToMessage
+                    ? {
+                        replyToId: message.replyTo.replyToId,
+                        replyToMessage: message.replyTo.replyToMessage,
+                        replyToSenderId: message.replyTo.replyToSenderId,
+                      }
+                    : undefined,
+                ),
+              );
 
-            this.server
-              .to(message.roomId)
-              .emit('markMessagesAsDelivered', { roomId: message.roomId });
+              this.server
+                .to(message.roomId)
+                .emit('markMessagesAsDelivered', { roomId: message.roomId });
+            }
           }
         }
       }
@@ -359,6 +366,49 @@ export class ChatGateway
               : undefined,
           ),
         );
+      }
+    }
+  }
+
+  @SubscribeMessage('deleteEveryoneMessage')
+  handleDeleteEveryoneMessage(
+    @MessageBody() data: { chatId: string; roomId: string; receiverId: string },
+  ) {
+    const { chatId, roomId, receiverId } = data;
+
+    const activeRoomUsers = this.chatService.getRoomUsers(roomId);
+
+    if (activeRoomUsers && activeRoomUsers.length > 0) {
+      const otherUserIsActiveInRoom = activeRoomUsers.find(
+        (user: { phoneNumber: string }) => user.phoneNumber === receiverId,
+      );
+
+      if (!otherUserIsActiveInRoom) {
+        const userIsOnline =
+          this.chatService.checkUserExistInActivePool(receiverId);
+
+        if (!userIsOnline) {
+          this.chatService.addChatToUserMessageQueue(receiverId, {
+            chatId,
+            roomId: data.roomId,
+            senderId: '',
+            content: 'delete message',
+            file: '',
+            createdAt: new Date().toISOString(),
+          });
+
+          return this.server
+            .to(roomId)
+            .emit('deleteEveryoneMessage', { chatId, roomId });
+        } else {
+          return this.server
+            .to(roomId)
+            .emit('deleteEveryoneMessage', { chatId, roomId });
+        }
+      } else {
+        return this.server
+          .to(roomId)
+          .emit('deleteEveryoneMessage', { chatId, roomId });
       }
     }
   }
