@@ -56,10 +56,15 @@ export class UsersController {
     } catch (error) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('Something went wrong', {
-          cause: new Error(),
+          cause: error.cause,
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -80,10 +85,15 @@ export class UsersController {
     } catch (error) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('Something went wrong', {
-          cause: new Error(),
+          cause: error.cause,
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -113,10 +123,15 @@ export class UsersController {
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('Something went wrong', {
-          cause: new Error(),
+          cause: error.cause,
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -164,6 +179,10 @@ export class UsersController {
           description: error.message,
         });
       }
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -199,6 +218,11 @@ export class UsersController {
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -235,6 +259,11 @@ export class UsersController {
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -276,10 +305,15 @@ export class UsersController {
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new InternalServerErrorException('', {
-          cause: error.message,
+          cause: error.cause,
           description: error.message,
         });
       }
+
+      throw new InternalServerErrorException('Something went wrong', {
+        cause: 'Internal server error',
+        description: 'An unexpected error occurred',
+      });
     }
   }
 
@@ -308,7 +342,7 @@ export class UsersController {
     } catch (error: unknown) {
       if (error instanceof Error) {
         throw new BadRequestException('', {
-          cause: error.message,
+          cause: error.cause,
           description: error.message,
         });
       }

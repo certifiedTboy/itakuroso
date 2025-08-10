@@ -30,13 +30,15 @@ export class UsersService {
    * @method create
    * @description Creates a new user and sends a verification email.
    * @param {CreateUserDto} createUserDto - The data transfer object containing user details.
-   * @returns {Promise<UserDocument>} - The created user object.
-   * @throws {Error} - Throws an error if the user creation fails.
    */
-  async create(createUserDto: CreateUserDto): Promise<UserDocument> {
+  async create(createUserDto: CreateUserDto) {
     // check if user with the same email or phone number already exists
     const userWithEmailExist = await this.checkIfUserExist({
       email: createUserDto.email,
+    });
+
+    const userWithPhoneNumberExists = await this.checkIfUserExist({
+      phoneNumber: createUserDto.phoneNumber,
     });
 
     if (userWithEmailExist) {
@@ -76,24 +78,61 @@ export class UsersService {
       return updatedUser;
     }
 
-    const otp = CodeGenerator.generateOtp();
-    const verificationCodeExpiresIn = Time.getTimeInOneHour();
-    const createdUser = new this.userModel({
-      ...createUserDto,
-      verificationCode: otp,
-      verificationCodeExpiresIn,
-    });
-    const user = await createdUser.save();
-    await this.queueService.addJob(
-      'email',
-      {
-        email: user?.email,
-        message: `Your verification code is: ${user?.verificationCode}`,
-        subject: 'Verification Token',
-      },
-      10000,
-    );
-    return user;
+    if (userWithPhoneNumberExists) {
+      if (userWithPhoneNumberExists.email !== createUserDto.email) {
+        throw new BadRequestException('', {
+          cause: 'The phone number and email belong to different users',
+          description: 'invalid credentials',
+        });
+      }
+
+      const otp = CodeGenerator.generateOtp();
+      const verificationCodeExpiresIn = Time.getTimeInOneHour();
+
+      const updatedUser = await this.userModel.findOneAndUpdate(
+        { email: userWithPhoneNumberExists.email },
+        { verificationCode: otp, isVerified: false, verificationCodeExpiresIn },
+        { new: true },
+      );
+
+      if (!updatedUser) {
+        throw new BadRequestException('', {
+          cause: 'Something went wrong',
+          description: 'Something went wrong',
+        });
+      }
+
+      await this.queueService.addJob(
+        'email',
+        {
+          email: updatedUser.email,
+          message: `Your verification code is: ${updatedUser.verificationCode}`,
+          type: 'Verification Token',
+        },
+        10000,
+      );
+    }
+
+    if (!userWithEmailExist && !userWithPhoneNumberExists) {
+      const otp = CodeGenerator.generateOtp();
+      const verificationCodeExpiresIn = Time.getTimeInOneHour();
+      const createdUser = new this.userModel({
+        ...createUserDto,
+        verificationCode: otp,
+        verificationCodeExpiresIn,
+      });
+      const user = await createdUser.save();
+      await this.queueService.addJob(
+        'email',
+        {
+          email: user?.email,
+          message: `Your verification code is: ${user?.verificationCode}`,
+          subject: 'Verification Token',
+        },
+        10000,
+      );
+      return user;
+    }
   }
 
   /**
