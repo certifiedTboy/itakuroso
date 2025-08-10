@@ -1,6 +1,15 @@
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import { DropdownContext } from "@/lib/context/dropdown-context";
-import React, { useContext, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import React, { useContext, useEffect, useRef, useState } from "react";
+import {
+  Animated,
+  Modal,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 type MenuDropdownOption = {
   label: string;
@@ -17,6 +26,34 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({ options }) => {
 
   const { dropdownIsVisible, toggleDropdown } = useContext(DropdownContext);
 
+  const cardBg = useThemeColor(
+    { light: Colors.light.background, dark: Colors.dark.background },
+    "background"
+  );
+
+  const textColor = useThemeColor(
+    { light: Colors.light.text, dark: Colors.dark.text },
+    "text"
+  );
+
+  const slideAnim = useRef(new Animated.Value(-200)).current; // Start off-screen
+
+  useEffect(() => {
+    if (dropdownIsVisible) {
+      Animated.timing(slideAnim, {
+        toValue: 0, // Slide down to visible
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: -200, // Slide back up
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [dropdownIsVisible]);
+
   const onSelect = (option: any) => {
     setSelectedOption(option);
     // setVisible(false);
@@ -29,23 +66,32 @@ const MenuDropdown: React.FC<MenuDropdownProps> = ({ options }) => {
         transparent={true}
         visible={dropdownIsVisible}
         onRequestClose={() => toggleDropdown()}
+        animationType="none"
       >
         <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
           onPress={() => toggleDropdown()}
         >
-          <View style={styles.dropdown}>
+          <Animated.View
+            style={[
+              styles.dropdown,
+              { transform: [{ translateY: slideAnim }] },
+              { backgroundColor: cardBg },
+            ]}
+          >
             {options.map((option, index) => (
               <TouchableOpacity
                 key={index}
                 style={styles.option}
                 onPress={() => onSelect(option)}
               >
-                <Text style={styles.optionText}>{option.label}</Text>
+                <Text style={[styles.optionText, { color: textColor }]}>
+                  {option.label}
+                </Text>
               </TouchableOpacity>
             ))}
-          </View>
+          </Animated.View>
         </TouchableOpacity>
       </Modal>
     </View>
@@ -65,7 +111,6 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
   },
   dropdown: {
-    backgroundColor: "white",
     borderRadius: 8,
     padding: 10,
     width: 200,
@@ -84,6 +129,8 @@ const styles = StyleSheet.create({
   },
   optionText: {
     fontSize: 16,
+    fontFamily: "RobotoMedium",
+    fontWeight: "500",
   },
 });
 

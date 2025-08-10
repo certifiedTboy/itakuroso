@@ -12,6 +12,7 @@ import { useCallback, useContext, useState } from "react";
 import { FlatList, StyleSheet } from "react-native";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { SafeAreaView } from "react-native-safe-area-context";
+
 import { useSelector } from "react-redux";
 
 type ChatScreenProps = {
@@ -107,6 +108,8 @@ const ChatScreen = ({ route }: ChatScreenProps) => {
           ...item,
           isSender: item.senderId === currentUser?.phoneNumber,
           setMessageToRespondTo,
+          receiverId: phoneNumber,
+          roomId,
         }}
       />
     ),

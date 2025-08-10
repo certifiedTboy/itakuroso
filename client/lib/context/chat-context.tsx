@@ -1,4 +1,5 @@
 import {
+  deleteChatById,
   insertChat,
   markDbMessagesAsDelivered,
   markDbMessagesAsRead,
@@ -6,52 +7,11 @@ import {
 import { updateRoomLastMessageId } from "@/helpers/database/contacts";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
-
 import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
+import { useDeleteFileMutation } from "../apis/chat-apis";
+import type { ChatContextType } from "./chat-context-types";
 const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
-
-type ChatContextType = {
-  messages: {
-    senderId: string;
-    message: string;
-    _id: string;
-    createdAt: string;
-    file?: string;
-    messageStatus: string;
-    replyTo?: { replyToId: string; replyToMessage: string; senderId?: string };
-  }[];
-  joinRoom: (
-    userId: { contactName: string; phoneNumber: string },
-    currentUser: { phoneNumber: string; email: string },
-    roomId?: string
-  ) => void;
-  sendMessage: (messageData: {
-    chatId: string;
-    content: string;
-    senderId: string;
-    receiverId: string;
-    roomId?: string;
-    file?: string;
-    replyTo?: {
-      replyToId: string;
-      replyToMessage: string;
-      replyToSenderId: string;
-    };
-  }) => void;
-  updateSocketMessages: (
-    messages: [],
-    currentUser?: { phoneNumber: string; email: string }
-  ) => void;
-  leaveRoom: (currentUserId: { phoneNumber: string }) => void;
-  triggerTypingIndicator: (roomId: string) => void;
-  markMessagesAsRead: (
-    roomId: string,
-    currentUserId: { phoneNumber: string }
-  ) => void;
-
-  isTyping?: boolean;
-};
 
 export const ChatContext = createContext<ChatContextType>({
   messages: [
@@ -96,6 +56,12 @@ export const ChatContext = createContext<ChatContextType>({
     currentUserId: { phoneNumber: string }
   ) => {},
   isTyping: false,
+  handleDeleteChatById: async (chatId: string, roomId: string) => {},
+  handleDeleteMessageForEveryone: (
+    chatId: string,
+    roomId: string,
+    receiverId: string
+  ) => {},
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
@@ -114,6 +80,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       file?: string;
     }[]
   >([]);
+
+  const [deleteFile] = useDeleteFileMutation();
 
   const [isTyping, setIsTyping] = useState(false);
 
@@ -391,6 +359,91 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  /**
+   * @function handleDeleteChatById
+   * Deletes a chat message by its ID.
+   */
+  const handleDeleteChatById = async (chatId: string, roomId: string) => {
+    const chatToDeleteIndex = socketMessages.findIndex(
+      (msg: any) => msg._id === chatId
+    );
+
+    /**
+     * update the room last message, if the chat to be deleted is the last message in the room
+     * this is to ensure that the room last message id is always up to date
+     */
+    if (chatToDeleteIndex !== -1) {
+      if (chatToDeleteIndex === socketMessages.length - 1) {
+        await updateRoomLastMessageId(
+          socketMessages[chatToDeleteIndex - 1]._id,
+          roomId
+        );
+      }
+
+      /**
+       * delete file from cloudinary if chat to delete has a file
+       */
+      if (socketMessages[chatToDeleteIndex].file) {
+        const fileUrl = socketMessages[chatToDeleteIndex].file;
+        const publicId = fileUrl
+          .split("/")
+          [fileUrl.split("/").length - 1].split(".")[0];
+
+        await deleteFile(publicId);
+      }
+
+      /**
+       * for fas UI update, we temporarily remove the chat to delete from the socket messages array
+       * before deleting it from the database
+       */
+      setSocketMessages((prevMessages) => {
+        const updatedMessages = [...prevMessages];
+        updatedMessages.splice(chatToDeleteIndex, 1);
+        return updatedMessages;
+      });
+
+      /**
+       * delete chat from the database
+       * and update the last message id of the room
+       */
+      await deleteChatById(chatId);
+    }
+  };
+
+  /**
+   * handles deleting a message for everyone
+   * it emits an event to the server to delete the message for everyone
+   * and also deletes the chat from the database
+   */
+  const handleDeleteMessageForEveryone = (
+    chatId: string,
+    roomId: string,
+    receiverId: string
+  ) => {
+    socket.current.emit("deleteMessageForEveryone", {
+      chatId,
+      roomId,
+      receiverId,
+    });
+
+    (async () => {
+      await handleDeleteChatById(chatId, roomId);
+    })();
+  };
+
+  /**
+   * handles deleting a message for the other user
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("deleteMessageForEveryone", ({ chatId, roomId }) => {
+      (async () => {
+        await handleDeleteChatById(chatId, roomId);
+      })();
+    });
+  }, [socket]);
+
   const value = {
     messages: socketMessages,
     joinRoom,
@@ -401,6 +454,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     leaveRoom,
     triggerTypingIndicator,
     isTyping,
+    handleDeleteChatById,
+    handleDeleteMessageForEveryone,
   };
 
   // @ts-ignore

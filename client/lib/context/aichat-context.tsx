@@ -1,29 +1,7 @@
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
 import { io } from "socket.io-client";
+import type { AiChatContextType } from "./chat-context-types";
 const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
-
-type AiChatContextType = {
-  aiMessages: {
-    senderId: string;
-    message: string;
-    _id: string;
-    createdAt: string;
-  }[];
-  isConnected: boolean;
-  isTyping: boolean;
-
-  joinAiRoom: (
-    roomId: string,
-    currentUserData: { phoneNumber: string; email: string }
-  ) => void;
-  sendAiMessage: (messageData: {
-    chatId: string;
-    content: string;
-    senderId: string;
-    roomId?: string;
-  }) => void;
-  updateSocketMessages: () => void;
-};
 
 export const AiChatContext = createContext<AiChatContextType>({
   aiMessages: [
