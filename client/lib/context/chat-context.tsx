@@ -373,9 +373,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
      * this is to ensure that the room last message id is always up to date
      */
     if (chatToDeleteIndex !== -1) {
-      if (chatToDeleteIndex === socketMessages.length - 1) {
+      if (chatToDeleteIndex === 0) {
         await updateRoomLastMessageId(
-          socketMessages[chatToDeleteIndex - 1]._id,
+          socketMessages[chatToDeleteIndex + 1]._id,
           roomId
         );
       }

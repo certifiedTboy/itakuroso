@@ -2,12 +2,10 @@ import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
-// import useGetActiveRooms from "@/hooks/useGetActiveRooms";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
-import { AuthContext } from "@/lib/context/auth-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect, useNavigation } from "expo-router";
@@ -64,7 +62,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const { currentUser } = useSelector((state: any) => state.authState);
 
   const { toggleDropdown } = useContext(DropdownContext);
-  const authCtx = useContext(AuthContext);
 
   /**
    * useColorScheme hook to get the current color scheme of the device
@@ -140,22 +137,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
       label: "Settings",
       onPress: () => {
         // @ts-ignore
-        navigate.navigate("Settings");
-        toggleDropdown();
-      },
-    },
-    {
-      label: "Profile",
-      onPress: () => {
-        // @ts-ignore
         navigate.navigate("user-profile-screen");
-        toggleDropdown();
-      },
-    },
-    {
-      label: "Logout",
-      onPress: () => {
-        authCtx.logout();
         toggleDropdown();
       },
     },
@@ -174,12 +156,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         roomImage: string;
         phoneNumber: string;
         name: string;
+        lastMessageStatus: string;
         members: { name: string; profileImage?: string; phoneNumber: string }[];
         lastMessage: {
           isSender: boolean;
           message: string;
           timestamp: string;
-          isRead: boolean;
+          lastMessageStatus: string;
           containsFile?: boolean;
           senderId: string;
         };
@@ -191,15 +174,17 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         message={item?.lastMessage?.message}
         time={item?.lastMessage?.timestamp}
         isSender={item?.lastMessage?.isSender}
+        isRead={item?.lastMessageStatus === "read"}
         image=""
         roomId={item?.roomId}
-        isRead={item?.lastMessage?.isRead}
         containsFile={item?.lastMessage?.containsFile}
         senderId={item?.lastMessage?.senderId}
       />
     ),
     []
   );
+
+  // console.log("rooms", rooms);
 
   return (
     <>

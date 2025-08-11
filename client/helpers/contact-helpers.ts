@@ -17,12 +17,14 @@ export const loadContacts = async () => {
 
   if (status === "granted") {
     const { data } = await Contacts.getContactsAsync({});
-    const authToken = await AsyncStorage.getItem("token");
+    const accessToken = await AsyncStorage.getItem("accessToken");
     const rooms = await axios.get(`${baseUrl}/chats/rooms`, {
       headers: {
-        Authorization: `Bearer ${authToken}`,
+        Authorization: `Bearer ${accessToken}`,
       },
     });
+
+    // console.log("Contacts data:", rooms?.data?.data[0].members);
 
     if (data && rooms?.data?.data && rooms?.data?.statusCode === 200) {
       const contacts = data

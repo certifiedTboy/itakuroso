@@ -15,7 +15,7 @@ export const createContactTable = async () => {
         roomId TEXT DEFAULT NULL,
         isActive BOOLEAN DEFAULT 0,
         lastMessageId TEXT DEFAULT NULL,
-        FOREIGN KEY (lastMessageId) REFERENCES chatss(_id)
+        FOREIGN KEY (lastMessageId) REFERENCES chatss(_id) ON DELETE CASCADE
       );
     `);
   } catch (error) {
@@ -86,7 +86,8 @@ export const getContacts = async (): Promise<IContact[]> => {
         r.message as lastMessageContent,
         r.timestamp as lastMessageTimestamp,
         r.file as lastMessageFile,
-        r.replyToId as lastMessageReplyToId
+        r.replyToId as lastMessageReplyToId,
+        r.messageStatus as lastMessageStatus
       FROM contact c
       LEFT JOIN chatss r ON c.lastMessageId = r._id
     `);
