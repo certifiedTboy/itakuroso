@@ -35,6 +35,7 @@ import {
   View,
 } from "react-native";
 import { useSelector } from "react-redux";
+import { DeleteButton } from "../common/emjoi-picker/DeleteButton";
 import { EmojiPicker } from "../common/emjoi-picker/EmojiPicker";
 import { EmojiType } from "../common/emjoi-picker/types";
 import LoaderSpinner from "../spinner/LoaderSpinner";
@@ -147,7 +148,11 @@ const MessageInput = ({
   useFocusEffect(
     useCallback(() => {
       heightRef.current = 50;
-    }, [])
+
+      if (inputHeight >= 168) {
+        heightRef.current = 169;
+      }
+    }, [inputHeight])
   );
 
   /**
@@ -283,7 +288,7 @@ const MessageInput = ({
 
   return (
     <>
-      {imageUri && (
+      {imageUri && imagePreviewIsVisible && (
         <ImagePreviewModal
           isVisible={imagePreviewIsVisible}
           onClose={() => setImagePreviewIsVisible(!imagePreviewIsVisible)}
@@ -407,7 +412,14 @@ const MessageInput = ({
               },
             ]}
           >
-            <View style={styles.row}>
+            <View
+              style={[
+                styles.row,
+                inputHeight > 44
+                  ? { alignItems: "flex-end" }
+                  : { alignItems: "center" },
+              ]}
+            >
               <TouchableOpacity onPress={() => showKeyboard()}>
                 <MaterialIcons name="keyboard" size={27} color="#B1B1B1FF" />
               </TouchableOpacity>
@@ -430,7 +442,9 @@ const MessageInput = ({
                 multiline
                 ref={inputRef}
                 onContentSizeChange={(event) =>
-                  setInputHeight(event.nativeEvent.contentSize.height)
+                  event.nativeEvent.contentSize.height < 169
+                    ? setInputHeight(event.nativeEvent.contentSize.height)
+                    : setInputHeight(168)
                 }
               />
 
@@ -503,6 +517,19 @@ const MessageInput = ({
             hideHeader={true}
             emojiSize={30}
             enableCategoryChangeAnimation={true}
+            customButtons={[
+              <DeleteButton
+                key="deleteButton"
+                onPress={() => setMessage((prev) => prev.slice(0, -2))}
+                style={({ pressed }) => ({
+                  opacity: pressed ? 1 : 0.8,
+                  padding: 10,
+                  borderRadius: 100,
+                })}
+                iconNormalColor={Colors.light.btnBgc}
+                iconActiveColor={Colors.light.btnBgc}
+              />,
+            ]}
           />
         </View>
       )}
@@ -521,7 +548,14 @@ const MessageInput = ({
             },
           ]}
         >
-          <View style={styles.row}>
+          <View
+            style={[
+              styles.row,
+              inputHeight > 44
+                ? { alignItems: "flex-end" }
+                : { alignItems: "center" },
+            ]}
+          >
             <>
               <TouchableOpacity
                 onPress={() => {
@@ -549,7 +583,9 @@ const MessageInput = ({
                 multiline
                 ref={inputRef}
                 onContentSizeChange={(event) =>
-                  setInputHeight(event.nativeEvent.contentSize.height)
+                  event.nativeEvent.contentSize.height < 169
+                    ? setInputHeight(event.nativeEvent.contentSize.height)
+                    : setInputHeight(168)
                 }
               />
 
@@ -611,35 +647,31 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    alignItems: "center",
+    // alignItems: "center",
   },
   imagePressable: {
     width: 40,
     borderRadius: 10,
   },
   previewImageContainer: {
-    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-    marginVertical: 23,
   },
 
   previewImageContainer2: {
-    flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 10,
-    // marginVertical: 23,
   },
 
   loaderContainer: {
-    flex: 1,
+    // flex: 1,
     flexDirection: "row",
     paddingHorizontal: 10,
-    marginVertical: 23,
+    // marginVertical: 23,
   },
 
   iconContainer: {
@@ -652,30 +684,30 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 30,
     resizeMode: "contain",
+
     padding: 10,
     backgroundColor: "#7E7A7AFF",
   },
 
   responseTextContainer: {
-    // flex: 1,
     flexDirection: "row",
     justifyContent: "space-between",
-    // alignItems: "flex-start",
     alignItems: "center",
+
     paddingHorizontal: 10,
-    // marginVertical: 10,
-    // marginBottom: 40,
   },
   recordingContainer: {
     flexDirection: "row",
     alignItems: "center",
     // marginLeft: -80,
+
     zIndex: 1,
   },
   emojiContainer: { position: "absolute", bottom: 0, left: 0, right: 0 },
   input: {
     flex: 1,
     paddingHorizontal: 10,
+
     // borderRadius: 20,
     // borderWidth: 1,
     // borderColor: "#ccc",

@@ -130,27 +130,18 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   const options = [
     {
       label: "Settings",
-      onPress: () => navigation.navigate("Settings"),
+      onPress: () => {
+        navigation.navigate("user-profile-screen");
+        toggleDropdown();
+      },
     },
-    {
-      label: "Help",
-      onPress: () => navigation.navigate("Help"),
-    },
+
     {
       label: "Refresh Contacts",
       onPress: () => {
         onLoadContacts();
         toggleDropdown();
       },
-    },
-    {
-      label: "Logout",
-      onPress: () =>
-        showNotification({
-          type: "success",
-          title: "Logout",
-          message: "You have been logged out.",
-        }),
     },
   ];
 

@@ -132,29 +132,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
                     : { alignSelf: "flex-start" },
                 ]}
               >
-                {/* {!message.isSender && (
-                <Image
-                  source={require("../../assets/images/avatar.png")}
-                  style={styles.avatar}
-                />
-              )} */}
-
                 <View style={[styles.container, styles.sender]}>
-                  {/* {message.type === "file" && (
-                  <TouchableOpacity
-                    style={styles.fileButton}
-                    onPress={handleOpenFile}
-                  >
-                    <MaterialCommunityIcons
-                      name="file"
-                      size={30}
-                      color="#007AFF"
-                    />
-                    <Text style={styles.fileName}>
-                      {message.message || "Open File"}
-                    </Text>
-                  </TouchableOpacity>
-                )} */}
                   <View>
                     {message?.replyTo && message?.replyTo?.replyToMessage && (
                       <Text
@@ -239,6 +217,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
               roomId={message.roomId}
               receiverId={message.receiverId}
               isSender={message.isSender}
+              message={message.message}
             />
           </Swipeable>
         ) : (
@@ -266,13 +245,6 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   },
                 ]}
               >
-                {/* {!message.isSender && (
-                <Image
-                  source={require("../../assets/images/avatar.png")}
-                  style={styles.avatar}
-                />
-              )} */}
-
                 <View
                   style={[
                     styles.container,
@@ -282,22 +254,6 @@ const MessageBubble = ({ message }: { message: Message }) => {
                     },
                   ]}
                 >
-                  {/* {message.type === "file" && (
-                  <TouchableOpacity
-                    style={styles.fileButton}
-                    onPress={handleOpenFile}
-                  >
-                    <MaterialCommunityIcons
-                      name="file"
-                      size={30}
-                      color="#007AFF"
-                    />
-                    <Text style={styles.fileName}>
-                      {message.message || "Open File"}
-                    </Text>
-                  </TouchableOpacity>
-                )} */}
-
                   {message?.replyTo && message?.replyTo?.replyToMessage && (
                     <Text
                       style={{ color: "#888" }}
@@ -348,6 +304,7 @@ const MessageBubble = ({ message }: { message: Message }) => {
                   roomId={message.roomId}
                   receiverId={message.receiverId}
                   isSender={message.isSender}
+                  message={message.message}
                 />
               </View>
             </Pressable>
@@ -363,7 +320,6 @@ export default memo(MessageBubble);
 const styles = StyleSheet.create({
   container: {
     maxWidth: "75%",
-    marginVertical: 4,
     padding: 10,
     borderRadius: 15,
   },

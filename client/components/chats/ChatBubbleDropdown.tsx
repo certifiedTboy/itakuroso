@@ -1,15 +1,15 @@
+import { Colors } from "@/constants/Colors";
+import { useThemeColor } from "@/hooks/useThemeColor";
 import React, { useContext } from "react";
 import {
   Alert,
+  Clipboard,
   Modal,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-
-import { Colors } from "@/constants/Colors";
-import { useThemeColor } from "@/hooks/useThemeColor";
 
 import { ChatContext } from "@/lib/context/chat-context";
 
@@ -22,6 +22,7 @@ const ChatBubbleDropdown = ({
   roomId,
   receiverId,
   isSender,
+  message,
 }: {
   menuVisible: boolean;
   setMenuVisible: (visible: boolean) => void;
@@ -31,6 +32,7 @@ const ChatBubbleDropdown = ({
   roomId: string;
   receiverId: string;
   isSender: boolean;
+  message: string;
 }) => {
   const { handleDeleteChatById, handleDeleteMessageForEveryone } =
     useContext(ChatContext);
@@ -48,6 +50,12 @@ const ChatBubbleDropdown = ({
     setMenuVisible(false);
     setMenuPosition({ x: 0, y: 0 }); // Reset position after selection
     Alert.alert(`Selected: ${option}`);
+  };
+
+  const copyToClipboard = (copiedMessage: string) => {
+    Clipboard.setString(copiedMessage);
+    setMenuVisible(false);
+    setMenuPosition({ x: 0, y: 0 }); // Reset position after
   };
 
   return (
@@ -96,20 +104,20 @@ const ChatBubbleDropdown = ({
 
               <TouchableOpacity
                 style={[styles.contextOption]}
-                onPress={() => handleOptionSelect("Copy")}
+                onPress={() => copyToClipboard(message)}
               >
                 <Text style={[{ color: textColor }, styles.contextOptionText]}>
                   Copy
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 style={styles.contextOption}
                 onPress={() => handleOptionSelect("Forward")}
               >
                 <Text style={[{ color: textColor }, styles.contextOptionText]}>
                   Forward
                 </Text>
-              </TouchableOpacity>
+              </TouchableOpacity> */}
               <TouchableOpacity
                 style={styles.contextOption}
                 onPress={() => handleDeleteChatById(chatId, roomId)}

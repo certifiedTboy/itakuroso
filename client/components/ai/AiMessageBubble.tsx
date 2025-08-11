@@ -69,7 +69,7 @@ export default memo(MessageBubble);
 
 const styles = StyleSheet.create({
   container: {
-    maxWidth: "75%",
+    maxWidth: "90%",
     marginVertical: 4,
     padding: 10,
     borderRadius: 15,

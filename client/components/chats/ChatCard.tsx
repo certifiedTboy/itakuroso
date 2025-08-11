@@ -14,11 +14,10 @@ type ChatCardProps = {
   message?: string;
   time: string;
   image?: any;
-  isRead?: boolean;
   containsFile?: boolean;
   roomId: string;
   isSender?: boolean;
-
+  isRead?: boolean;
   senderId: string;
   onNavigate?: () => void;
 };

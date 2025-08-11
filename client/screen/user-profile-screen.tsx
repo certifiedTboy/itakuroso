@@ -3,7 +3,9 @@ import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useUploadProfileImageMutation } from "@/lib/apis/userApis";
+import { AuthContext } from "@/lib/context/auth-context";
 import * as ImagePicker from "expo-image-picker";
+import { useContext } from "react";
 import {
   Platform,
   Pressable,
@@ -20,6 +22,8 @@ const UserProfileScreen = () => {
   const { currentUser } = useSelector((state: any) => state.authState);
 
   const [uploadProfileImage, { isLoading }] = useUploadProfileImageMutation();
+
+  const { logout } = useContext(AuthContext);
 
   const titleColor = useThemeColor(
     { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
@@ -92,6 +96,24 @@ const UserProfileScreen = () => {
           <Text style={styles.value}>{currentUser?.phoneNumber}</Text>
         </View>
       </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          pressed && { opacity: 0.8 },
+          styles.detailsContainerNext2,
+        ]}
+        onPress={logout}
+      >
+        <View>
+          <Icon name="trash" size={24} color={Colors.light.errorText} />
+        </View>
+        <View>
+          <Text style={[styles.title, { color: Colors.light.errorText }]}>
+            Delete Account
+          </Text>
+          <Text style={styles.value}>All message data will be deleted</Text>
+        </View>
+      </Pressable>
     </ScrollView>
   );
 };
@@ -122,6 +144,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "flex-start",
     marginHorizontal: 30,
+    marginBottom: 35,
+    // marginTop: 20,
+    gap: 30,
+  },
+
+  detailsContainerNext2: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    marginHorizontal: 30,
     // marginTop: 20,
     gap: 30,
   },
@@ -135,11 +167,14 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 16,
     fontWeight: "bold",
+    fontFamily: "robotoMedium",
   },
 
   value: {
     fontSize: 15,
     color: Colors.light.icon,
     marginTop: 4,
+    fontFamily: "robotoRegular",
+    fontWeight: 600,
   },
 });
