@@ -174,9 +174,6 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
     }, 100);
   };
 
-  console.log("inputHeight", inputHeight);
-  console.log("hieghtRef", heightRef.current);
-
   return (
     <>
       {showEmoji && (

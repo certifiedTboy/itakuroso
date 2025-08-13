@@ -48,6 +48,14 @@ export type ChatContextType = {
     roomId: string,
     receiverId: string
   ) => void;
+
+  handleUpdateUserProfilePicture: (
+    phoneNumber: string,
+    profilePicture: string,
+    currentUserId: string
+  ) => Promise<void>;
+
+  triggerUserOfflineStatus: () => void;
 };
 
 export type AiChatContextType = {

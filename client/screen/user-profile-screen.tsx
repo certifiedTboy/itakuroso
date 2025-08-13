@@ -4,8 +4,9 @@ import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useUploadProfileImageMutation } from "@/lib/apis/userApis";
 import { AuthContext } from "@/lib/context/auth-context";
+import { ChatContext } from "@/lib/context/chat-context";
 import * as ImagePicker from "expo-image-picker";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import {
   Platform,
   Pressable,
@@ -16,14 +17,16 @@ import {
 } from "react-native";
 import { Avatar } from "react-native-paper";
 import { useSelector } from "react-redux";
-import dummyAvatar from "../assets/images/dummy-avatar.png";
 
 const UserProfileScreen = () => {
   const { currentUser } = useSelector((state: any) => state.authState);
 
-  const [uploadProfileImage, { isLoading }] = useUploadProfileImageMutation();
+  const [uploadProfileImage, { isLoading, isSuccess, data }] =
+    useUploadProfileImageMutation();
 
   const { logout } = useContext(AuthContext);
+  const { triggerUserOfflineStatus, handleUpdateUserProfilePicture } =
+    useContext(ChatContext);
 
   const titleColor = useThemeColor(
     { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
@@ -54,6 +57,21 @@ const UserProfileScreen = () => {
     }
   };
 
+  const onLogoutUser = () => {
+    triggerUserOfflineStatus();
+    logout();
+  };
+
+  useEffect(() => {
+    if (isSuccess && data) {
+      handleUpdateUserProfilePicture(
+        currentUser?.phoneNumber,
+        data?.data?.profilePicture,
+        currentUser?.id
+      );
+    }
+  }, [isSuccess, data]);
+
   return (
     <ScrollView style={styles.profileContainer}>
       <View style={styles.profileImageContainer}>
@@ -64,7 +82,10 @@ const UserProfileScreen = () => {
               source={{ uri: currentUser?.profilePicture }}
             />
           ) : (
-            <Avatar.Image size={150} source={dummyAvatar} />
+            <Avatar.Image
+              size={150}
+              source={require("../assets/images/dummy-avatar.png")}
+            />
           )}
         </Pressable>
 
@@ -102,7 +123,7 @@ const UserProfileScreen = () => {
           pressed && { opacity: 0.8 },
           styles.detailsContainerNext2,
         ]}
-        onPress={logout}
+        onPress={onLogoutUser}
       >
         <View>
           <Icon name="trash" size={24} color={Colors.light.errorText} />

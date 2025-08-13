@@ -1,8 +1,8 @@
+import ContactLastSeen from "@/components/chats/ContactLastSeen";
 import SearchInput from "@/components/contacts/SearchInput";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
-import { formatDate } from "@/helpers/chat-helpers";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdown-context";
 import AIScreen from "@/screen/ai-screen";
@@ -12,6 +12,7 @@ import UserProfileScreen from "@/screen/user-profile-screen";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useContext } from "react";
 import { Text, View } from "react-native";
+import { Avatar } from "react-native-paper";
 import "react-native-reanimated";
 import MainTabs from "./tab/main-tabs";
 
@@ -119,6 +120,7 @@ const AuthenticatedStack = () => {
               phoneNumber?: string;
               isOnline?: boolean;
               lastSeen?: string | number | Date;
+              profileImage?: string;
             };
           };
         }) => ({
@@ -128,77 +130,54 @@ const AuthenticatedStack = () => {
             return (
               <View
                 style={{
-                  marginLeft: -20,
+                  marginLeft: -25,
+                  // marginTop: -25,
                   backgroundColor: backgroundColor,
+                  flexDirection: "row",
+                  gap: 10,
+                  alignItems: "center",
                 }}
               >
-                <Text
-                  style={{
-                    color: titleColor,
-                    fontWeight: "500",
-                    fontSize: 16,
-                  }}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {route && route.params && route.params.contactName
-                    ? route.params.contactName[0].toUpperCase() +
-                      route.params.contactName.slice(1)
-                    : route && route.params && route.params.phoneNumber
-                    ? route.params.phoneNumber
-                    : "Chat"}
-                </Text>
-
-                {!route?.params?.isOnline ? (
+                <View>
+                  {route?.params?.profileImage ? (
+                    <Avatar.Image
+                      size={40}
+                      source={{ uri: route.params.profileImage }}
+                    />
+                  ) : (
+                    <Avatar.Text
+                      size={40}
+                      label={
+                        route.params!.contactName! &&
+                        route.params!.contactName![0].charAt(0).toUpperCase()
+                      }
+                      style={{ backgroundColor: Colors.light.btnBgc }}
+                    />
+                  )}
+                </View>
+                <View>
                   <Text
                     style={{
-                      color: chatScreenTitleColor,
+                      color: titleColor,
                       fontWeight: "500",
-                      fontSize: 13,
-                      marginTop: 4,
-                      opacity: 0.8,
+                      fontSize: 16,
                     }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
-                    Last Seen
-                    {route.params?.lastSeen &&
-                      ` ${new Date(route.params.lastSeen).toLocaleTimeString(
-                        "en-US",
-                        {
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        }
-                      )}`}
-                    {" - "}
-                    {formatDate(
-                      route.params?.lastSeen
-                        ? String(route.params.lastSeen)
-                        : ""
-                    )}
+                    {route && route.params && route.params.contactName
+                      ? route.params.contactName[0].toUpperCase() +
+                        route.params.contactName.slice(1)
+                      : route && route.params && route.params.phoneNumber
+                      ? route.params.phoneNumber
+                      : "Chat"}
                   </Text>
-                ) : (
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      // marginLeft: 20,
-                      alignItems: "center",
-                      gap: 5,
-                      marginTop: 5,
-                    }}
-                  >
-                    <Text
-                      style={{
-                        color: chatScreenTitleColor,
-                        fontWeight: "500",
-                        fontSize: 12,
-                        opacity: 0.8,
-                        marginBottom: 3,
-                      }}
-                    >
-                      Online
-                    </Text>
-                    <Icon name="ellipse" color={Colors.dark.btnBgc} size={12} />
-                  </View>
-                )}
+
+                  <ContactLastSeen
+                    isOnline={route.params?.isOnline}
+                    lastSeenTime={route.params?.lastSeen?.toLocaleString()}
+                  />
+                </View>
               </View>
             );
           },

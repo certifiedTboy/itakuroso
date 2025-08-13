@@ -480,6 +480,34 @@ export class ChatGateway
     }
   }
 
+  @SubscribeMessage('updateUserProfilePicture')
+  async handleUpdateUserProfilePicture(
+    @MessageBody()
+    data: {
+      phoneNumber: string;
+      profilePicture: string;
+      currentUserId: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { phoneNumber, profilePicture, currentUserId } = data;
+
+    const rooms = await this.chatService.getAllRoomsByUser(currentUserId);
+
+    if (rooms && rooms.length > 0) {
+      rooms.forEach((room) => {
+        client
+          .to(room.roomId)
+          .emit('userProfilePictureUpdated', { profilePicture, phoneNumber });
+      });
+    }
+
+    // Emit an event to notify all clients in the room about the profile picture update
+    // this.server
+    //   .to(phoneNumber)
+    //   .emit('userProfilePictureUpdated', { profilePicture });
+  }
+
   @SubscribeMessage('markMessagesAsRead')
   handleMarkMessagesAsRead(
     @MessageBody()

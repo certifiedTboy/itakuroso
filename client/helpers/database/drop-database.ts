@@ -6,5 +6,6 @@ export const dropDatabase = async () => {
     await db.execAsync(`DROP TABLE IF EXISTS contact`);
     await db.execAsync(`DROP TABLE IF EXISTS chatss`);
     await db.execAsync(`DROP TABLE IF EXISTS room_idss`);
+    await db.execAsync(`DROP TABLE IF EXISTS user_profile`);
   }
 };

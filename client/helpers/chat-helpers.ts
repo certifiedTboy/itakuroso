@@ -31,7 +31,7 @@ export const generateDbId = () => {
  * @param {string} date - The date to format.
  */
 export const formatDate = (date: string) => {
-  return moment(date, "YYYY-MM-DD HH:mm:ss").fromNow();
+  return moment.utc(date, "YYYY-MM-DD HH:mm:ss").local().fromNow();
 };
 
 /**
