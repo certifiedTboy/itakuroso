@@ -1,7 +1,7 @@
 import { getDatabase, runWithLock } from "./database";
 
 /**
- * @method createChatTable
+ * @function createChatTable
  * Creates the chats table in the SQLite database if it does not already exist.
  */
 export const createChatTable = async () => {
@@ -30,7 +30,7 @@ export const createChatTable = async () => {
 };
 
 /**
- * @method insertChat
+ * @function insertChat
  * Inserts a new chat message into the chats table.
  * @param {Object} chatData - The data for the chat message to be inserted.
  * @param {string} chatData.senderId - The ID of the sender of the message.
@@ -75,7 +75,7 @@ export const insertChat = async (chatData: {
 };
 
 /**
- * @method getChatsBySenderId
+ * @function getChatsBySenderId
  * Retrieves all chat messages sent by a specific sender from the chats table.
  * @param {string} senderId - The ID of the sender for which to retrieve chat messages.
  */
@@ -97,7 +97,7 @@ export const getChatsBySenderId = async (senderId: string) => {
 };
 
 /**
- * @method getLocalChatsByRoomId
+ * @function getLocalChatsByRoomId
  * Retrieves all chat messages associated with a specific room ID from the chats table.
  * @param {string} roomId - The ID of the room for which to retrieve chat messages.
  */
@@ -141,7 +141,7 @@ export const getLocalChatsByRoomId = async (roomId: string) => {
 };
 
 /**
- * @method getLastChatByRoomId
+ * @function getLastChatByRoomId
  * Retrieves the last chat message associated with a specific room ID from the chats table.
  * @param {string} roomId - The ID of the room for which to retrieve the last chat message.
  */
@@ -164,7 +164,7 @@ export const getLastChatByRoomId = async (roomId: string) => {
 };
 
 /**
- * @method deleteChatById
+ * @function deleteChatById
  * Deletes a chat message by its ID from the chats table.
  * @param {string} chatId - The ID of the chat message to delete.
  */
@@ -186,7 +186,7 @@ export const deleteChatById = async (chatId: string) => {
 };
 
 /**
- * @method markDbMessagesAsRead
+ * @function markDbMessagesAsRead
  * Marks all messages in a specific room as read.
  * @param {string} roomId - The ID of the room for which to mark messages
  */
@@ -211,7 +211,7 @@ export const markDbMessagesAsRead = async (roomId: string) => {
 };
 
 /**
- * @method markDbMessagesAsDelivered
+ * @function markDbMessagesAsDelivered
  * Marks all messages in a specific room as delivered.
  * @param {string} roomId - The ID of the room for which to mark messages
  */
@@ -231,6 +231,34 @@ export const markDbMessagesAsDelivered = async (roomId: string) => {
       await db.runAsync("COMMIT");
     } catch (error) {
       console.log("Error marking messages as delivered:", error);
+    }
+  });
+};
+
+/**
+ * @funtion updateChatMessageById
+ * Updates a chat message by its ID in the chats table.
+ * @param {string} chatId - The ID of the chat message to update.
+ */
+export const updateChatMessageById = async (
+  chatId: string,
+  updateMessage: string
+) => {
+  await runWithLock(async () => {
+    try {
+      const db = await getDatabase();
+      await db.runAsync("BEGIN TRANSACTION");
+
+      if (db) {
+        await db.runAsync(`UPDATE chatss SET message = ? WHERE _id = ?`, [
+          updateMessage,
+          chatId,
+        ]);
+      }
+
+      await db.runAsync("COMMIT");
+    } catch (error) {
+      console.log("Error updating chat message:", error);
     }
   });
 };

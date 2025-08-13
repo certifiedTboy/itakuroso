@@ -1,3 +1,4 @@
+import { upsertUserProfile } from "@/helpers/database/user";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { setCurrentUser } from "../redux/auth-slice";
@@ -87,6 +88,25 @@ export const userApis = createApi({
         url: `/auth/user/${payload}/profile`,
         method: "GET",
       }),
+
+      async onQueryStarted(arg, { dispatch, queryFulfilled }) {
+        try {
+          const { data } = await queryFulfilled;
+
+          const userProfileData = {
+            id: data?.data._id.toString(),
+            phoneNumber: data?.data.phoneNumber,
+            isActive: data?.data?.isActive,
+            isOnline: data?.data?.isOnline,
+            lastSeen: data?.data?.lastSeen,
+            profilePicture: data?.data?.profilePicture,
+          };
+
+          await upsertUserProfile(userProfileData);
+        } catch (error) {
+          console.log(error);
+        }
+      },
     }),
 
     uploadProfileImage: builder.mutation({

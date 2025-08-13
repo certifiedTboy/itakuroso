@@ -5,6 +5,7 @@ import {
   markDbMessagesAsRead,
 } from "@/helpers/database/chats";
 import { updateRoomLastMessageId } from "@/helpers/database/contacts";
+import { updateUserProfilePicture } from "@/helpers/database/user";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
 import { useSelector } from "react-redux";
@@ -61,6 +62,12 @@ export const ChatContext = createContext<ChatContextType>({
     chatId: string,
     roomId: string,
     receiverId: string
+  ) => {},
+  triggerUserOfflineStatus: () => {},
+  handleUpdateUserProfilePicture: async (
+    phoneNumber: string,
+    profilePicture: string,
+    currentUserId: string
   ) => {},
 });
 
@@ -280,6 +287,10 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
         })();
       }
     );
+
+    return () => {
+      currentSocket.off("markMessagesAsRead");
+    };
   }, [socket]);
 
   useEffect(() => {
@@ -294,6 +305,10 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
         }
       })();
     });
+
+    return () => {
+      currentSocket.off("markMessagesAsDelivered");
+    };
   }, [socket]);
 
   /**
@@ -318,6 +333,14 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
       currentSocket.off("userOffline");
     };
   }, [networkInfo.isConnected, networkInfo.type, currentUser, socket]);
+
+  const triggerUserOfflineStatus = () => {
+    const currentSocket = socket.current;
+    if (currentUser) {
+      isConntectedRef.current = false;
+      currentSocket.emit("userOffline", currentUser);
+    }
+  };
 
   // update socket messages function
   const updateSocketMessages = async (
@@ -442,6 +465,47 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
         await handleDeleteChatById(chatId, roomId);
       })();
     });
+
+    return () => {
+      currentSocket.off("deleteMessageForEveryone");
+    };
+  }, [socket]);
+
+  /**
+   * @function handleUpdateUserProfilePicture
+   * @param {string} phoneNumber - The phone number of the user.
+   * @param {string} profilePicture - The new profile picture URL.
+   */
+  const handleUpdateUserProfilePicture = (
+    phoneNumber: string,
+    profilePicture: string,
+    currentUserId: string
+  ) => {
+    socket.current.emit("updateUserProfilePicture", {
+      phoneNumber,
+      profilePicture,
+      currentUserId,
+    });
+  };
+
+  /**
+   * update profile picture locally for other users on the network
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on(
+      "updateUserProfilePicture",
+      ({ phoneNumber, profilePicture }) => {
+        (async () => {
+          await updateUserProfilePicture(phoneNumber, profilePicture);
+        })();
+      }
+    );
+
+    return () => {
+      currentSocket.off("updateUserProfilePicture");
+    };
   }, [socket]);
 
   const value = {
@@ -456,6 +520,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     isTyping,
     handleDeleteChatById,
     handleDeleteMessageForEveryone,
+    triggerUserOfflineStatus,
+    handleUpdateUserProfilePicture,
   };
 
   // @ts-ignore

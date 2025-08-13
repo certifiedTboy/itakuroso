@@ -1,10 +1,12 @@
 import { Colors } from "@/constants/Colors";
+import { getUserProfileById } from "@/helpers/database/user";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetUserProfileMutation } from "@/lib/apis/userApis";
 import { useNavigation } from "@react-navigation/native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
+
 import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
@@ -12,8 +14,6 @@ type ChatCardProps = {
   contactName: string;
   phoneNumber: string;
   message?: string;
-  time: string;
-  image?: any;
   containsFile?: boolean;
   roomId: string;
   isSender?: boolean;
@@ -26,8 +26,6 @@ const ChatCard = ({
   contactName,
   phoneNumber,
   message,
-  time,
-  image,
   roomId,
   isRead,
   containsFile,
@@ -35,9 +33,17 @@ const ChatCard = ({
   isSender,
   senderId,
 }: ChatCardProps) => {
+  const [userData, setUserData] = useState<{
+    id: string;
+    phoneNumber: string;
+    isOnline: boolean;
+    lastSeen: Date;
+    isActive: boolean;
+    profilePicture: string;
+  }>();
   const navigation = useNavigation();
 
-  const [getUserProfile, { data, error }] = useGetUserProfileMutation();
+  const [getUserProfile, { data }] = useGetUserProfileMutation();
 
   const { width } = Dimensions.get("window");
 
@@ -52,10 +58,22 @@ const ChatCard = ({
   );
 
   useEffect(() => {
-    if (phoneNumber) {
-      getUserProfile(phoneNumber);
-    }
+    (async () => {
+      if (phoneNumber) {
+        const localUserProfile = await getUserProfileById(phoneNumber);
+        setUserData(localUserProfile);
+        if (!localUserProfile) {
+          await getUserProfile(phoneNumber);
+        }
+      }
+    })();
   }, [phoneNumber]);
+
+  useEffect(() => {
+    if (data && data?.data) {
+      setUserData(data.data);
+    }
+  }, [data]);
 
   return (
     <Pressable
@@ -67,9 +85,9 @@ const ChatCard = ({
           roomId,
           senderId,
           isRead,
-          lastSeen: data?.data?.lastSeen,
-          profileImage: data?.data?.profileImage,
-          isOnline: data?.data?.isOnline,
+          lastSeen: userData?.lastSeen,
+          profileImage: userData?.profilePicture,
+          isOnline: userData?.isOnline,
         });
       }}
       style={({ pressed }) => [
@@ -80,8 +98,8 @@ const ChatCard = ({
     >
       {/* Image + Sender/Message Block */}
       <View style={styles.leftContainer}>
-        {image ? (
-          <Avatar.Image size={50} source={image} />
+        {userData?.profilePicture ? (
+          <Avatar.Image size={50} source={{ uri: userData?.profilePicture }} />
         ) : (
           <Avatar.Text
             size={50}

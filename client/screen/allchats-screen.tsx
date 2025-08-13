@@ -172,10 +172,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         contactName={item?.contactName}
         phoneNumber={item?.phoneNumber}
         message={item?.lastMessage?.message}
-        time={item?.lastMessage?.timestamp}
         isSender={item?.lastMessage?.isSender}
         isRead={item?.lastMessageStatus === "read"}
-        image=""
         roomId={item?.roomId}
         containsFile={item?.lastMessage?.containsFile}
         senderId={item?.lastMessage?.senderId}

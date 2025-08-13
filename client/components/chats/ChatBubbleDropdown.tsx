@@ -110,14 +110,7 @@ const ChatBubbleDropdown = ({
                   Copy
                 </Text>
               </TouchableOpacity>
-              {/* <TouchableOpacity
-                style={styles.contextOption}
-                onPress={() => handleOptionSelect("Forward")}
-              >
-                <Text style={[{ color: textColor }, styles.contextOptionText]}>
-                  Forward
-                </Text>
-              </TouchableOpacity> */}
+
               <TouchableOpacity
                 style={styles.contextOption}
                 onPress={() => handleDeleteChatById(chatId, roomId)}

@@ -27,7 +27,7 @@ export class ChatService {
     contactName: string;
     phoneNumber: string;
   }[] = [];
-  messageQueue: MessageQueue[] = [];
+  private messageQueue: MessageQueue[] = [];
   constructor(
     @InjectModel(Room.name) private roomModel: Model<RoomDocument>,
     @InjectModel(Chat.name) private chatModel: Model<ChatDocument>,
