@@ -141,6 +141,15 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         toggleDropdown();
       },
     },
+
+    {
+      label: "New Group",
+      onPress: () => {
+        // @ts-ignore
+        navigate.navigate("new-group-screen");
+        toggleDropdown();
+      },
+    },
   ];
 
   // Render the card
@@ -201,13 +210,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         // @ts-ignore
         onNavigate={() => navigate.navigate("contact-lists-screen")}
         iconName="account-multiple-plus-outline"
-        style={{
-          position: "absolute",
-          margin: 16,
-          right: 0,
-          bottom: 0,
-          zIndex: 100,
-        }}
+        style={styles.floatingBtn}
       />
       <MenuDropdown options={options} />
       <View style={styles.contianer}>
@@ -274,5 +277,13 @@ const styles = StyleSheet.create({
   aiIcon: {
     width: 50,
     height: 50,
+  },
+
+  floatingBtn: {
+    position: "absolute",
+    margin: 16,
+    right: 0,
+    bottom: 0,
+    zIndex: 100,
   },
 });

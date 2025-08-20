@@ -1,6 +1,8 @@
 import { Colors } from "@/constants/Colors";
+import { useGetScreenOrientation } from "@/hooks/useGetScreenOrientation";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { Dimensions, Pressable, StyleSheet, Text } from "react-native";
+import { useEffect } from "react";
+import { Pressable, StyleSheet, Text, useWindowDimensions } from "react-native";
 import Icon from "../ui/Icon";
 
 const AiHintBubble = ({
@@ -10,7 +12,9 @@ const AiHintBubble = ({
   message: string;
   onPress: (message: string) => void;
 }) => {
-  const { width } = Dimensions.get("window");
+  const { width } = useWindowDimensions();
+
+  const { isPortrait, getScreenOrientation } = useGetScreenOrientation();
 
   const textColor = useThemeColor(
     { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
@@ -21,6 +25,11 @@ const AiHintBubble = ({
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
   );
+
+  useEffect(() => {
+    getScreenOrientation(width);
+  }, [width]);
+
   return (
     <Pressable
       onPress={() => onPress(message)}
@@ -28,7 +37,10 @@ const AiHintBubble = ({
         pressed && { opacity: 0.8 },
         styles.container,
         styles.lightStyle,
-        { width: width * 0.9, backgroundColor: cardBg },
+        {
+          width: isPortrait ? width * 0.9 : width * 0.7,
+          backgroundColor: cardBg,
+        },
       ]}
     >
       <Icon name="document-text-outline" size={20} color={textColor} />
@@ -41,7 +53,7 @@ export default AiHintBubble;
 
 const styles = StyleSheet.create({
   container: {
-    maxWidth: "90%",
+    // maxWidth: "90%",
     marginVertical: 8,
     paddingHorizontal: 20,
     paddingVertical: 15,
@@ -54,6 +66,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "500",
     color: "#333",
+    fontFamily: "robotoMedium",
   },
 
   lightStyle: {

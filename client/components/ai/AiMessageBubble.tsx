@@ -25,7 +25,7 @@ const MessageBubble = ({ isSender, message, createdAt }: Message) => {
             {
               flexDirection: "row",
             },
-            isSender ? { alignSelf: "flex-end" } : { alignSelf: "flex-start" },
+            isSender && { alignSelf: "flex-end" },
           ]}
         >
           <View style={[styles.container, styles.sender]}>
@@ -99,12 +99,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 700,
     color: "#333",
+    fontFamily: "robotoMedium",
   },
 
   receiverText: {
     fontSize: 14,
     fontWeight: 700,
     color: Colors.light.btnBgc,
+    fontFamily: "robotoMedium",
   },
   image: {
     width: 180,

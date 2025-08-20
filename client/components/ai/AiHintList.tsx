@@ -16,11 +16,11 @@ const AiHintList = ({
 
   return (
     <ScrollView
-      contentContainerStyle={{ alignItems: "center" }}
+      contentContainerStyle={styles.contentContainerStyle}
       showsVerticalScrollIndicator={false}
     >
-      <View style={{ flex: 1 }}>
-        <View style={{ alignItems: "center", marginTop: 20, marginBottom: 60 }}>
+      <View style={styles.container}>
+        <View style={styles.aiIconContainer}>
           <Image
             style={styles.aiIcon}
             source={require("@/assets/images/ai.gif")}
@@ -49,6 +49,20 @@ const styles = StyleSheet.create({
     // height: 200,
     alignSelf: "center",
     // height: 50,
+  },
+
+  contentContainerStyle: {
+    alignItems: "center",
+  },
+
+  container: {
+    flex: 1,
+  },
+
+  aiIconContainer: {
+    alignItems: "center",
+    marginTop: 20,
+    marginBottom: 60,
   },
 
   hintText: {

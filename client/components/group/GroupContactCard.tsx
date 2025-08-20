@@ -14,10 +14,14 @@ type ChatCardProps = {
   phoneNumber: string;
   isActiveUser?: boolean;
   contactImage: any;
-  onPress: () => void;
+  onPress: (
+    contactName: string,
+    phoneNumber: string,
+    profileImage: string
+  ) => void;
 };
 
-const ContactCard = ({
+const GroupContactCard = ({
   contactName,
   phoneNumber,
   isActiveUser,
@@ -64,7 +68,9 @@ const ContactCard = ({
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={() =>
+        onPress(phoneNumber, contactName, userData?.profilePicture || "")
+      }
       style={({ pressed }) => [
         pressed && { opacity: 0.8 },
         styles.cardContainer,
@@ -120,7 +126,7 @@ const ContactCard = ({
   );
 };
 
-export default ContactCard;
+export default GroupContactCard;
 
 const styles = StyleSheet.create({
   cardContainer: {

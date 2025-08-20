@@ -59,7 +59,7 @@ export const insertContacts = async (
   });
 };
 
-interface IContact {
+export interface IContact {
   id: string;
   name: string;
   phoneNumber: string;
