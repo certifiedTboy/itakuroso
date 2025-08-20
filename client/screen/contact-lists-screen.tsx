@@ -161,11 +161,17 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       };
     }) => (
       <ContactCard
-        contactName={item.name}
+        contactName={item.name[0].toUpperCase() + item.name.slice(1)}
         phoneNumber={item?.phoneNumber}
         isActiveUser={!!item?.roomId}
         contactImage=""
-        roomId={item?.roomId}
+        onPress={() => {
+          navigation.navigate("chat-screen", {
+            contactName: item.name,
+            phoneNumber: item.phoneNumber,
+            roomId: item.roomId,
+          });
+        }}
       />
     ),
     []

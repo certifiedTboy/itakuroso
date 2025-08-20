@@ -1,5 +1,4 @@
 import ContactLastSeen from "@/components/chats/ContactLastSeen";
-import SearchInput from "@/components/contacts/SearchInput";
 import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
@@ -8,10 +7,12 @@ import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdo
 import AIScreen from "@/screen/ai-screen";
 import ChatScreen from "@/screen/chat-screen";
 import ContactListsScreen from "@/screen/contact-lists-screen";
+import NewGroupDetailsScreen from "@/screen/new-group-details-screen";
+import NewGroupScreen from "@/screen/new-group-screen";
 import UserProfileScreen from "@/screen/user-profile-screen";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useContext } from "react";
-import { Text, View } from "react-native";
+import { useContext, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 import "react-native-reanimated";
 import MainTabs from "./tab/main-tabs";
@@ -25,15 +26,13 @@ const Stack = createNativeStackNavigator();
  * it is the main stack tab navigator for the app which contains screens such as chat, status AI and calls screens
  */
 const AuthenticatedStack = () => {
-  const {
-    toggleDropdown,
-    toggleSearchBar,
-    showSearchBar,
-    totalContacts,
-    onSearchQuery,
-    contactSearchQuery,
-    contactIsLoading,
-  } = useContext(ContactScreenDropdownContext);
+  const { totalContacts, onSearchQuery, contactIsLoading } = useContext(
+    ContactScreenDropdownContext
+  );
+
+  const [searchBarIsFocused, setSearchBarIsFocused] = useState(false);
+  const [contactScreenSearchBarIsFocused, setContactScreenSearchBarIsFocused] =
+    useState(false);
 
   const backgroundColor = useThemeColor(
     { light: "#fff", dark: "#000" },
@@ -75,12 +74,18 @@ const AuthenticatedStack = () => {
             return (
               <View
                 style={{
-                  marginLeft: -20,
+                  marginLeft: -30,
                   backgroundColor: backgroundColor,
-                  height: 50,
-                  justifyContent: "center",
+                  gap: 5,
+                  flexDirection: "row",
+                  alignItems: "center",
                 }}
               >
+                <Avatar.Image
+                  size={50}
+                  style={{ backgroundColor: "transparent" }}
+                  source={require("@/assets/images/ai.gif")}
+                />
                 <Text
                   style={{
                     color: titleColor,
@@ -193,68 +198,66 @@ const AuthenticatedStack = () => {
         name="contact-lists-screen"
         component={ContactListsScreen}
         options={({ route }) => ({
+          headerBackVisible: !contactScreenSearchBarIsFocused,
           animation: "slide_from_right",
-          // headerShown: true,
+
+          headerSearchBarOptions: {
+            placeholder: "Search contacts...",
+            onFocus: () => {
+              setContactScreenSearchBarIsFocused(true);
+            },
+            onBlur: () => {
+              setContactScreenSearchBarIsFocused(false);
+            },
+
+            onChangeText: (event) => {
+              onSearchQuery(event.nativeEvent.text);
+            },
+          },
+
           headerTitle: () => (
             <>
-              {!showSearchBar ? (
-                <View
-                  style={{
-                    marginLeft: -20,
-                    // marginRight: 15,
-                    flexDirection: "row",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <View>
-                    <Text
-                      style={{
-                        color: headerTextColor,
-                        fontSize: 14,
-                        fontWeight: "bold",
-                      }}
-                    >
-                      Select Contacts
-                    </Text>
-                    <Text style={{ color: headerTextColor, fontSize: 12 }}>
-                      {totalContacts}
-                    </Text>
-                  </View>
-
-                  <View style={{ flexDirection: "row", gap: 20 }}>
-                    {contactIsLoading && <LoaderSpinner />}
-                    <Icon
-                      name="search"
-                      size={21}
-                      color={headerTextColor}
-                      onPress={() => toggleSearchBar()}
-                    />
-
-                    <Icon
-                      name="ellipsis-vertical"
-                      size={21}
-                      color={headerTextColor}
-                      onPress={() => toggleDropdown()}
-                    />
-                  </View>
+              <View
+                style={{
+                  marginLeft: -20,
+                  // marginRight: 15,
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  <Text
+                    style={{
+                      color: headerTextColor,
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      fontFamily: "robotoMedium",
+                    }}
+                  >
+                    Select Contacts
+                  </Text>
+                  <Text style={{ color: headerTextColor, fontSize: 12 }}>
+                    {totalContacts}
+                  </Text>
                 </View>
-              ) : (
-                <SearchInput
-                  setShowSearch={() => toggleSearchBar()}
-                  showSearchInput={showSearchBar}
-                  onSearchQuery={(text) => onSearchQuery(text)}
-                  searchQuery={contactSearchQuery}
-                />
-              )}
+
+                <View
+                  style={{ flexDirection: "row", gap: 10, marginRight: 20 }}
+                >
+                  {contactIsLoading && <LoaderSpinner />}
+
+                  <Pressable>
+                    <Icon name="refresh" size={21} color={headerTextColor} />
+                  </Pressable>
+                </View>
+              </View>
             </>
           ),
           headerTitleStyle: {
             fontSize: 14,
             fontWeight: "bold",
           },
-
-          headerBackVisible: !showSearchBar,
         })}
       />
 
@@ -267,6 +270,37 @@ const AuthenticatedStack = () => {
           headerStyle: {
             backgroundColor,
           },
+        }}
+      />
+
+      <Stack.Screen
+        name="new-group-screen"
+        component={NewGroupScreen}
+        options={{
+          headerTitle: "New Group",
+          animation: "slide_from_right",
+          headerBackVisible: !searchBarIsFocused,
+          headerSearchBarOptions: {
+            placeholder: "Search...",
+
+            onFocus: () => {
+              setSearchBarIsFocused(true);
+            },
+
+            onBlur: () => {
+              setSearchBarIsFocused(false);
+            },
+          },
+        }}
+      />
+
+      <Stack.Screen
+        name="new-group-details-screen"
+        // @ts-ignore
+        component={NewGroupDetailsScreen}
+        options={{
+          headerTitle: "New Group",
+          animation: "slide_from_right",
         }}
       />
     </Stack.Navigator>
