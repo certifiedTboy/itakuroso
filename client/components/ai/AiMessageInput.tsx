@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { generateDbId } from "@/helpers/chat-helpers";
+import { useKeyboard } from "@/hooks/useKeyboard";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { AiChatContext } from "@/lib/context/aichat-context";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
@@ -43,6 +44,13 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
   const [inputHeight, setInputHeight] = useState(35);
   const inputRef = useRef<TextInput>(null);
   const heightRef = useRef<number>(85);
+
+  const {
+    keyboardVisible,
+    closeKeyboard,
+    keyboardHeight,
+    updateKeyboardHeight,
+  } = useKeyboard();
 
   const { currentUser } = useSelector((state: any) => state.authState);
 
@@ -147,6 +155,12 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
     }
   }, [hintMessage]);
 
+  useEffect(() => {
+    if (keyboardVisible) {
+      setShowEmoji(false);
+    }
+  }, [keyboardVisible]);
+
   /**
    * handleSend is used to send the message to the AI chat.
    * It checks if the message is not empty and then sends it.
@@ -169,79 +183,14 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
 
   const showKeyboard = () => {
     setShowEmoji(false);
-    setTimeout(() => {
-      inputRef.current?.focus();
-    }, 100);
+
+    inputRef.current?.focus();
   };
 
   return (
     <>
       {showEmoji && (
         <View style={styles.emojiContainer}>
-          <View
-            style={[
-              styles.container,
-              {
-                height:
-                  inputHeight < heightRef.current
-                    ? heightRef?.current
-                    : inputHeight,
-
-                backgroundColor: textInputBackgroundColor,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.row,
-                inputHeight > 44
-                  ? { alignItems: "flex-end" }
-                  : { alignItems: "center" },
-              ]}
-            >
-              <TouchableOpacity onPress={() => showKeyboard()}>
-                <MaterialIcons name="keyboard" size={27} color="#B1B1B1FF" />
-              </TouchableOpacity>
-              <TextInput
-                placeholderTextColor={placeholderTextColor}
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: textInputBackgroundColor,
-                    color: textInputColor,
-                    height: inputHeight,
-                  },
-                ]}
-                placeholder="Type a message"
-                value={message}
-                onChangeText={setMessage}
-                onFocus={() => showKeyboard()}
-                editable={!isRecording}
-                selectTextOnFocus={!isRecording}
-                multiline
-                ref={inputRef}
-                onContentSizeChange={(event) =>
-                  event.nativeEvent.contentSize.height < 169
-                    ? setInputHeight(event.nativeEvent.contentSize.height)
-                    : setInputHeight(168)
-                }
-              />
-
-              <View style={{ marginLeft: 5 }}>
-                <TouchableOpacity
-                  onPress={isRecording ? stopRecording : record}
-                >
-                  <MaterialIcons
-                    name={"keyboard-voice"}
-                    size={27}
-                    color={
-                      isRecording ? Colors.light.errorText : Colors.light.btnBgc
-                    }
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
           <EmojiPicker
             expandable={false}
             open={showEmoji}
@@ -250,6 +199,9 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
             }}
             onEmojiSelected={(emoji: EmojiType) =>
               setMessage((prev) => prev + emoji?.emoji)
+            }
+            getKeyboardHeight={(height: number) =>
+              updateKeyboardHeight(height + 50)
             }
             categoryPosition="top"
             theme={{
@@ -286,78 +238,87 @@ const AiMessageInput = ({ hintMessage, getHintMessage }: ChatInputProps) => {
         </View>
       )}
 
-      {!showEmoji && (
-        <View style={[styles.container]}>
-          <View
-            style={[
-              styles.row,
-              inputHeight > 44
-                ? { alignItems: "flex-end" }
-                : { alignItems: "center" },
-            ]}
-          >
-            <>
+      <View
+        style={[
+          styles.container,
+          showEmoji && {
+            position: "absolute",
+            bottom: keyboardHeight - 50,
+            left: 0,
+            right: 0,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.row,
+            inputHeight > 44
+              ? { alignItems: "flex-end" }
+              : { alignItems: "center" },
+          ]}
+        >
+          <>
+            {showEmoji ? (
+              <TouchableOpacity onPress={() => showKeyboard()}>
+                <MaterialIcons name="keyboard" size={27} color="#B1B1B1FF" />
+              </TouchableOpacity>
+            ) : (
               <TouchableOpacity
                 onPress={() => {
                   setShowEmoji(!showEmoji);
+                  closeKeyboard();
                 }}
               >
                 <Ionicons name="happy-outline" size={27} color="#B1B1B1FF" />
               </TouchableOpacity>
-              <TextInput
-                placeholderTextColor={placeholderTextColor}
-                style={[
-                  styles.input,
-                  {
-                    backgroundColor: textInputBackgroundColor,
-                    color: textInputColor,
-                    height: inputHeight,
-                  },
-                ]}
-                placeholder="Type a message"
-                value={message}
-                onChangeText={setMessage}
-                onFocus={() => showKeyboard()}
-                editable={!isRecording}
-                selectTextOnFocus={!isRecording}
-                multiline
-                ref={inputRef}
-                onContentSizeChange={(event) =>
-                  event.nativeEvent.contentSize.height < 169
-                    ? setInputHeight(event.nativeEvent.contentSize.height)
-                    : setInputHeight(168)
-                }
-              />
+            )}
+            <TextInput
+              placeholderTextColor={placeholderTextColor}
+              style={[
+                styles.input,
+                {
+                  backgroundColor: textInputBackgroundColor,
+                  color: textInputColor,
+                  height: inputHeight,
+                },
+              ]}
+              placeholder="Type a message"
+              value={message}
+              onChangeText={setMessage}
+              onFocus={() => showKeyboard()}
+              editable={!isRecording}
+              selectTextOnFocus={!isRecording}
+              multiline
+              ref={inputRef}
+              onContentSizeChange={(event) =>
+                event.nativeEvent.contentSize.height < 169
+                  ? setInputHeight(event.nativeEvent.contentSize.height)
+                  : setInputHeight(168)
+              }
+            />
 
-              <View style={{ marginLeft: 5 }}>
-                {message && message.trim().length > 0 ? (
-                  <TouchableOpacity onPress={async () => await handleSend()}>
-                    <Ionicons
-                      name="send"
-                      size={27}
-                      color={Colors.light.btnBgc}
-                    />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity
-                    onPress={isRecording ? stopRecording : record}
-                  >
-                    <MaterialIcons
-                      name="keyboard-voice"
-                      size={27}
-                      color={
-                        isRecording
-                          ? Colors.light.errorText
-                          : Colors.light.btnBgc
-                      }
-                    />
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          </View>
+            <View style={{ marginLeft: 5 }}>
+              {message && message.trim().length > 0 ? (
+                <TouchableOpacity onPress={async () => await handleSend()}>
+                  <Ionicons name="send" size={27} color={Colors.light.btnBgc} />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={isRecording ? stopRecording : record}
+                >
+                  <MaterialIcons
+                    name="keyboard-voice"
+                    size={27}
+                    color={
+                      isRecording ? Colors.light.errorText : Colors.light.btnBgc
+                    }
+                  />
+                </TouchableOpacity>
+              )}
+            </View>
+          </>
         </View>
-      )}
+      </View>
     </>
   );
 };

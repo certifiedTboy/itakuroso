@@ -61,6 +61,14 @@ export const chatApis = createApi({
         method: "DELETE",
       }),
     }),
+
+    createGroupChat: builder.mutation({
+      query: (payload) => ({
+        url: "/chats/create",
+        method: "POST",
+        body: payload,
+      }),
+    }),
   }),
 });
 
@@ -69,4 +77,5 @@ export const {
   useGetChatsByRoomIdMutation,
   useUploadFileMutation,
   useDeleteFileMutation,
+  useCreateGroupChatMutation,
 } = chatApis;

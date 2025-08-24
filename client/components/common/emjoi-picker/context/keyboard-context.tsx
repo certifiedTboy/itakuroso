@@ -95,6 +95,7 @@ export type KeyboardProps = {
   selectedEmojis?: string[] | false;
   enableCategoryChangeGesture?: boolean;
   emojisByCategory?: EmojisByCategory[];
+  getKeyboardHeight?: (height: number) => void;
 };
 export type ContextValues = {
   activeCategoryIndex: number;
@@ -194,6 +195,7 @@ export const defaultKeyboardContext: Required<KeyboardProps> & {
   selectedEmojis: false,
   enableCategoryChangeGesture: true,
   emojisByCategory: emojisByCategory as EmojisByCategory[],
+  getKeyboardHeight: (height: number) => {},
 };
 
 export const defaultKeyboardValues: ContextValues = {

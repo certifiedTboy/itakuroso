@@ -17,7 +17,8 @@ type ChatCardProps = {
   onPress: (
     contactName: string,
     phoneNumber: string,
-    profileImage: string
+    profileImage: string,
+    id: string
   ) => void;
 };
 
@@ -69,7 +70,12 @@ const GroupContactCard = ({
   return (
     <Pressable
       onPress={() =>
-        onPress(phoneNumber, contactName, userData?.profilePicture || "")
+        onPress(
+          phoneNumber,
+          contactName,
+          userData?.profilePicture || "",
+          userData?.id!
+        )
       }
       style={({ pressed }) => [
         pressed && { opacity: 0.8 },

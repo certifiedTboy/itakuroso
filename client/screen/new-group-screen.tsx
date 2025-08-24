@@ -13,7 +13,7 @@ import { useSelector } from "react-redux";
 const NewGroupScreen = () => {
   const [contacts, setContacts] = useState<IContact[]>([]);
   const [groupContacts, setGroupContacts] = useState<
-    { phoneNumber: string; name: string; profileImage: string }[]
+    { id: string; phoneNumber: string; name: string; profileImage: string }[]
   >([]);
 
   const { currentUser } = useSelector((state: any) => state.authState);
@@ -49,13 +49,14 @@ const NewGroupScreen = () => {
   const addContactToGroupList = (
     phoneNumber: string,
     name: string,
-    profileImage: string
+    profileImage: string,
+    id: string
   ) => {
     setGroupContacts((prev) => {
       if (prev.some((c) => c.phoneNumber === phoneNumber)) {
         return prev;
       }
-      return [...prev, { phoneNumber, name, profileImage }];
+      return [...prev, { phoneNumber, name, profileImage, id }];
     });
   };
 
