@@ -1,4 +1,10 @@
-import { IsString, IsNotEmpty, IsOptional, IsObject } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsObject,
+  IsArray,
+} from 'class-validator';
 
 export class CreateRoomDto {
   @IsString()
@@ -17,13 +23,9 @@ export class CreateRoomDto {
   @IsOptional()
   readonly roomImage?: string;
 
-  @IsString()
+  @IsArray()
   @IsOptional()
-  readonly currentUserId: string;
-
-  @IsString()
-  @IsOptional()
-  readonly otherUserId: string;
+  readonly members: string[];
 
   @IsObject()
   @IsOptional()

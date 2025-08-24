@@ -119,10 +119,16 @@ export class ChatGateway
        * create a new room for the user
        */
 
+      if (!currentUser) {
+        return;
+      }
+
       await this.chatService.createRoom({
         roomId,
-        currentUserId: currentUser ? currentUser._id.toString() : '',
-        otherUserId: userWithPhoneExist && userWithPhoneExist._id.toString(),
+        members: [
+          currentUser._id.toString(),
+          userWithPhoneExist._id.toString(),
+        ],
         roomName: '',
         roomLink: '',
         roomImage: '',

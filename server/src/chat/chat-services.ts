@@ -196,7 +196,7 @@ export class ChatService {
   async createRoom(createRoomDto: CreateRoomDto) {
     const userData = {
       ...createRoomDto,
-      members: [createRoomDto.currentUserId, createRoomDto.otherUserId],
+      members: createRoomDto.members,
     };
 
     const createdRoom = new this.roomModel(userData);

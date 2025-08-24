@@ -18,6 +18,7 @@ export const EmojiPicker = ({
   expandable = defaultKeyboardContext.expandable,
   defaultHeight = defaultKeyboardContext.defaultHeight,
   allowMultipleSelections = false,
+  getKeyboardHeight,
   ...props
 }: KeyboardProps) => {
   const { height: screenHeight } = useWindowDimensions();
@@ -35,7 +36,7 @@ export const EmojiPicker = ({
     Animated.timing(additionalHeight, {
       toValue: newAdditionalHeightValue,
       useNativeDriver: false,
-      duration: 50,
+      duration: 10,
     }).start();
   }, [additionalHeight, isExpanded, keyboardHeight, keyboardVisible]);
 
@@ -72,6 +73,10 @@ export const EmojiPicker = ({
           />
         )}
         <Animated.View
+          onLayout={(event) => {
+            const { height } = event.nativeEvent.layout;
+            getKeyboardHeight && getKeyboardHeight(height);
+          }}
           style={[
             {
               height: Animated.add(
