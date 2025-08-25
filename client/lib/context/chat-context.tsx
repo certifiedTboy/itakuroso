@@ -1,3 +1,4 @@
+import { loadContacts, loadUsersGroups } from "@/helpers/contact-helpers";
 import {
   deleteChatById,
   insertChat,
@@ -5,6 +6,7 @@ import {
   markDbMessagesAsRead,
 } from "@/helpers/database/chats";
 import { updateRoomLastMessageId } from "@/helpers/database/contacts";
+import { insertGroupChat } from "@/helpers/database/group-chat";
 import { updateUserProfilePicture } from "@/helpers/database/user";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
@@ -12,6 +14,7 @@ import { useSelector } from "react-redux";
 import { io } from "socket.io-client";
 import { useDeleteFileMutation } from "../apis/chat-apis";
 import type { ChatContextType } from "./chat-context-types";
+
 const API_URL = process.env.EXPO_PUBLIC_SOCKET_URL;
 
 export const ChatContext = createContext<ChatContextType>({
@@ -69,11 +72,20 @@ export const ChatContext = createContext<ChatContextType>({
     profilePicture: string,
     currentUserId: string
   ) => {},
+
+  handleCreateGroupChat: (newGroupData: {
+    groupName: string;
+    groupImage: string;
+    members: string[];
+    roomId: string;
+  }) => {},
+  contactIsLoaded: false,
 });
 
 const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   const socket = useRef(io(API_URL));
   const isConntectedRef = useRef(false);
+
   /**
    * chat message state data
    */
@@ -91,6 +103,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   const [deleteFile] = useDeleteFileMutation();
 
   const [isTyping, setIsTyping] = useState(false);
+  const [contactIsLoaded, setContactIsLoaded] = useState(false);
 
   /**
    * network info state data
@@ -105,9 +118,13 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const currentSocket = socket.current;
     currentSocket.on("connected", () => {
-      if (currentUser) {
-        currentSocket.emit("userOnline", currentUser);
-      }
+      // load all existing contacts
+      (async () => {
+        setContactIsLoaded(true);
+        await loadContacts();
+        await loadUsersGroups();
+        setContactIsLoaded(false);
+      })();
     });
 
     return () => {
@@ -223,6 +240,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket.current;
 
     currentSocket.on("message", (message: any) => {
+      console.log("New message received:", message);
       // setTriggerCount((prevCount) => prevCount + 1);
       setSocketMessages((prevMessages) => [
         {
@@ -311,6 +329,24 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket]);
 
+  useEffect(() => {
+    const currentSocket = socket?.current;
+    let timer: NodeJS.Timeout;
+    if (!contactIsLoaded) {
+      timer = setTimeout(() => {
+        currentSocket.emit("fetchQueueMessages", {
+          ...currentUser,
+          from: "user logged in",
+        });
+      }, 2000);
+    }
+
+    return () => {
+      clearTimeout(timer);
+      currentSocket.off("fetchQueueMessages");
+    };
+  }, [contactIsLoaded]);
+
   /**
    * network status effect
    * helps update current user status if online or offline
@@ -319,17 +355,23 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket?.current;
     if (networkInfo && networkInfo.isConnected) {
       if (currentUser) {
-        currentSocket.emit("userOnline", currentUser);
+        currentSocket.emit("fetchQueueMessages", {
+          ...currentUser,
+          from: "network connection",
+        });
       }
     } else {
       if (currentUser) {
         isConntectedRef.current = false;
-        currentSocket.emit("userOffline", currentUser);
+        currentSocket.emit("userOffline", {
+          ...currentUser,
+          from: "network disconnection",
+        });
       }
     }
 
     return () => {
-      currentSocket.off("userOnline");
+      currentSocket.off("fetchQueueMessages");
       currentSocket.off("userOffline");
     };
   }, [networkInfo.isConnected, networkInfo.type, currentUser, socket]);
@@ -508,6 +550,36 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [socket]);
 
+  /**
+   * emit an event to server for new group creation
+   */
+  const handleCreateGroupChat = (newGroupData: {
+    groupName: string;
+    groupImage: string;
+    members: string[];
+    roomId: string;
+  }) => {
+    socket.current.emit("createGroupChat", newGroupData);
+  };
+
+  /**
+   * listen to create group chat event to update all users added to the group
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("groupChatCreated", (newGroupData: any) => {
+      (async () => {
+        // insert the new group chat into the database
+        await insertGroupChat(newGroupData.data);
+      })();
+    });
+
+    return () => {
+      currentSocket.off("groupChatCreated");
+    };
+  }, [socket]);
+
   const value = {
     messages: socketMessages,
     joinRoom,
@@ -522,6 +594,8 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     handleDeleteMessageForEveryone,
     triggerUserOfflineStatus,
     handleUpdateUserProfilePicture,
+    handleCreateGroupChat,
+    contactIsLoaded,
   };
 
   // @ts-ignore

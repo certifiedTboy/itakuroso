@@ -227,10 +227,31 @@ export class ChatService {
     const rooms = await this.roomModel
       .find({
         members: { $all: [userId] },
+        type: 'private',
       })
       .populate({
         path: 'members',
         select: '-passcode -verificationCode -verificationCodeExpiresIn -__v',
+      })
+      .exec();
+
+    return rooms;
+  }
+
+  /**
+   * @method getGroupChatsByUser
+   * @description Retrieves all group chats associated with the current user.
+   * @param {string} userId - The ID of the user whose group chats are to be retrieved.
+   */
+  async getGroupChatsByUser(userId: string) {
+    const rooms = await this.roomModel
+      .find({
+        members: { $all: [userId] },
+        type: 'group',
+      })
+      .populate({
+        path: 'members',
+        select: 'phoneNumber -_id',
       })
       .exec();
 

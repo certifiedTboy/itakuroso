@@ -18,8 +18,16 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { SceneMap, TabView } from "react-native-tab-view";
 
-const MainTabs = () => {
-  const [index, setIndex] = useState(0);
+type MainTabsProps = {
+  route: {
+    params: {
+      index: number;
+    };
+  };
+};
+
+const MainTabs = ({ route }: MainTabsProps) => {
+  const [index, setIndex] = useState(route?.params?.index || 0);
 
   const renderScene = SceneMap({
     chats: AllChatsScreen,
@@ -75,8 +83,6 @@ const MainTabs = () => {
       },
     }),
   };
-
-  // console.log(currentRouteName);
 
   return (
     <SafeAreaView

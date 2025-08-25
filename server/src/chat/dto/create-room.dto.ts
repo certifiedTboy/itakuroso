@@ -17,6 +17,10 @@ export class CreateRoomDto {
 
   @IsString()
   @IsOptional()
+  readonly type?: string;
+
+  @IsString()
+  @IsOptional()
   readonly roomLink?: string;
 
   @IsString()

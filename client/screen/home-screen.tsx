@@ -4,6 +4,7 @@ import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
 import { createChatTable } from "@/helpers/database/chats";
 import { createContactTable } from "@/helpers/database/contacts";
+import { createGroupChatTable } from "@/helpers/database/group-chat";
 import { createRoomIdTable } from "@/helpers/database/room";
 import { createUserProfileTable } from "@/helpers/database/user";
 import { useThemeColor } from "@/hooks/useThemeColor";
@@ -44,6 +45,7 @@ const HomeScreen = ({ navigation }: HomeScreenInterface) => {
         await createChatTable();
         await createRoomIdTable();
         await createUserProfileTable();
+        await createGroupChatTable();
       };
 
       onCreateContactTable();

@@ -47,7 +47,10 @@ export class ChatControllers {
   @Post('create')
   async createRoom(@Body() createRoomDto: CreateRoomDto) {
     try {
-      const result = await this.chatService.createRoom(createRoomDto);
+      const result = await this.chatService.createRoom({
+        ...createRoomDto,
+        type: 'group',
+      });
 
       return ResponseHandler.ok(
         201,
@@ -77,6 +80,34 @@ export class ChatControllers {
 
       if (currentUser) {
         const rooms = await this.chatService.getAllRoomsByUser(
+          currentUser?._id,
+        );
+
+        return ResponseHandler.ok(200, 'Rooms retrieved successfully', rooms);
+      }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        throw new BadRequestException('', {
+          cause: error.cause,
+          description: error.message,
+        });
+      }
+      throw new InternalServerErrorException('An unexpected error occurred');
+    }
+  }
+
+  /**
+   * @method getCurrentUserGroupsChats
+   * @description Retrieves all group chats associated with the current user
+   * @param {Request} req - The request object containing user information.
+   */
+  @Get('groups')
+  async getCurrentUserGroupsChats(@Req() req: Request) {
+    try {
+      const currentUser = req.user;
+
+      if (currentUser) {
+        const rooms = await this.chatService.getGroupChatsByUser(
           currentUser?._id,
         );
 

@@ -1,23 +1,36 @@
 import { DeleteButton } from "@/components/common/emjoi-picker/DeleteButton";
 import { EmojiPicker } from "@/components/common/emjoi-picker/EmojiPicker";
 import { EmojiType } from "@/components/common/emjoi-picker/types";
+import Notification from "@/components/common/Notification";
 import GroupDetailsContactList from "@/components/group/GroupDetailsContactList";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import { ThemedView } from "@/components/ThemedView";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
+import { generateDbId } from "@/helpers/chat-helpers";
+import { showNotification } from "@/helpers/notification";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useCreateGroupChatMutation } from "@/lib/apis/chat-apis";
-import { Ionicons, MaterialIcons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import { useEffect, useRef, useState } from "react";
 import {
+  useCreateGroupChatMutation,
+  useDeleteFileMutation,
+  useUploadFileMutation,
+} from "@/lib/apis/chat-apis";
+import { ChatContext } from "@/lib/context/chat-context";
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
+import { useContext, useEffect, useRef, useState } from "react";
+
+import {
+  Platform,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+
 import { Avatar } from "react-native-paper";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
@@ -41,6 +54,7 @@ const NewGroupDetailsScreen = ({
   const [groupProfileImage, setGroupProfileImage] = useState<string | null>(
     null
   );
+  const [publicId, setPublicId] = useState<string>("");
 
   const [groupName, setGroupName] = useState<string>("");
   const [members, setMembers] = useState<string[]>([]);
@@ -48,8 +62,25 @@ const NewGroupDetailsScreen = ({
 
   const { keyboardVisible, closeKeyboard } = useKeyboard();
 
-  const [createGroupChat, { isLoading, isSuccess, error }] =
+  const navigation = useNavigation();
+
+  const { handleCreateGroupChat } = useContext(ChatContext);
+
+  const [createGroupChat, { isLoading, isSuccess, error, data }] =
     useCreateGroupChatMutation();
+
+  const [
+    uploadFile,
+    {
+      isLoading: fileUploadIsLoading,
+      isSuccess: fileUploadIsSuccess,
+      error: fileUploadError,
+      data: fileUploadData,
+    },
+  ] = useUploadFileMutation();
+
+  const [deleteFile, { isSuccess: fileDeletedSuccess }] =
+    useDeleteFileMutation();
 
   const inputRef = useRef<TextInput>(null);
 
@@ -99,7 +130,19 @@ const NewGroupDetailsScreen = ({
   const handleImagePick = async () => {
     const result = await ImagePicker.launchImageLibraryAsync();
     if (!result.canceled) {
-      setGroupProfileImage(result.assets[0].uri);
+      const asset = result.assets[0];
+
+      const formData = new FormData();
+      formData.append("file", {
+        uri:
+          Platform.OS === "android"
+            ? asset.uri
+            : asset.uri.replace("file://", ""),
+        name: asset?.fileName,
+        type: asset.mimeType,
+      } as any);
+
+      uploadFile(formData);
     }
   };
 
@@ -110,12 +153,70 @@ const NewGroupDetailsScreen = ({
     }, 70);
   };
 
+  /**
+   * update file url and public id after pre-uploading a file
+   */
+  useEffect(() => {
+    if (fileUploadIsSuccess && fileUploadData?.data?.secureUrl) {
+      setGroupProfileImage(fileUploadData?.data?.secureUrl);
+      setPublicId(fileUploadData?.data?.publicId);
+    }
+  }, [fileUploadIsSuccess]);
+
+  useEffect(() => {
+    if (isSuccess) {
+      handleCreateGroupChat({
+        groupName,
+        groupImage: groupProfileImage || " ",
+        members: [...members, currentUser._id],
+        roomId: data.data.roomId,
+      });
+
+      navigation.navigate("group-chat-screen" as never);
+    }
+  }, [isSuccess]);
+
+  /**
+   * reset imageUri and publicId after file deletion is successful
+   * this is to ensure that the image preview is removed from the UI
+   */
+  useEffect(() => {
+    if (fileDeletedSuccess) {
+      setGroupProfileImage("");
+      setPublicId("");
+    }
+  }, [fileDeletedSuccess]);
+
+  useEffect(() => {
+    if (error) {
+      showNotification({
+        // @ts-ignore
+        title: error?.data?.message || "something went wrong",
+        message: "",
+        type: "error",
+      });
+    }
+  }, [error]);
+
+  const onCreateGroupChat = () => {
+    if (!groupName) return;
+    createGroupChat({
+      members: [...members, currentUser._id],
+      roomName: groupName,
+      roomImage: groupProfileImage,
+      roomId: generateDbId(),
+    });
+  };
+
   return (
     <SafeAreaView
       style={[{ backgroundColor: safeAreaBackground }, styles.container]}
       edges={["right"]}
     >
       <ThemedView darkColor={Colors.dark.bgc} lightColor={Colors.light.bgc}>
+        <View style={{ zIndex: 1000 }}>
+          <Notification />
+        </View>
         {/* <ScrollView contentContainerStyle={styles.contentContainerStyle}> */}
         <View style={styles.inputContainer}>
           {!groupProfileImage ? (
@@ -123,10 +224,16 @@ const NewGroupDetailsScreen = ({
               style={styles.imagePickerIcon}
               onPress={handleImagePick}
             >
-              <Ionicons name="images" size={20} color="#B1B1B1FF" />
+              {fileUploadIsLoading ? (
+                <LoaderSpinner />
+              ) : (
+                <Ionicons name="images" size={20} color="#B1B1B1FF" />
+              )}
             </TouchableOpacity>
           ) : (
-            <TouchableOpacity onPress={handleImagePick}>
+            <TouchableOpacity
+              onPress={() => deleteFile(publicId.split("/").pop())}
+            >
               <Avatar.Image size={45} source={{ uri: groupProfileImage }} />
             </TouchableOpacity>
           )}
@@ -218,14 +325,19 @@ const NewGroupDetailsScreen = ({
             ]}
           />
         )}
-        <FloatingBtn
-          onNavigate={() =>
-            // @ts-ignore
-            navigation.navigate("new-group-details-screen", { groupContacts })
-          }
-          iconName="check-circle"
-          style={styles.floatingBtn}
-        />
+        {!isLoading ? (
+          <FloatingBtn
+            onNavigate={onCreateGroupChat}
+            iconName="check-circle"
+            style={styles.floatingBtn}
+          />
+        ) : (
+          <View style={styles.loadingContainer}>
+            <View style={styles.loader}>
+              <LoaderSpinner color="#EADCEEFF" size="small" />
+            </View>
+          </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -288,7 +400,24 @@ const styles = StyleSheet.create({
     position: "absolute",
     margin: 16,
     right: 0,
-    bottom: 0,
+    bottom: 50,
     zIndex: 100,
+  },
+
+  loadingContainer: {
+    position: "absolute",
+    margin: 16,
+    right: 0,
+    bottom: 50,
+    zIndex: 100,
+    backgroundColor: "#EADCEEFF",
+    padding: 15,
+    borderRadius: 15,
+  },
+
+  loader: {
+    backgroundColor: "#14001AFF",
+    padding: 2,
+    borderRadius: 50,
   },
 });
