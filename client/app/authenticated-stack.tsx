@@ -1,18 +1,17 @@
 import ContactLastSeen from "@/components/chats/ContactLastSeen";
-import LoaderSpinner from "@/components/spinner/LoaderSpinner";
-import Icon from "@/components/ui/Icon";
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdown-context";
 import AIScreen from "@/screen/ai-screen";
 import ChatScreen from "@/screen/chat-screen";
 import ContactListsScreen from "@/screen/contact-lists-screen";
+import GroupChatScreen from "@/screen/group-chat-screen";
 import NewGroupDetailsScreen from "@/screen/new-group-details-screen";
 import NewGroupScreen from "@/screen/new-group-screen";
 import UserProfileScreen from "@/screen/user-profile-screen";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useContext, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 import "react-native-reanimated";
 import MainTabs from "./tab/main-tabs";
@@ -26,7 +25,7 @@ const Stack = createNativeStackNavigator();
  * it is the main stack tab navigator for the app which contains screens such as chat, status AI and calls screens
  */
 const AuthenticatedStack = () => {
-  const { totalContacts, onSearchQuery, contactIsLoading } = useContext(
+  const { totalContacts, onSearchQuery } = useContext(
     ContactScreenDropdownContext
   );
 
@@ -60,6 +59,7 @@ const AuthenticatedStack = () => {
         options={() => ({
           headerShown: false,
         })}
+        // @ts-ignore
         component={MainTabs}
       />
 
@@ -241,16 +241,6 @@ const AuthenticatedStack = () => {
                     {totalContacts}
                   </Text>
                 </View>
-
-                <View
-                  style={{ flexDirection: "row", gap: 10, marginRight: 20 }}
-                >
-                  {contactIsLoading && <LoaderSpinner />}
-
-                  <Pressable>
-                    <Icon name="refresh" size={21} color={headerTextColor} />
-                  </Pressable>
-                </View>
               </View>
             </>
           ),
@@ -300,6 +290,14 @@ const AuthenticatedStack = () => {
         component={NewGroupDetailsScreen}
         options={{
           headerTitle: "New Group",
+          animation: "slide_from_right",
+        }}
+      />
+      <Stack.Screen
+        name="group-chat-screen"
+        component={GroupChatScreen}
+        options={{
+          headerTitle: "Group Chat",
           animation: "slide_from_right",
         }}
       />

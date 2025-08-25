@@ -1,17 +1,17 @@
 import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { useThemeColor } from "@/hooks/useThemeColor";
 import { useGetCurrentUserMutation } from "@/lib/apis/userApis";
+import { ChatContext } from "@/lib/context/chat-context";
 import { DropdownContext } from "@/lib/context/dropdown-context";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect, useNavigation } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-
 import {
   FlatList,
   Image,
@@ -21,6 +21,7 @@ import {
   View,
 } from "react-native";
 import { Searchbar } from "react-native-paper";
+import { useSelector } from "react-redux";
 
 type AllChatsScreenInterface = {
   navigation: NativeStackNavigationProp<any>;
@@ -34,6 +35,8 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   >([]);
 
   const [getCurrentUser] = useGetCurrentUserMutation();
+
+  const { contactIsLoaded } = useContext(ChatContext);
 
   const [rooms, setRooms] = useState<
     {
@@ -98,7 +101,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           );
         }
       })();
-    }, [currentUser])
+    }, [currentUser, contactIsLoaded])
   );
 
   useEffect(() => {
@@ -213,6 +216,13 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         style={styles.floatingBtn}
       />
       <MenuDropdown options={options} />
+      {contactIsLoaded && (
+        <View
+          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+        >
+          <LoaderSpinner />
+        </View>
+      )}
       <View style={styles.contianer}>
         <Searchbar
           iconColor={textColor}
@@ -238,7 +248,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           // @ts-ignore
           data={rooms}
           renderItem={RenderedCard}
-          keyExtractor={(item) => item.roomId}
+          keyExtractor={(item) => item.phoneNumber}
           numColumns={1}
           scrollEventThrottle={16} // Improves performance
           // onEndReached={handleEndReached} // Trigger when reaching the end

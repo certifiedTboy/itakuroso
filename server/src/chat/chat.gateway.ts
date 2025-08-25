@@ -129,11 +129,35 @@ export class ChatGateway
           currentUser._id.toString(),
           userWithPhoneExist._id.toString(),
         ],
+        type: 'private',
         roomName: '',
         roomLink: '',
         roomImage: '',
       });
     }
+  }
+
+  @SubscribeMessage('createGroupChat')
+  async handleCreateGroupChat(
+    @MessageBody()
+    data: {
+      roomId: string;
+      members: string[];
+      roomName?: string;
+      roomLink?: string;
+      roomImage?: string;
+    },
+    @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId } = data;
+
+    await client.join(roomId);
+
+    // Notify the client of successful creation
+    this.server.to(roomId).emit('groupChatCreated', {
+      message: 'Group chat created successfully',
+      data: { ...data, id: data?.roomId },
+    });
   }
 
   @SubscribeMessage('joinAiRoom')
@@ -155,13 +179,22 @@ export class ChatGateway
    * @description Handles listening event when a user comes online.
    * @param {Object} currentUserData - The data of the current user.
    */
-  @SubscribeMessage('userOnline')
-  async handleUserOnline(
+  @SubscribeMessage('fetchQueueMessages')
+  async handleFetchQueueMessages(
     @MessageBody()
-    currentUserData: { _id: string; phoneNumber: string; email: string },
+    currentUserData: {
+      _id: string;
+      phoneNumber: string;
+      email: string;
+      from: string;
+    },
     @ConnectedSocket() client: Socket,
   ) {
-    if (currentUserData.phoneNumber && currentUserData.email) {
+    if (
+      currentUserData.phoneNumber &&
+      currentUserData.email &&
+      currentUserData.from === 'user logged in'
+    ) {
       /**
        * add current user to active user pool
        */
@@ -186,13 +219,19 @@ export class ChatGateway
         while (userMessageQueue.size > 0) {
           const message = userMessageQueue.dequeue();
           if (message) {
+            await client.join(message.roomId);
+            //          const user = this.chatService.userJoin({
+            //   contactName: currentUserId.email,
+            //   roomId,
+            //   phoneNumber: currentUserId.phoneNumber,
+            // });
             if (message.content === 'delete message') {
-              client.to(message.roomId).emit('deleteEveryoneMessage', {
+              this.server.to(message.roomId).emit('deleteEveryoneMessage', {
                 chatId: message.chatId,
                 roomId: message.roomId,
               });
             } else {
-              client.to(message.roomId).emit(
+              this.server.to(message.roomId).emit(
                 'message',
                 ChatHelpers.messageResponse(
                   message.content,

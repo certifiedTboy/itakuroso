@@ -1,7 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { getUserProfileById } from "@/helpers/database/user";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetUserProfileMutation } from "@/lib/apis/userApis";
 import { useEffect, useState } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
@@ -33,7 +32,6 @@ const ContactCard = ({
     profilePicture: string;
   }>();
 
-  const [getUserProfile, { data }] = useGetUserProfileMutation();
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
@@ -49,18 +47,9 @@ const ContactCard = ({
       if (phoneNumber) {
         const localUserProfile = await getUserProfileById(phoneNumber);
         setUserData(localUserProfile);
-        if (!localUserProfile) {
-          await getUserProfile(phoneNumber);
-        }
       }
     })();
   }, [phoneNumber]);
-
-  useEffect(() => {
-    if (data && data?.data) {
-      setUserData(data.data);
-    }
-  }, [data]);
 
   return (
     <Pressable

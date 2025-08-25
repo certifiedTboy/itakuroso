@@ -56,6 +56,14 @@ export type ChatContextType = {
   ) => Promise<void>;
 
   triggerUserOfflineStatus: () => void;
+  handleCreateGroupChat: (newGroupData: {
+    groupName: string;
+    groupImage: string;
+    members: string[];
+    roomId: string;
+  }) => void;
+
+  contactIsLoaded: boolean;
 };
 
 export type AiChatContextType = {

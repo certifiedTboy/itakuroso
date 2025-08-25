@@ -1,9 +1,5 @@
 import { Colors } from "@/constants/Colors";
-import { getUserProfileById } from "@/helpers/database/user";
 import { useThemeColor } from "@/hooks/useThemeColor";
-import { useGetUserProfileMutation } from "@/lib/apis/userApis";
-import { useNavigation } from "@react-navigation/native";
-import { useEffect, useState } from "react";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 
@@ -11,40 +7,26 @@ import { ThemedText } from "../ThemedText";
 import Icon from "../ui/Icon";
 
 type ChatCardProps = {
-  contactName: string;
-  phoneNumber: string;
+  groupName: string;
+  groupImage: string;
   message?: string;
   containsFile?: boolean;
   roomId: string;
   isSender?: boolean;
   isRead?: boolean;
-  senderId: string;
   onNavigate?: () => void;
 };
 
-const ChatCard = ({
-  contactName,
-  phoneNumber,
+const GroupChatCard = ({
+  groupName,
+  groupImage,
   message,
   roomId,
   isRead,
   containsFile,
   onNavigate,
   isSender,
-  senderId,
 }: ChatCardProps) => {
-  const [userData, setUserData] = useState<{
-    id: string;
-    phoneNumber: string;
-    isOnline: boolean;
-    lastSeen: Date;
-    isActive: boolean;
-    profilePicture: string;
-  }>();
-  const navigation = useNavigation();
-
-  const [getUserProfile, { data }] = useGetUserProfileMutation();
-
   const { width } = Dimensions.get("window");
 
   const cardBg = useThemeColor(
@@ -57,37 +39,19 @@ const ChatCard = ({
     "text"
   );
 
-  useEffect(() => {
-    (async () => {
-      if (phoneNumber) {
-        const localUserProfile = await getUserProfileById(phoneNumber);
-        setUserData(localUserProfile);
-        if (!localUserProfile) {
-          await getUserProfile(phoneNumber);
-        }
-      }
-    })();
-  }, [phoneNumber]);
-
-  useEffect(() => {
-    if (data && data?.data) {
-      setUserData(data.data);
-    }
-  }, [data]);
-
   return (
     <Pressable
       onPress={() => {
         // @ts-ignore
         navigation.navigate("chat-screen", {
-          contactName,
-          phoneNumber,
-          roomId,
-          senderId,
-          isRead,
-          lastSeen: userData?.lastSeen,
-          profileImage: userData?.profilePicture,
-          isOnline: userData?.isOnline,
+          //   contactName,
+          //   phoneNumber,
+          //   roomId,
+          //   senderId,
+          //   isRead,
+          //   lastSeen: userData?.lastSeen,
+          //   profileImage: userData?.profilePicture,
+          //   isOnline: userData?.isOnline,
         });
       }}
       style={({ pressed }) => [
@@ -98,20 +62,19 @@ const ChatCard = ({
     >
       {/* Image + Sender/Message Block */}
       <View style={styles.leftContainer}>
-        {userData?.profilePicture ? (
-          <Avatar.Image size={50} source={{ uri: userData?.profilePicture }} />
+        {groupImage ? (
+          <Avatar.Image size={50} source={{ uri: groupImage }} />
         ) : (
           <Avatar.Text
             size={50}
-            label={contactName && contactName![0].charAt(0).toUpperCase()}
+            label={groupName && groupName![0].charAt(0).toUpperCase()}
             style={{ backgroundColor: Colors.light.btnBgc }}
           />
         )}
         <View style={[{ maxWidth: width * 0.62 }, styles.textContainer]}>
           <ThemedText style={styles.sender}>
-            {(contactName &&
-              contactName.charAt(0).toUpperCase() + contactName.slice(1)) ||
-              (phoneNumber && phoneNumber)}
+            {groupName &&
+              groupName.charAt(0).toUpperCase() + groupName.slice(1)}
           </ThemedText>
           <View style={styles.messageRow}>
             {/* <Icon name="checkmark-done-outline" size={14} color="#969494FF" /> */}
@@ -146,7 +109,7 @@ const ChatCard = ({
               />
             </View>
           )}
-          {!isRead && message && isSender && (
+          {!isRead && isSender && (
             <View style={styles.counter}>
               <ThemedText style={styles.counterText}></ThemedText>
             </View>
@@ -157,7 +120,7 @@ const ChatCard = ({
   );
 };
 
-export default ChatCard;
+export default GroupChatCard;
 
 const styles = StyleSheet.create({
   cardContainer: {
@@ -211,9 +174,6 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#fff",
     textAlign: "center",
-    // lineHeight: 50, // Center vertically
-    // width: 50,
-    // height: 50,
     borderRadius: 25, // Make it circular
   },
   sender: {

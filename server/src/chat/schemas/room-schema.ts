@@ -21,6 +21,9 @@ export class Room {
   roomLinik: string;
 
   @Prop()
+  type: string;
+
+  @Prop()
   roomImage: string;
 
   @Prop({ type: Object })

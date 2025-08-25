@@ -1,7 +1,7 @@
 import Notification from "@/components/common/Notification";
 import ContactCard from "@/components/contacts/ContactCard";
-import ContactScreenDropdown from "@/components/dropdown/ContactScreenDropdown";
 import { ThemedView } from "@/components/ThemedView";
+import { Colors } from "@/constants/Colors";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { showNotification } from "@/helpers/notification";
@@ -10,7 +10,7 @@ import { ContactScreenDropdownContext } from "@/lib/context/contactscreen-dropdo
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useContext, useEffect, useState } from "react";
-import { FlatList, StyleSheet, View } from "react-native";
+import { FlatList, RefreshControl, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useSelector } from "react-redux";
@@ -31,8 +31,8 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   const {
     updateTotalContacts,
     contactSearchQuery,
-    toggleDropdown,
     onContactLoading,
+    contactIsLoading,
   } = useContext(ContactScreenDropdownContext);
 
   const { currentUser } = useSelector((state: any) => state.authState);
@@ -40,6 +40,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
   const safeAreaBackground = useThemeColor(
     { light: "#fff", dark: "#000" },
     "background"
+  );
+
+  const loaderColor = useThemeColor(
+    { light: Colors.light.btnBgc, dark: Colors.dark.btnBgc },
+    "text"
   );
 
   /**
@@ -93,20 +98,12 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     try {
       await loadContacts();
       onContactLoading(false);
-      // showNotification({
-      //   type: "success",
-      //   title: "Contacts Loaded",
-      //   message: "Your contacts have been successfully loaded.",
-      // });
 
       showNotification({
         type: "success",
 
         title: "Contacts Loaded",
         message: "Your contacts have been successfully loaded.",
-
-        // onShow: () => {},
-        // onHide: () => {},
       });
     } catch (error) {
       onContactLoading(false);
@@ -123,27 +120,6 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       updateTotalContacts(filteredContacts.length);
     }, [contactSearchQuery, filteredContacts.length])
   );
-
-  /**
-   * Dropdown options for the contact lists screen
-   */
-  const options = [
-    {
-      label: "Settings",
-      onPress: () => {
-        navigation.navigate("user-profile-screen");
-        toggleDropdown();
-      },
-    },
-
-    {
-      label: "Refresh Contacts",
-      onPress: () => {
-        onLoadContacts();
-        toggleDropdown();
-      },
-    },
-  ];
 
   // Render the card
   // useCallback is used to prevent re-rendering of the card
@@ -198,7 +174,6 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       <View style={{ zIndex: 1000 }}>
         <Notification />
       </View>
-      <ContactScreenDropdown options={options} />
 
       <ThemedView darkColor="#000" lightColor="#fff">
         <FlatList
@@ -217,6 +192,15 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
             offset: 60 * index,
             index,
           })}
+          refreshControl={
+            <RefreshControl
+              refreshing={contactIsLoading}
+              onRefresh={onLoadContacts}
+              colors={[loaderColor]} // Android spinner colors
+              tintColor={loaderColor} // iOS spinner color
+              progressBackgroundColor={safeAreaBackground}
+            />
+          }
         />
       </ThemedView>
     </SafeAreaView>

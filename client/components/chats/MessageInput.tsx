@@ -515,7 +515,6 @@ const MessageInput = ({
           </>
         </View>
       </View>
-      {/* {showEmoji && <View style={{ height: keyboardHeight }}></View>} */}
     </>
   );
 };
@@ -530,7 +529,6 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: "row",
-    // alignItems: "center",
   },
   imagePressable: {
     width: 40,
