@@ -240,7 +240,6 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket.current;
 
     currentSocket.on("message", (message: any) => {
-      console.log("New message received:", message);
       // setTriggerCount((prevCount) => prevCount + 1);
       setSocketMessages((prevMessages) => [
         {

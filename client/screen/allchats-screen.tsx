@@ -1,6 +1,5 @@
 import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
-import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
@@ -35,7 +34,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   >([]);
 
   const [getCurrentUser] = useGetCurrentUserMutation();
-
   const { contactIsLoaded } = useContext(ChatContext);
 
   const [rooms, setRooms] = useState<
@@ -74,6 +72,11 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   const textColor = useThemeColor(
     { light: Colors.light.text, dark: Colors.dark.text },
+    "background"
+  );
+
+  const cardBg = useThemeColor(
+    { light: Colors.light.background, dark: Colors.dark.background },
     "background"
   );
 
@@ -216,13 +219,7 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
         style={styles.floatingBtn}
       />
       <MenuDropdown options={options} />
-      {contactIsLoaded && (
-        <View
-          style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
-        >
-          <LoaderSpinner />
-        </View>
-      )}
+
       <View style={styles.contianer}>
         <Searchbar
           iconColor={textColor}

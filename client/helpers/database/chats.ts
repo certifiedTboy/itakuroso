@@ -50,7 +50,6 @@ export const insertChat = async (chatData: {
   await runWithLock(async () => {
     try {
       const db = await getDatabase();
-      await db.runAsync("BEGIN TRANSACTION");
 
       if (db) {
         await db.runAsync(
@@ -66,8 +65,6 @@ export const insertChat = async (chatData: {
           ]
         );
       }
-
-      await db.runAsync("COMMIT");
     } catch (error) {
       console.log("Error inserting contacts:", error);
     }

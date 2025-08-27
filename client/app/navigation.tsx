@@ -16,7 +16,6 @@ import {
   SafeAreaProvider,
   initialWindowMetrics,
 } from "react-native-safe-area-context";
-
 import AuthStack from "./auth-stack";
 import AuthenticatedStack from "./authenticated-stack";
 

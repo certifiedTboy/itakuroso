@@ -343,6 +343,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 1 }, // iOS
     shadowOpacity: 0.2, // iOS
     shadowRadius: 1.41, // iOS
+    marginVertical: 7,
   },
   senderText: {
     fontSize: 14,
