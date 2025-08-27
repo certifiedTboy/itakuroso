@@ -250,9 +250,9 @@ export class ChatGateway
                 ),
               );
 
-              this.server
-                .to(message.roomId)
-                .emit('markMessagesAsDelivered', { roomId: message.roomId });
+              // this.server
+              //   .to(message.roomId)
+              //   .emit('markMessagesAsDelivered', { roomId: message.roomId });
             }
           }
         }
