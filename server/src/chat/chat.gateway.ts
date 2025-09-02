@@ -174,6 +174,26 @@ export class ChatGateway
     await client.join(roomId);
   }
 
+  @SubscribeMessage('joinGroup')
+  async handleJoinGroup(
+    @MessageBody() data: { roomId: string; phoneNumber: string; email: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    console.log(data);
+    const { roomId, phoneNumber, email } = data;
+
+    // /**
+    //  * add current user to temporary room
+    //  */
+    this.chatService.userJoin({
+      contactName: email,
+      roomId,
+      phoneNumber,
+    });
+
+    await client.join(roomId);
+  }
+
   /**
    * @method handleUserOnline
    * @description Handles listening event when a user comes online.
@@ -220,11 +240,7 @@ export class ChatGateway
           const message = userMessageQueue.dequeue();
           if (message) {
             await client.join(message.roomId);
-            //          const user = this.chatService.userJoin({
-            //   contactName: currentUserId.email,
-            //   roomId,
-            //   phoneNumber: currentUserId.phoneNumber,
-            // });
+
             if (message.content === 'delete message') {
               this.server.to(message.roomId).emit('deleteEveryoneMessage', {
                 chatId: message.chatId,
@@ -413,6 +429,46 @@ export class ChatGateway
         );
       }
     }
+  }
+
+  @SubscribeMessage('groupMessage')
+  handleGroupMessage(
+    @MessageBody()
+    data: {
+      chatId: string;
+      roomId: string;
+      senderId: string;
+      receiverId: string;
+      content: string;
+      file?: string;
+      replyTo?: {
+        replyToId: string;
+        replyToMessage: string;
+        replyToSenderId: string;
+      } | null;
+    },
+    // @ConnectedSocket() client: Socket,
+  ) {
+    const { roomId, chatId } = data;
+
+    return this.server.to(roomId).emit(
+      'groupMessage',
+      ChatHelpers.messageResponse(
+        data.content,
+        data.senderId,
+        chatId,
+        MessageStatus.SENT,
+        roomId,
+        data.file,
+        data.replyTo && data?.replyTo?.replyToMessage
+          ? {
+              replyToId: data.replyTo.replyToId,
+              replyToMessage: data.replyTo.replyToMessage,
+              replyToSenderId: data.replyTo.replyToSenderId,
+            }
+          : undefined,
+      ),
+    );
   }
 
   @SubscribeMessage('deleteEveryoneMessage')

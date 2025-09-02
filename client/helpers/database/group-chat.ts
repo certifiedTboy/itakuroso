@@ -74,36 +74,66 @@ export const insertGroupChat = async (
 };
 
 /**
- * Fetch all group chats
+ * Get all group chats.
  */
-export const fetchGroupChats = async (): Promise<GroupChat[]> => {
+export const fetchGroupChats = async () => {
   try {
     const db = await getDatabase();
-    const rows: GroupChatRow[] = await db.getAllAsync(
-      `SELECT * FROM group_chatss`
-    );
-
-    return rows.map((row) => {
-      let members: string[] = [];
-      try {
-        members = row.members ? JSON.parse(row.members) : [];
-      } catch (e) {
-        console.warn("⚠️ Invalid members JSON for chat:", row.id, row.members);
-      }
-      return {
-        id: row.id,
-        groupName: row.roomName ?? "",
-        groupImage: row.roomImage,
-        members,
-        roomLink: row.roomLink,
-        roomId: row.roomId,
-      };
-    });
+    const results = await db.getAllAsync(`
+          SELECT 
+            c.id,
+            c.roomName,
+            c.roomImage, 
+            c.roomId, 
+            c.lastMessageId,
+            r._id as lastMessageId,
+            r.senderId as lastMessageSenderId,
+            r.message as lastMessageContent,
+            r.timestamp as lastMessageTimestamp,
+            r.file as lastMessageFile,
+            r.replyToId as lastMessageReplyToId,
+            r.messageStatus as lastMessageStatus
+          FROM group_chatss c
+          LEFT JOIN chatss r ON c.lastMessageId = r._id
+        `);
+    return results;
   } catch (error) {
-    console.error("❌ Error fetching group chats:", error);
+    console.error("Error getting group chats:", error);
     throw error;
   }
 };
+
+// /**
+//  * Fetch all group chats
+//  */
+// export const fetchGroupChats = async (): Promise<GroupChat[]> => {
+//   try {
+//     const db = await getDatabase();
+//     const rows: GroupChatRow[] = await db.getAllAsync(
+//       `SELECT * FROM group_chatss`
+//     );
+
+//     return rows.map((row) => {
+//       let members: string[] = [];
+//       try {
+//         members = row.members ? JSON.parse(row.members) : [];
+//       } catch (e) {
+//         console.warn("⚠️ Invalid members JSON for chat:", row.id, row.members);
+//       }
+//       return {
+//         id: row.id,
+//         groupName: row.roomName ?? "",
+//         groupImage: row.roomImage,
+//         members,
+//         roomLink: row.roomLink,
+//         roomId: row.roomId,
+//       };
+//     });
+//   } catch (error) {
+//     console.error("❌ Error fetching group chats:", error);
+//     throw error;
+//   }
+// };
 
 /**
  * Delete a group chat by ID
@@ -142,10 +172,47 @@ export const getGroupChat = async (roomId: string) => {
 export const getGroupChats = async () => {
   try {
     const db = await getDatabase();
-    const result = await db.getAllAsync(`SELECT * FROM group_chatss`);
-    return result;
+    const results = await db.getAllAsync(`
+          SELECT 
+            c.id,
+            c.roomName,
+            c.roomImage, 
+            c.roomId, 
+            c.lastMessageId,
+            r._id as lastMessageId,
+            r.senderId as lastMessageSenderId,
+            r.message as lastMessageContent,
+            r.timestamp as lastMessageTimestamp,
+            r.file as lastMessageFile,
+            r.replyToId as lastMessageReplyToId,
+            r.messageStatus as lastMessageStatus
+          FROM group_chatss c
+          LEFT JOIN chatss r ON c.lastMessageId = r._id
+        `);
+    return results;
   } catch (error) {
     console.error("Error getting group chats:", error);
     throw error;
+  }
+};
+
+/**
+ * @function updateGroupLastMessageId
+ * @param {string} lastMessageId - Id of the last message to update
+ * @param {string} roomId - The ID of the room to associate with the last message.
+ * @returns {Promise<void>}
+ */
+export const updateGroupLastMessageId = async (
+  lastMessageId: string,
+  roomId: string
+): Promise<void> => {
+  try {
+    const db = await getDatabase();
+    await db.runAsync(
+      `UPDATE group_chatss SET lastMessageId = ? WHERE roomId = ?`,
+      [lastMessageId, roomId]
+    );
+  } catch (error) {
+    console.error("Error updating group last message ID:", error);
   }
 };

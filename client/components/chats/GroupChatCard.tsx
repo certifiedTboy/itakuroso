@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/Colors";
 import { useThemeColor } from "@/hooks/useThemeColor";
+import { useNavigation } from "@react-navigation/native";
 import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { Avatar } from "react-native-paper";
 
@@ -29,6 +30,8 @@ const GroupChatCard = ({
 }: ChatCardProps) => {
   const { width } = Dimensions.get("window");
 
+  const navigation = useNavigation();
+
   const cardBg = useThemeColor(
     { light: Colors.light.background, dark: Colors.dark.background },
     "background"
@@ -43,15 +46,10 @@ const GroupChatCard = ({
     <Pressable
       onPress={() => {
         // @ts-ignore
-        navigation.navigate("chat-screen", {
-          //   contactName,
-          //   phoneNumber,
-          //   roomId,
-          //   senderId,
-          //   isRead,
-          //   lastSeen: userData?.lastSeen,
-          //   profileImage: userData?.profilePicture,
-          //   isOnline: userData?.isOnline,
+        navigation.navigate("group-chat-screen", {
+          groupName,
+          profileImage: groupImage,
+          roomId,
         });
       }}
       style={({ pressed }) => [

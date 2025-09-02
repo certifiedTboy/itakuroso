@@ -113,6 +113,73 @@ const AuthenticatedStack = () => {
         })}
       />
       <Stack.Screen
+        name="group-chat-screen"
+        // @ts-ignore
+        component={GroupChatScreen}
+        options={({
+          route,
+        }: {
+          route: {
+            params?: {
+              groupName?: string;
+              profileImage?: string;
+            };
+          };
+        }) => ({
+          headerShown: true,
+          headerTitle: () => {
+            return (
+              <View
+                style={{
+                  marginLeft: -25,
+                  // marginTop: -25,
+                  backgroundColor: backgroundColor,
+                  flexDirection: "row",
+                  gap: 10,
+                  alignItems: "center",
+                }}
+              >
+                <View>
+                  {route?.params?.profileImage ? (
+                    <Avatar.Image
+                      size={40}
+                      source={{ uri: route.params.profileImage }}
+                    />
+                  ) : (
+                    <Avatar.Text
+                      size={40}
+                      label={
+                        route.params!.groupName! &&
+                        route.params!.groupName![0].charAt(0).toUpperCase()
+                      }
+                      style={{ backgroundColor: Colors.light.btnBgc }}
+                    />
+                  )}
+                </View>
+                <View>
+                  <Text
+                    style={{
+                      color: titleColor,
+                      fontWeight: "500",
+                      fontSize: 16,
+                    }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {route &&
+                      route.params &&
+                      route.params.groupName &&
+                      route.params.groupName[0].toUpperCase() +
+                        route.params.groupName.slice(1)}
+                  </Text>
+                </View>
+              </View>
+            );
+          },
+          animation: "slide_from_right",
+        })}
+      />
+      <Stack.Screen
         name="chat-screen"
         // @ts-ignore
         component={ChatScreen}
@@ -290,14 +357,6 @@ const AuthenticatedStack = () => {
         component={NewGroupDetailsScreen}
         options={{
           headerTitle: "New Group",
-          animation: "slide_from_right",
-        }}
-      />
-      <Stack.Screen
-        name="group-chat-screen"
-        component={GroupChatScreen}
-        options={{
-          headerTitle: "Group Chat",
           animation: "slide_from_right",
         }}
       />

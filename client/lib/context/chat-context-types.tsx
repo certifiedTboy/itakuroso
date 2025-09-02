@@ -17,11 +17,28 @@ export type ChatContextType = {
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
   ) => void;
+  joinGroup: (groupData: {
+    roomId: string;
+    phoneNumber: string;
+    email: string;
+  }) => void;
   sendMessage: (messageData: {
     chatId: string;
     content: string;
     senderId: string;
     receiverId: string;
+    roomId?: string;
+    file?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
+  }) => void;
+  sendGroupMessage: (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
     roomId?: string;
     file?: string;
     replyTo?: {

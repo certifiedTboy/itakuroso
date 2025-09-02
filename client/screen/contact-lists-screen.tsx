@@ -2,6 +2,7 @@ import Notification from "@/components/common/Notification";
 import ContactCard from "@/components/contacts/ContactCard";
 import { ThemedView } from "@/components/ThemedView";
 import { Colors } from "@/constants/Colors";
+import { moveContactToTop } from "@/helpers/chat-helpers";
 import { loadContacts } from "@/helpers/contact-helpers";
 import { getContacts } from "@/helpers/database/contacts";
 import { showNotification } from "@/helpers/notification";
@@ -153,19 +154,6 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
     []
   );
 
-  function moveToTop(
-    arr: { phoneNumber: string }[],
-    criteria: (item: any) => boolean
-  ) {
-    return [
-      ...arr.filter(
-        (item) =>
-          criteria(item) && item?.phoneNumber !== currentUser?.phoneNumber
-      ),
-      ...arr.filter((item) => !criteria(item)),
-    ];
-  }
-
   return (
     <SafeAreaView
       style={[{ backgroundColor: safeAreaBackground }, styles.container]}
@@ -178,7 +166,11 @@ const ContactListsScreen = ({ navigation }: ContactListsScreenInterface) => {
       <ThemedView darkColor="#000" lightColor="#fff">
         <FlatList
           // @ts-ignore
-          data={moveToTop(filteredContacts, (item: any) => item.roomId)}
+          data={moveContactToTop(
+            filteredContacts,
+            (item: any) => item.roomId,
+            currentUser?.phoneNumber
+          )}
           renderItem={RenderedCard}
           keyExtractor={(item: any) => item.id}
           numColumns={1}

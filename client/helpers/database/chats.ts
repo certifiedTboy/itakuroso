@@ -153,7 +153,7 @@ export const getLastChatByRoomId = async (roomId: string) => {
         [roomId]
       );
 
-      return results;
+      return results[0];
     }
   } catch (error) {
     console.log(error);

@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Itakuroso",
-    "slug": "client",
+    "name": "itakuroso",
+    "slug": "itakuroso-client",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/images/app-icon.png",
@@ -17,14 +17,13 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "android.permission.READ_CONTACTS",
         "android.permission.WRITE_CONTACTS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
-      "package": "com.certifiedtboy.client"
+      "package": "com.certifiedtboy.itakurosoclient"
     },
     "web": {
       "bundler": "metro",
@@ -40,13 +39,12 @@
           "imageWidth": 300,
           "resizeMode": "contain",
           "backgroundColor": "#FFFFFFFF",
-          "dark" : {
+          "dark": {
             "image": "./assets/images/app-icon.png",
             "imageWidth": 300,
             "resizeMode": "contain",
             "backgroundColor": "#000000"
           }
-           
         }
       ],
       [
@@ -84,9 +82,8 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "e82dac55-9c6d-4ebc-ab81-61ebfec28d2e"
+        "projectId": "48fbc033-ccc7-4053-ae23-1732fffaefcd"
       }
-    },
-    "owner": "certifiedtboy"
+    }
   }
 }

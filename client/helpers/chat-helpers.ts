@@ -41,3 +41,30 @@ export const formatDate = (date: string) => {
 export const removeAsteriks = (message: string) => {
   return message.replace(/\*/g, "");
 };
+
+export const moveContactToTop = (
+  arr: { phoneNumber: string }[],
+  criteria: (item: any) => boolean,
+  phoneNumber: string
+) => {
+  return [
+    ...arr.filter(
+      (item) => criteria(item) && item?.phoneNumber !== phoneNumber
+    ),
+    ...arr.filter((item) => !criteria(item)),
+  ];
+};
+
+export const sortChatMessagesByTime = (messages: {}[]) => {
+  // console.log(messages[0]);
+  const itemsWithTimestamps = messages.map((item: any) => ({
+    ...item,
+    timestamp: new Date(item.lastMessage.created_at).getTime(),
+  }));
+
+  // const sortedItems = itemsWithTimestamps.sort(
+  //   (a: any, b: any) => a.timestamp - b.timestamp
+  // );
+
+  // return sortedItems;
+};

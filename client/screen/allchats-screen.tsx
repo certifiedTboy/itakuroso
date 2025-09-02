@@ -1,5 +1,6 @@
 import ChatCard from "@/components/chats/ChatCard";
 import MenuDropdown from "@/components/dropdown/MenuDropdown";
+import LoaderSpinner from "@/components/spinner/LoaderSpinner";
 import FloatingBtn from "@/components/ui/FloatingBtn";
 import { Colors } from "@/constants/Colors";
 import { formatPhoneNumber } from "@/helpers/contact-helpers";
@@ -28,7 +29,6 @@ type AllChatsScreenInterface = {
 
 const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
   const [searchQuery, setSearchQuery] = useState("");
-  // const [rooms, getExistingRoomsData] = useGetActiveRooms();
   const [savedContacts, setSavedContacts] = useState<
     { id: string; phoneNumber: string; name: string; roomId?: string }[]
   >([]);
@@ -75,11 +75,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     "background"
   );
 
-  const cardBg = useThemeColor(
-    { light: Colors.light.background, dark: Colors.dark.background },
-    "background"
-  );
-
   useFocusEffect(
     useCallback(() => {
       getCurrentUser(null);
@@ -109,7 +104,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
 
   useEffect(() => {
     if (savedContacts && savedContacts.length > 0) {
-      // console.log("data fetched", data?.data);
       setRooms(
         savedContacts.map((contact: any) => {
           return {
@@ -197,8 +191,6 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
     []
   );
 
-  // console.log("rooms", rooms);
-
   return (
     <>
       <Pressable
@@ -241,16 +233,21 @@ const AllChatsScreen = ({ navigation }: AllChatsScreenInterface) => {
           ]}
         />
 
-        <FlatList
-          // @ts-ignore
-          data={rooms}
-          renderItem={RenderedCard}
-          keyExtractor={(item) => item.phoneNumber}
-          numColumns={1}
-          scrollEventThrottle={16} // Improves performance
-          // onEndReached={handleEndReached} // Trigger when reaching the end
-          onEndReachedThreshold={0.5} // Adjust sensitivity
-        />
+        {contactIsLoaded ? (
+          <LoaderSpinner />
+        ) : (
+          <FlatList
+            // @ts-ignore
+            // data={sortChatMessagesByTime(rooms)}
+            data={rooms}
+            renderItem={RenderedCard}
+            keyExtractor={(item) => item.phoneNumber}
+            numColumns={1}
+            scrollEventThrottle={16} // Improves performance
+            // onEndReached={handleEndReached} // Trigger when reaching the end
+            onEndReachedThreshold={0.5} // Adjust sensitivity
+          />
+        )}
       </View>
     </>
   );

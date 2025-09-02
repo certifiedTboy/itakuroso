@@ -6,7 +6,10 @@ import {
   markDbMessagesAsRead,
 } from "@/helpers/database/chats";
 import { updateRoomLastMessageId } from "@/helpers/database/contacts";
-import { insertGroupChat } from "@/helpers/database/group-chat";
+import {
+  insertGroupChat,
+  updateGroupLastMessageId,
+} from "@/helpers/database/group-chat";
 import { updateUserProfilePicture } from "@/helpers/database/user";
 import NetInfo from "@react-native-community/netinfo";
 import { ReactNode, createContext, useEffect, useRef, useState } from "react";
@@ -35,11 +38,28 @@ export const ChatContext = createContext<ChatContextType>({
     currentUser: { phoneNumber: string; email: string },
     roomId?: string
   ) => {},
+  joinGroup: (groupData: {
+    roomId: string;
+    phoneNumber: string;
+    email: string;
+  }) => {},
   sendMessage: (messageData: {
     chatId: string;
     content: string;
     senderId: string;
     receiverId: string;
+    roomId?: string;
+    file?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
+  }) => {},
+  sendGroupMessage: (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
     roomId?: string;
     file?: string;
     replyTo?: {
@@ -175,6 +195,21 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   };
 
   /**
+   * join group function
+   */
+  const joinGroup = (groupData: {
+    roomId: string;
+    phoneNumber: string;
+    email: string;
+  }) => {
+    socket?.current.emit("joinGroup", {
+      roomId: groupData.roomId,
+      phoneNumber: groupData?.phoneNumber,
+      email: groupData?.email,
+    });
+  };
+
+  /**
    * send message function
    */
   const sendMessage = async (messageData: {
@@ -191,6 +226,24 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     };
   }) => {
     socket.current.emit("message", messageData);
+  };
+
+  /**
+   * send message function
+   */
+  const sendGroupMessage = async (messageData: {
+    chatId: string;
+    content: string;
+    senderId: string;
+    roomId?: string;
+    file?: string;
+    replyTo?: {
+      replyToId: string;
+      replyToMessage: string;
+      replyToSenderId: string;
+    };
+  }) => {
+    socket.current.emit("groupMessage", messageData);
   };
 
   /**
@@ -286,6 +339,58 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   }, [socket]);
 
   /**
+   * listens to incoming messages from the socket server
+   */
+  useEffect(() => {
+    const currentSocket = socket.current;
+
+    currentSocket.on("groupMessage", (message: any) => {
+      // setTriggerCount((prevCount) => prevCount + 1);
+      setSocketMessages((prevMessages) => [
+        {
+          senderId: message.senderId,
+          message: message.message,
+          _id: message.chatId,
+          createdAt: message.createdAt,
+          file: message?.file,
+          messageStatus: message?.messageStatus,
+          replyTo: {
+            replyToId: message?.replyTo?.replyToId,
+            replyToMessage: message?.replyTo?.replyToMessage,
+            replyToSenderId: message?.replyTo?.replyToId
+              ? message?.replyTo?.replyToSenderId
+              : undefined,
+          },
+        },
+        ...prevMessages,
+      ]);
+
+      /**
+       * a self invoking function to insert the chat message into the database
+       */
+      (async () => {
+        if (message?.roomId) {
+          await insertChat({
+            chatId: message.chatId,
+            senderId: message.senderId,
+            message: message.message,
+            chatRoomId: message.roomId,
+            file: message?.file,
+            messageStatus: message?.messageStatus,
+            replyToId: message?.replyTo?.replyToId,
+          });
+
+          await updateGroupLastMessageId(message.chatId, message?.roomId);
+        }
+      })();
+    });
+
+    return () => {
+      currentSocket.off("groupMessage");
+    };
+  }, [socket]);
+
+  /**
    * handles listening to the socket server emitting the markMessagesAsRead event
    * and updates the message status that belongs to a particular room
    */
@@ -332,6 +437,7 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
     const currentSocket = socket?.current;
     let timer: NodeJS.Timeout;
     if (!contactIsLoaded) {
+      // @ts-ignore
       timer = setTimeout(() => {
         currentSocket.emit("fetchQueueMessages", {
           ...currentUser,
@@ -582,7 +688,9 @@ const ChatContextProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     messages: socketMessages,
     joinRoom,
+    joinGroup,
     sendMessage,
+    sendGroupMessage,
     updateSocketMessages,
     markMessagesAsRead,
     isConnected: isConntectedRef.current,

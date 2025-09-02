@@ -19,14 +19,13 @@ export const loadContacts = async () => {
 
     if (status === "granted") {
       const { data } = await Contacts.getContactsAsync({});
+
       const accessToken = await AsyncStorage.getItem("accessToken");
       const rooms = await axios.get(`${baseUrl}/chats/rooms`, {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
       });
-
-      // console.log("Contacts data:", rooms?.data?.data[0].members);
 
       if (data && rooms?.data?.data && rooms?.data?.statusCode === 200) {
         const contacts = data
@@ -52,13 +51,14 @@ export const loadContacts = async () => {
               contact?.phoneNumber.startsWith("*")
           );
 
-        // Remove unwanted fields from the contact object
         const unwantedFields = [
           "_id",
           "createdAt",
           "updatedAt",
           "isVerified",
           "email",
+          "passwordResetToken",
+          "passwordResetTokenExpiresIn",
         ];
 
         function cleanObject(obj: any) {

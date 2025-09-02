@@ -15,7 +15,19 @@ type AllChatsScreenInterface = {
 const GroupScreen = ({ navigation }: AllChatsScreenInterface) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [groups, setGroups] = useState<
-    { id: string; groupName: string; roomId: string; groupImage: string }[]
+    {
+      id: string;
+      groupName: string;
+      roomId: string;
+      groupImage: string;
+      lastMessage: {
+        message: string;
+        timestamp: string;
+        isRead: boolean;
+        containsFile?: boolean;
+        senderId: string;
+      };
+    }[]
   >([]);
 
   /**
@@ -36,9 +48,16 @@ const GroupScreen = ({ navigation }: AllChatsScreenInterface) => {
         setGroups(
           groupChats.map((group: any) => ({
             id: group.id,
-            groupName: group.groupName,
+            groupName: group.roomName,
             roomId: group.roomId,
-            groupImage: group.groupImage,
+            groupImage: group.roomImage,
+            lastMessage: {
+              message: group.lastMessageContent || "",
+              timestamp: group.lastMessageTimestamp || "",
+              isRead: group.lastMessageStatus === "read",
+              containsFile: group.lastMessageFile,
+              senderId: group.lastMessageSenderId,
+            },
           }))
         );
       })();
