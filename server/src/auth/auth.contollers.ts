@@ -91,8 +91,8 @@ export class AuthControllers {
   }
 
   /**
-   * @method getCurrentUser
-   * @description Handles requests to get the current user's information.
+   * @method getUserProfile
+   * @description Handles requests to get  user's information.
    */
   @Get('user/:phoneNumber/profile')
   @UseGuards(AuthGuard)
